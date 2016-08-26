@@ -1,0 +1,72 @@
+<apex:page standardController="Aria_Items__c" extensions="AriaItemServicesPopUpExtension" sidebar="false" showheader="false">  
+<apex:stylesheet value="{!$Resource.SuperTable}/stylesheets/superTables.css"/>
+
+<style>
+
+.fakeContainer { /* The parent container */
+    margin: 0px;
+    padding: 0px;
+    border: none;
+    width: 620px; /* Required to set */
+    height: 180px; /* Required  to set */ 
+    overflow: hidden; /* Required to set */
+}
+
+
+    .bdrless td{ 
+       border-width: 3px;
+       bgcolor="#FF0000"; 
+    } 
+ 
+</style> 
+    
+    <table width="100%">
+        <tr>
+            <td><center><input type="button" value="{!$Label.ARIA_ITEM_SERVICES_POP_UP_VIEW_ITEM_DETAILS}" class="btn" onClick="window.open('/{!itm.Id}','_blank')"/> </center></td>
+            <td align="right" width="50px"><a href="javascript: window.parent.hideItemPopUp();">    {!$Label.ARIA_PAYMENT_CREDIT_CLOSE}    </a></td>
+        </tr>
+    </table>    
+    
+    <apex:pageBlock title="{!$Label.ARIA_POP_UP_SERVICES_FOR} {!Aria_Items__c.Name}">
+    <table width="100%" cellpadding="0" cellspacing="0" class="myTable">
+        <tr>
+            <th width="33%">{!$Label.ARIA_ITEM_SERVICES_POP_UP_VIEW_SERVICE_NO}</th><th width="33%">{!$Label.ARIA_ITEM_SERVICES_POP_UP_VIEW_SERVICE_NAME}</th><th width="33%">{!$Label.ARIA_ITEM_SERVICES_POP_UP_VIEW_SERVICE_TYPE}</th>
+        </tr>
+        <tr height="5px"><td colspan="3"></td></tr>
+        <tr>
+            <td>{!itm.Service__r.Aria_Id__c}</td><td>{!itm.Service__r.Name}</td><td>{!itm.Service__r.Service_Type__c}</td>
+        </tr>
+        <tr height="10px"><td colspan="3"></td></tr>
+        <tr>
+            <td colspan="3">
+                <table cellpadding="0" cellspacing="10" border="0" width="100%" style="border-collapse: collapse;">
+                    <tr style="border-bottom: 1px solid rgb(138, 138, 138);">
+                        <th>{!$Label.ARIA_ITEM_SERVICES_POP_UP_VIEW_CURRENCY_NAME}</th>
+                        <th style="text-align: right;padding-left:3%">{!$Label.ARIA_ACCT_SERVICES_PRICE}</th>
+                        <th style="text-align: center;">&nbsp;&nbsp;{!$Label.ARIA_ITEM_SERVICES_POP_UP_VIEW_CURRENCY}</th>
+                    </tr>
+                    <apex:repeat var="ip" value="{!itm.Aria_Item_Prices__r}">
+                    <tr>
+                        <td>{!ip.Currency__c}</td>
+                        <td style="text-align: right;padding-left:3%">
+                            <apex:outputText id="arr" value="{0, number, 0.00}">
+                           <apex:param value="{!ip.Price__c}" />
+                          </apex:outputText>
+                        </td>
+                        <!--<td>{!ip.Price_Per_Unit__c}</td>-->
+                        <td style="text-align: center;">&nbsp;&nbsp;{!ip.Currency__c}</td>
+                    </tr>
+                    </apex:repeat>
+                    
+                </table>
+            </td>
+        </tr>
+             
+    </table>   
+    
+        
+    
+    </apex:pageBlock>  
+   
+
+</apex:page>

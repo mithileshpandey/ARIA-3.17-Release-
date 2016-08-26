@@ -1,0 +1,491 @@
+<apex:page standardController="Account" id="pg" showheader="false" extensions="AriaRatedUnbilledUsageController">
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'collapse.css')}" /> 
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<style>
+    #tabs_wrapper {
+    width: 98%;
+    margin:0 auto;
+    margin-top :2px;
+    }
+    #tabs_container {
+        border-bottom: 1px solid #ccc;
+        
+    }
+    #tabs {
+        list-style: none;
+        padding: 5px 0 4px 0;
+        margin: 0 0 0 20px;
+        font: 0.90em arial;
+    }
+    #tabs li {
+        display: inline;
+    }
+    #tabs li a {
+        border: 1px solid #ccc;
+        padding: 4px 6px;
+        text-decoration: none;
+        background-color: #eeeeee;
+        border-bottom: none;
+        outline: none;
+        border-radius: 5px 5px 0 0;
+        -moz-border-radius: 5px 5px 0 0;
+        -webkit-border-top-left-radius: 5px;
+        -webkit-border-top-right-radius: 5px;
+        color:#000;
+    }
+    #tabs li a:hover {
+        background-color: #dddddd;
+        padding: 4px 6px;
+    }
+    #tabs li.active a {
+        border-bottom: 1px solid #fff;
+        background-color: #fff;
+        padding: 4px 6px 5px 6px;
+        border-bottom: none;
+    }
+    #tabs li.active a:hover {
+        background-color: #eeeeee;
+        padding: 4px 6px 5px 6px;
+        border-bottom: none;
+    }
+    #tabs li a.icon_accept:hover {
+        padding-left: 24px;
+    }
+    
+    #tabs_content_container {
+        border: 1px solid #ccc;
+        border-top: none;
+        padding: 10px;
+        width: 98.4%;
+    }
+    ul li, ol li {
+    margin-left: 0em;
+    padding-left: 0;
+    
+   .header{
+        text-align:right;
+    }
+    /* Added By MP */
+    th {text-align: center;border-bottom: thin solid black;}
+              td {text-align: left}
+              #drow {text-align: right;}
+              #crow {text-align: center;}
+              #lrow {padding-left: 25px;}
+              .drow {text-align: right;}
+              .crow {text-align: center;}
+              .fright{text-align: right;}
+              .fleft{text-align: left;}
+              
+             
+       
+</style>
+<style>
+     .disableLink{
+       pointer-events: none;
+       color:Red;
+       cursor: default;
+    }
+</style>
+<script>
+    function toggle(id){
+        $('.'+id).slideToggle(function() {
+            //alert($('#'+id).text()+' and '+$('#'+id).is(':visible'));
+            if($('#'+id).text()=='less'){
+                $('#'+id).text('more...');
+            }
+            else{
+                $('#'+id).text('less');
+            }
+            /*$('#'+id).text(
+              $('#'+id).is(':visible') ? "less" : "more"
+            );*/
+        });
+    }
+    function confirmAndResetBalance(source){
+        if(source == 'M'){
+            var cnf = confirm("{!$Label.ARIA_RATED_CURRENT}");
+            if(cnf){
+                resetMTD();
+            }
+            else{
+                alert("{!$Label.ARIA_USAGE_HISTORY_OPERATION_CANCELLED}");
+            }
+        }
+        else if(source == 'P'){
+            var cnf = confirm("{!$Label.ARIA_RATED_BILLING_PERIOD}");
+            if(cnf){
+                resetPTD();
+            }
+            else{
+                alert("{!$Label.ARIA_USAGE_HISTORY_OPERATION_CANCELLED}");
+            }
+        }
+        return false;
+    }
+    function isNumberKey(evt, val)
+      {
+         var charCode = (evt.which) ? evt.which : event.keyCode
+         if (charCode == 46) {
+            // Allow only 1 decimal point ('.')...
+            
+            if((val) && (val.indexOf('.') >= 0))
+                return false;
+            else
+                return true;
+        }
+         
+         if (charCode > 31 && (charCode < 48 || charCode > 57))
+            return false;
+
+         return true;
+      }
+      
+      function twoDecimalPlaces(obj){
+        var decimalVal = obj.value.split('.');
+         if(decimalVal.length > 1 && decimalVal[1].length > 2){
+            obj.value = obj.value.substring(0,obj.value.length -1);
+         }
+      }
+      
+      function closeWin(){
+         var aid = window.parent.location.href.split('id=')[1];
+         aid = aid.split('&')[0];
+         window.opener.location.href = 'https://'+document.domain+'/'+aid.trim();
+         window.close();
+      }
+      function show_data(entity,id){
+                var tr = document.getElementById(id);
+                if(entity.className == "expanded"){
+                    entity.className ="collapsed";
+                    tr.style.display="none";
+                }
+                else if(entity.className == "collapsed"){
+                    entity.className ="expanded";
+                    tr.style.display="";
+                }
+                
+            }
+            
+       function ConfirmProcessRefund(){
+           var r = confirm('{!$Label.ARIA_REFUND_ISSUE_REFUND_MESSAGE}');
+            if (r==true){
+                  processRefund();
+                  //return false;
+              }
+             return false;
+           
+       }     
+       function verifyInput(){
+           var isValid = true;
+           $("#newThresholdErrorMsg").hide();
+           var newThresholdVal = $(".newThreshold").val();
+           if(newThresholdVal.length == 0 || eval(newThresholdVal) <=0 ){
+               $("#newThresholdErrorMsg").show();
+               isValid = false;
+           }
+           if(isValid){
+            MTA();
+           }
+           return false;
+   }     
+            
+</script>
+<apex:actionstatus id="status">
+    <apex:facet name="start">
+        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 95%;width:100%;padding-top: 10%;opacity:.8;">
+            <img src="{!URLFOR($Resource.LodingGif)}" title="{!$Label.ARIA_GENERAL_CONFIG_LOADING}" /><br/><br/>
+            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+        </div>
+    </apex:facet>
+</apex:actionstatus>
+
+<style>
+td.left{font-weight: bold; width:50%;}
+td.right{padding-left:5px;}
+</style>
+
+<apex:form id="frm">
+        
+    <div id="tabs_wrapper">
+    <apex:pagemessages ></apex:pagemessages>
+        <div id="tabs_container">
+            <ul id="tabs">
+                <li ><a href="/apex/AriaUsageHistory?id={!AccId}"><b>{!$Label.ARIA_USAGE_HISTORY}</b></a></li>
+                <li class="active"><a href="#"><b>{!$Label.ARIA_USAGE_HISTORY_RATED_UNBILLED_USAGE}</b></a></li>
+            </ul>
+            
+        </div>
+        
+         <div id="tabs_content_container" >
+             <input type="button" style="float: right;margin-right: 20px;margin-top: -8px;" value="{!$Label.ARIA_PAYMENT_CREDIT_CLOSE}" onclick="closeWin();"/> 
+             <apex:actionFunction id="resetMTD" name="resetMTD" action="{!reset_usg_mtd_bal}" status="status" reRender="frm"/>
+             <apex:actionFunction id="MTA" name="MTA" action="{!modify_threshold_amount}" status="status" reRender="frm"/>
+             <apex:actionFunction id="subscriptionChange" name="subscriptionChange" action="{!onSubscriptionChange}" status="status" reRender="frm"/>
+             <apex:actionFunction id="resetPTD" name="resetPTD" action="{!reset_usg_ptd_bal}" status="status" reRender="frm"/>
+             <!-- US Dollars ($ $) -->
+             <apex:pageBlock rendered="{!showIntermediate=false}">
+                <apex:outputPanel layout="block" style="background-color:hsl(195, 61%, 88%);padding:5px 15px;-webkit-border-radius:15px;">
+                <apex:outputLabel escape="false" value="{!$Label.ARIA_RATED_HEADER_ONE}"></apex:outputLabel>
+                <p>{!$Label.ARIA_RATED_HEADER_TWO}&nbsp;{!resp.currency_name},&nbsp;<apex:outputLabel escape="false" value="{!$Label.ARIA_RATED_HEADER_THREE}"></apex:outputLabel></p>
+                
+               
+                {!resp.currency_name}
+                 <br/>
+                </apex:outputPanel>
+                <br/>
+                <apex:outputPanel >
+                <apex:outputLabel value="{!$Label.ARIA_ACCOUNT_DETAIL_SUBSCRIPTION_ID}"> </apex:outputLabel>
+                <apex:outputPanel style="margin-left: 20px;">
+                        <apex:selectList size="1" value="{!subscriptionTransId}" styleClass="subTransId" style="width:325px;" onchange="subscriptionChange();">
+                            <apex:selectOptions value="{!SubscriptionList}"></apex:selectOptions>
+                        </apex:selectList>
+                    </apex:outputPanel>
+                 </apex:outputPanel> 
+                 <br/><br/>
+                <apex:outputPanel id="usageHistory" rendered="{!isPlanSelected=true}"  > 
+                <table width="100%" >
+                            <tr>
+                                <td class="left">
+                                   {!$Label.ARIA_RATED_MTD_BAL} 
+                                </td>
+                                <td class="right">
+                                <apex:outputText rendered="{!(resp.mtd_balance_amount!=null)}" value="{0, number, ###,###,##0.00}">
+                                    <apex:param value="{!resp.mtd_balance_amount}" />
+                                </apex:outputText>
+                                <apex:outputText rendered="{!(resp.mtd_balance_amount=null)}" value="{none}"/>
+                                &nbsp;&nbsp;
+                                <!--<apex:outputLink style="{!IF((resp.mtd_balance_amount!=null && resp.mtd_balance_amount = 0),'pointer-events: none;color :rgb(143, 139, 139);cursor: default;','')}" onclick="return confirmAndResetBalance('M');">{!$Label.ARIA_RATED_RESET_BAL_TO_ZERO}</apex:outputLink>-->
+                                <apex:outputLink style="{!IF((resp.mtd_balance_amount!=null && resp.mtd_balance_amount = 0),'color :rgb(143, 139, 139);cursor: default;text-decoration: underline;','')}" disabled="{!(resp.mtd_balance_amount!=null && resp.mtd_balance_amount = 0)}" onclick="return confirmAndResetBalance('M');">{!$Label.ARIA_RATED_RESET_BAL_TO_ZERO}</apex:outputLink>
+                                <!--<apex:commandLink id="resetMTDLink" value="Re-Set Balance to Zero" onclick="return confirmAndResetBalance('M');"/> -->
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="left">
+                                    {!$Label.ARIA_RATED_PTD_BAL}
+                                </td> 
+                                <td class="right">
+                                <apex:outputText rendered="{!(resp.ptd_balance_amount!=null)}" value="{0, number, ###,###,##0.00}">
+                                    <apex:param value="{!resp.ptd_balance_amount}" />
+                                </apex:outputText>
+                                <apex:outputText rendered="{!(resp.ptd_balance_amount=null)}" value="{none}"/>
+                                &nbsp;&nbsp;
+                                <!--<apex:outputLink style="{!IF((resp.ptd_balance_amount!=null && resp.ptd_balance_amount = 0),'pointer-events: none;color : rgb(143, 139, 139);cursor: default;','')}"  onclick="return confirmAndResetBalance('P');">Re-Set Balance to Zero</apex:outputLink>-->
+                                <apex:outputLink style="{!IF((resp.ptd_balance_amount!=null && resp.ptd_balance_amount = 0),'color : rgb(143, 139, 139);cursor: default;text-decoration: underline;','')}" disabled="{!(resp.ptd_balance_amount!=null && resp.ptd_balance_amount = 0)}"  onclick="return confirmAndResetBalance('P');">{!$Label.ARIA_RATED_RESET_BAL_TO_ZERO}</apex:outputLink>
+                                <!-- <apex:commandLink id="resetPTDLink"  value="Re-Set Balance to Zero" onclick="return confirmAndResetBalance('P');"/>-->
+                                </td>
+                            </tr>
+                            <tr style="height:5px;"><td colspan="2"></td></tr>
+                            <tr>
+                                <td class="left"> 
+                                    {!$Label.ARIA_RATED_MPI_NOTICE_MTD_THRESHOLD}
+                                </td>
+                                <td class="right">
+                                <apex:outputText rendered="{!(resp.mpi_mtd_threshold_amount!=null)}" value="{0, number, ###,###,##0.00}">
+                                    <apex:param value="{!resp.mpi_mtd_threshold_amount}" />
+                                </apex:outputText>
+                                <apex:outputText rendered="{!(resp.mpi_mtd_threshold_amount=null)}" value="{none}"/>
+                                &nbsp;&nbsp;
+                                <apex:commandLink value="{!$Label.ARIA_RATED_MODIFY_THRESHOLD_AMOUNT}" action="{!set_mpi_usg_mtd_threshold}" status="status" reRender="frm"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="left">
+                                   {!$Label.ARIA_RATED_MPI_NOTICE_MTD_DELTA}
+                                </td>
+                                <td class="right">
+                                <apex:outputText rendered="{!(resp.mpi_mtd_delta_amount!=null)}" value="{0, number, ###,###,##0.00}">
+                                    <apex:param value="{!resp.mpi_mtd_delta_amount}" />
+                                </apex:outputText>
+                                <apex:outputText rendered="{!(resp.mpi_mtd_delta_amount=null)}" value="{none}"/>
+                                &nbsp;<apex:outputPanel rendered="{!(resp.mpi_mtd_delta_amount!=null)}"><i><apex:outputText value=" {!IF(resp.mpi_mtd_delta_sign='+','OVER',IF(resp.mpi_mtd_delta_sign='=','EQUAL TO','UNDER'))} "/></i>&nbsp;{!$Label.ARIA_RATED_THRESHOLD_AMOUNT}</apex:outputPanel> 
+                                </td>
+                            </tr>
+                            <tr style="height:5px;"><td colspan="2"></td></tr>
+                            <tr>
+                                <td class="left">
+                                   {!$Label.ARIA_RATED_MPI_NOTICE_PTD_THRESHOLD}
+                                </td>
+                                <td class="right">
+                                <apex:outputText rendered="{!(resp.mpi_ptd_threshold_amount!=null)}" value="{0, number, ###,###,##0.00}">
+                                    <apex:param value="{!resp.mpi_ptd_threshold_amount}" />
+                                </apex:outputText>
+                                <apex:outputText rendered="{!(resp.mpi_ptd_threshold_amount=null)}" value="{none}"/>
+                                &nbsp;&nbsp;
+                                <apex:commandLink value="{!$Label.ARIA_RATED_MODIFY_THRESHOLD_AMOUNT}" action="{!set_mpi_usg_ptd_threshold}" status="status" reRender="frm"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="left">
+                                    {!$Label.ARIA_RATED_MPI_NOTICE_PTD_DELTA}
+                                </td>
+                                <td class="right">
+                                <apex:outputText rendered="{!(resp.mpi_ptd_delta_amount != null)}" value="{0, number, ###,###,##0.00}">
+                                    <apex:param value="{!resp.mpi_ptd_delta_amount}" />
+                                    
+                                </apex:outputText>
+                                <apex:outputText rendered="{!(resp.mpi_ptd_delta_amount = null)}" value="{none}"/>
+                                <apex:outputPanel rendered="{!(resp.mpi_ptd_delta_amount != null)}">&nbsp;<i><apex:outputText value=" {!IF(resp.mpi_ptd_delta_sign='+','OVER',IF(resp.mpi_ptd_delta_sign='=','EQUAL TO','UNDER'))} "/></i>&nbsp;{!$Label.ARIA_RATED_THRESHOLD_AMOUNT}</apex:outputPanel> 
+                                <!--<apex:outputText rendered="{!(resp.acct_ptd_delta_amount != null)}" value=" {!IF(resp.acct_ptd_delta_sign='+','OVER',IF(resp.acct_ptd_delta_sign='=','EQUAL TO','UNDER'))} threshold amount"/>-->
+                                
+                                </td>
+                            </tr>
+                            <tr style="height:5px;"><td colspan="2"></td></tr>
+                            <tr>
+                                <td class="left">
+                                    {!$Label.ARIA_RATED_CLIENT_NOTICE_MTD_THRESHOLD}
+                                </td>
+                                <td class="right">
+                                <apex:outputText rendered="{!(resp.client_mtd_threshold_amount!=null)}" value="{0, number, ###,###,##0.00}">
+                                    <apex:param value="{!resp.client_mtd_threshold_amount}" />
+                                </apex:outputText>
+                                <apex:outputText rendered="{!(resp.client_mtd_threshold_amount=null)}" value="{none}"/>
+                                &nbsp;&nbsp;
+                                <apex:commandLink value="{!$Label.ARIA_RATED_MODIFY_THRESHOLD_AMOUNT}" action="{!set_client_usg_mtd_threshold}" status="status" reRender="frm"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="left">
+                                   {!$Label.ARIA_RATED_CLIENT_NOTICE_MTD_DELTA}
+                                </td>
+                                <td class="right">
+                                <apex:outputText rendered="{!(resp.client_mtd_delta_amount!=null)}" value="{0, number, ###,###,##0.00}">
+                                    <apex:param value="{!resp.client_mtd_delta_amount}" />
+                                </apex:outputText>
+                                <apex:outputText rendered="{!(resp.client_mtd_delta_amount=null)}" value="{none}"/>
+                                
+                                
+                                <apex:outputPanel rendered="{!(resp.client_mtd_delta_amount!=null)}">&nbsp;<i><apex:outputText value=" {!IF(resp.client_mtd_delta_sign='+','OVER',IF(resp.client_mtd_delta_sign='=','EQUAL TO','UNDER'))} "/></i>&nbsp;{!$Label.ARIA_RATED_THRESHOLD_AMOUNT}</apex:outputPanel>
+                                
+                                </td>
+                            </tr>
+                            <tr style="height:5px;"><td colspan="2"></td></tr>
+                            <tr>
+                                <td class="left">
+                                   {!$Label.ARIA_RATED_CLIENT_NOTICE_PTD_THRESHOLD}
+                                </td>
+                                <td class="right">
+                                <apex:outputText rendered="{!(resp.client_ptd_threshold_amount!=null)}" value="{0, number, ###,###,##0.00}">
+                                    <apex:param value="{!resp.client_ptd_threshold_amount}" />
+                                </apex:outputText>
+                                <apex:outputText rendered="{!(resp.client_ptd_threshold_amount=null)}" value="{none}"/>
+                                &nbsp;&nbsp;
+                                <apex:commandLink value="{!$Label.ARIA_RATED_MODIFY_THRESHOLD_AMOUNT}" action="{!set_client_usg_ptd_threshold}" status="status" reRender="frm" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="left">
+                                   {!$Label.ARIA_RATED_CLIENT_NOTICE_PTD_DELTA}
+                                </td>
+                                <td class="right">
+                                <apex:outputText rendered="{!(resp.client_ptd_delta_amount!=null)}" value="{0, number, ###,###,##0.00}">
+                                    <apex:param value="{!resp.client_ptd_delta_amount}" />
+                                    
+                                </apex:outputText>
+                                <apex:outputText rendered="{!(resp.client_ptd_delta_amount=null)}" value="{none}"/>
+                                <apex:outputPanel rendered="{!(resp.client_ptd_delta_amount!=null)}">&nbsp;<i><apex:outputText value=" {!IF(resp.client_ptd_delta_sign='+','OVER',IF(resp.client_ptd_delta_sign='=','EQUAL TO','UNDER'))} "/>&nbsp;{!$Label.ARIA_RATED_THRESHOLD_AMOUNT}</i></apex:outputPanel>
+                                
+                                
+                                </td>
+                            </tr>
+                            
+                            <tr style="height:5px;"><td colspan="2"></td></tr>
+                            <tr>
+                                <td class="left">
+                                    {!$Label.ARIA_RATED_UNAPP_SERVICE_CREDIT_BAL}
+                                </td>
+                                <td class="right">
+                                <apex:outputText rendered="{!(resp.unapp_svc_credit_bal_amount!=null)}" value="{0, number, ###,###,##0.00}">
+                                    <apex:param value="{!resp.unapp_svc_credit_bal_amount}" />
+                                </apex:outputText>
+                                <apex:outputText rendered="{!(resp.unapp_svc_credit_bal_amount=null)}" value="{none}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="left">
+                                   {!$Label.ARIA_RATED_UNAPP_SERVICE_CREDIT_DELTA}
+                                </td>
+                                <td class="right">
+                                <apex:outputText rendered="{!(resp.unapp_svc_credit_delta_amount!=null)}" value="{0, number, ###,###,##0.00}">
+                                    <apex:param value="{!resp.unapp_svc_credit_delta_amount}" />
+                                    
+                                </apex:outputText>
+                                <apex:outputText rendered="{!(resp.unapp_svc_credit_delta_amount=null)}" value="{none}"/>
+                                <apex:outputPanel rendered="{!(resp.unapp_svc_credit_delta_amount!=null)}">&nbsp;<i><apex:outputText value=" {!IF(resp.unapp_svc_credit_delta_sign='+','OVER',IF(resp.unapp_svc_credit_delta_sign='=','EQUAL TO','UNDER'))} "/></i>&nbsp;{!$Label.ARIA_RATED_THRESHOLD_AMOUNT}</apex:outputPanel>
+                                
+                                </td>
+                            </tr>
+                            
+                 </table>
+                </apex:outputPanel> 
+             </apex:pageBlock>
+             <apex:pageBlock rendered="{!showIntermediate=true}">
+                <apex:outputPanel layout="block" style="background-color:hsl(195, 61%, 88%);padding:5px 15px;-webkit-border-radius:15px;">
+                    <p>{!$Label.ARIA_RATED_PLEASE_PROVIDE_A_VALUE}&nbsp;{!labelLine2}&nbsp;{!$Label.ARIA_RATED_THEN_CLICK_MODIFY}</p>
+                    <p>{!labelLine2} {!$Label.ARIA_RATED_AMOUNT_MUST_BE_A_VALID}</p>
+                   <br/>
+                </apex:outputPanel>
+                <br/>
+                <table width="100%" >
+                            <tr>
+                                <td class="left" style="text-align:right;">
+                                   {!labelLine1}: 
+                                </td>
+                                <td class="right">
+                                <apex:outputText rendered="{!(oldThreshold!=null)}" value="{!UPPER(resp.currency_cd)} "/>
+                                <apex:outputText rendered="{!(oldThreshold!=null)}" value="{0, number, ###,###,##0.00}">
+                                    <apex:param value="{!oldThreshold}" />
+                                </apex:outputText>
+                                <apex:outputText rendered="{!(oldThreshold=null)}" value="{none}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="left" style="text-align:right;vertical-align: top;padding-top: 5px;">
+                                   {!labelLine2}: 
+                                </td>
+                                <td class="right">
+                                    <apex:outputPanel layout="block" styleClass="requiredInput">
+                                       <div style="float:left;line-height: 25px;margin-right: 7px;">
+                                        <apex:outputText value="{!UPPER(resp.currency_cd)} "/>
+                                       </div>
+                                       <div style="position: relative;float: left;">    
+                                           <apex:outputPanel layout="block" styleClass="requiredBlock">&nbsp;</apex:outputPanel>
+                                           <apex:inputText value="{!newThreshold}" id="newThreshold" styleClass="newThreshold" style="text-align:right;" onkeyup="twoDecimalPlaces(this)" onkeypress="return isNumberKey(event, this.value);"/>
+                                           <div class="errorMsg" id="newThresholdErrorMsg" style="display:none;max-width: 300px;">
+                                           <strong>{!$Label.ARIA_REFUND_ERROR}</strong>{!$Label.ARIA_RATED_NEW_THRESHOLD_AMOUNT_MUST_BE}</div>
+                                       </div>
+                                   </apex:outputPanel>
+                                    <!-- <apex:inputText value="{!newThreshold}" id="newThreshold" style="text-align:right;" onkeyup="twoDecimalPlaces(this)" onkeypress="return isNumberKey(event, this.value);"/> -->
+                                </td>
+                            </tr>
+                            <tr>
+                            <td colspan="2" style="text-align:right">
+                                <apex:commandButton value="{!$Label.ARIA_RATED_MODIFY_THRESHOLD_AMOUNT}" onclick="return verifyInput();"/>
+                                &nbsp;&nbsp;
+                                <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_CANCEL}" action="{!cancel}" status="status" reRender="frm"/>
+                                    
+                            </td>
+                            </tr>
+                </table>
+              </apex:pageBlock>
+             
+             
+         </div>
+         </div> 
+<script>
+     var mtd_balance = {!resp.mtd_balance_amount};
+     var ptd_balance = {!resp.ptd_balance_amount};
+     if(mtd_balance == 0){
+        $([id$="resetMTDLink"]).click(function(event){
+            event.preventDefault();
+        });
+     }
+     if(ptd_balance == 0){
+        $([id$="resetPTDLink"]).click(function(event){
+            event.preventDefault();
+        });
+     }
+</script> 
+          
+</apex:form>
+
+</apex:page>

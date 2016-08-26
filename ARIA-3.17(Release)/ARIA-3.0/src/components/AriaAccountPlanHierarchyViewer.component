@@ -1,0 +1,3 @@
+<!-- This component has been deprecated. -->
+<apex:component access="global" allowDML="true">
+    </apex:component>

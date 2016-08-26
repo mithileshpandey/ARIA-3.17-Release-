@@ -1,0 +1,10 @@
+<apex:page standardController="Opportunity" extensions="AriaAccountPlanVieweOpportunityExtension">
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'collapse.css')}" /> 
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" /> 
+<!-- <c:AriaAccountPlanHierarchyOppViewer rendered="{!!billingGroupEnable}" opportunityId1="{!opportunity.Id}"/> 
+rendered="{!billingGroupEnable}"
+-->
+
+<c:AriaAcctPlanHierarchyOppBGViewer opportunityId1="{!opportunity.Id}"/>  
+</apex:page>

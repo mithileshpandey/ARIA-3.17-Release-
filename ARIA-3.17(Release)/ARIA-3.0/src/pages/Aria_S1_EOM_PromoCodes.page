@@ -1,0 +1,196 @@
+<apex:page sidebar="false" showHeader="false" standardController="Opportunity" extensions="Aria_S1_EOM_AccountPlanSelectionCtr" id="coupon">
+<apex:stylesheet value="{!URLFOR($Resource.sf_resources,'styles/main.css')}"/>
+<apex:includeScript value="{!URLFOR($Resource.sf_resources,'scripts/jquery.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.sf_resources,'scripts/main.js')}"/>
+<div id="myCurtain" class="requiredLoaderBG" style="display:none;"></div>
+<apex:form id="validateCoupon">
+    <apex:actionFunction action="{!goHome}" name="navigateToHome"/>
+    <apex:actionFunction name="validateCoupon" action="{!ValidateCoupon}"  />
+    <apex:actionFunction name="fetchAssignCouponDetails" action="{!fetchAssignCouponDetails}"  />
+    <div class="blue-header" style="display:block;" id="paymentHome">
+        <div class="left-button" onclick="$('#myCurtain').show(); navigateToHomePage();">Cancel</div>
+    </div>
+    <div class="page-header context-account">
+        <h1>Coupon Codes</h1>
+        <p class="title truncate">for {!opportunityObj.Name}</p>
+    </div>
+    <style>
+    .input-fix {
+        width:73% !important;
+    }
+    .button-fix {
+        width: 23% !important;
+        margin-left: 12px;
+        margin-top:0px !important;
+    }
+    .digit-text {
+        font-size:18px;
+        color:#55565A;
+        font-weight:bold;
+    }
+    .digit-text-normal {
+        font-size:18px;
+        color:#55565A;
+    }
+    .margin0 {
+        margin:0px !important;
+    }
+    .text-label-desc {
+        padding:8px;
+        font-size:14px;
+        background:#E8E9EB;
+        border-radius: 4px;
+      -moz-border-radius: 4px;
+      -webkit-border-radius: 4px;
+    }
+    .text-label-desc-normal {
+        font-size:12px;
+        text-transform:uppercase;
+    }
+    @media only screen and (min-width: 90.063em) { 
+        .input-fix {
+            width:83% !important;
+        }
+        .button-fix {
+            width: 16% !important;
+            margin-top:0px !important;
+        }
+    }
+    
+    @media only screen and (min-width: 64.063em) and (max-width: 90em) { 
+        .input-fix {
+            width:83% !important;
+        }
+        .button-fix {
+            width: 16% !important;
+            margin-top:0px !important;
+        }   
+    }
+    .margin-top10 {
+        margin-top:10px !important;
+    }
+    
+   .btn-grey {  
+        background-color: #cccccc;
+        border: 2px solid #00629C;
+        width: 100%;
+        height: 38px;
+        line-height: 38px;
+        border-radius: 4px;
+        -moz-border-radius: 4px;
+        -webkit-border-radius: 4px;
+        opacity: .6;
+    }
+    #datePicker{
+        display:none;
+    }
+    .error-custom {
+        height: auto !important;
+        margin: -6px;
+        padding-right: 40px!important;
+        line-height:25px;
+        padding:8px;
+    }
+    
+</style>
+    <apex:outputPanel style="display:{!if(cpn_msg != '','block','none')}" id="errorMsg">
+        <div class="error-message">
+            <div class="row group error">
+                <div class="col col-button span_4_of_4"> 
+                    <div class="error-body error-custom">
+                        <div class="error-title">{!cpn_msg}</div>
+                        <div class="close-button" onclick="closeErrorMsg();"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </apex:outputPanel>
+    <apex:outputPanel style="display:{!if(successMsg != '','block','none')}" id="successMsg">
+        <div class="error-message">
+            <div class="row group error">
+                <div class="col col-button span_4_of_4"> 
+                    <div class="success-body error-custom">
+                        <div class="title">{!successMsg}</div>
+                        <div class="close-button" onclick="closeSuccessMsg();"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </apex:outputPanel>
+    
+<div class="coupon-codes">
+        <div class="row"><br/>
+            <label>Enter Validation Code</label>
+            <div class="input-holder">
+                <div class="form-control margin-top10 col col-custom span_10_of_12 input-fix margin0">
+                    <apex:inputText styleclass="text-input margin-top0" maxlength="30"  value="{!validate_to_coupon}" id="couponcode"/>
+                </div>
+                <div class="col col-custom span_2_of_12 button-fix margin-top10" style="float:right;" onclick="$('#myCurtain').show(); validateCouponCode();">
+                    <div class="btn-blue ">Validate</div>
+                </div>
+            </div>
+
+          <apex:outputPanel id="couponHistory" >
+            <apex:repeat value="{!assignedCoupons}" var="couponList" >
+            <div onclick="$('#myCurtain').show(); fetchAssingCoupon('{!couponList.Coupon_Code__c}');" style="cursor:pointer;">
+                <div class="col margin-top10 col-custom span_12_of_12 margin0">
+                    <div class="digit-text title truncate">{!couponList.Coupon_Code__c}</div>
+                </div>
+                <div class="col col-custom span_12_of_12 margin0">
+                    <div class="text-label-desc">Description : {!couponList.Description__c}</div>
+                </div>
+            </div>
+            </apex:repeat>         
+          </apex:outputPanel>
+        </div>
+ </div>
+<apex:inputHidden value="{!selectedCouponName}" id="theHiddenInput"/>
+<script>        
+     function validateCouponCode(){
+        document.getElementById('coupon:validateCoupon:errorMsg').style.display = 'none';
+        document.getElementById('coupon:validateCoupon:successMsg').style.display = 'none';
+        validateCoupon();
+     }  
+     function navigateToHomePage(){
+        document.getElementById('coupon:validateCoupon:errorMsg').style.display = 'none';
+        document.getElementById('coupon:validateCoupon:successMsg').style.display = 'none';
+        navigateToHome();
+     }
+     function fetchAssingCoupon(obj){
+        document.getElementById('coupon:validateCoupon:errorMsg').style.display = 'none';
+        document.getElementById('coupon:validateCoupon:successMsg').style.display = 'none';
+        document.getElementById('coupon:validateCoupon:theHiddenInput').value = obj;
+        fetchAssignCouponDetails();
+     }
+     function closeErrorMsg(){
+         document.getElementById('coupon:validateCoupon:errorMsg').style.display = 'none';
+     }
+     function closeSuccessMsg(){
+         document.getElementById('coupon:validateCoupon:successMsg').style.display = 'none';
+      }
+</script>
+<style>
+    .requiredLoaderBG{
+        background-color: rgb(71,71,71);
+        opacity:0.7;
+        filter:alpha(opacity=70);
+        //background-image:url('/img/loading.gif');
+        background-image:url("{!URLFOR($Resource.sf_resources,'/images/icons/ajax-loader.gif')}");
+        background-position: center center;
+        background-repeat: no-repeat;
+        height: 100%;
+        left: 0;
+        position: fixed;
+        text-align: center;
+        top: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+    #curtainText{
+        position: relative;
+        top: 54%;
+        color: white;
+    }
+</style>
+</apex:form>                
+</apex:page>

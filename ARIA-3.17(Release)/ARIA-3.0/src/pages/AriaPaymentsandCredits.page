@@ -1,0 +1,981 @@
+<apex:page standardController="Account" id="pg" showheader="false" extensions="AriaPaymentsandCreditsExtension">
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<style>
+	.apexp .detailList .list .headerRow th {
+    	white-space: normal;
+}
+.errorMsgInvLineItem, .errorMsgAmtInvLineItem{
+    color: #d74c3b;
+}
+</style>
+<script>
+var individualTransaction = false;
+
+function DisableCtrlKey(e)
+{
+    var code = (document.all) ? event.keyCode:e.which;
+    // look for CTRL key press
+    if (parseInt(code)==17)
+    {
+        alert("Ctrl key disabled.");
+        window.event.returnValue = false;
+    }
+}
+function DisableRightClick(event)
+{
+    //For mouse right click
+    if (event.button==2)
+    {
+        alert("Right click disabled.");       
+    }
+}﻿
+	
+    function individualTrans(){
+        var i = 0;
+        var j = 0;
+        $(".amtToPay").each(function(index){
+            i++;
+            if($(this).val() == 0){
+                j++;
+            }
+        });
+        
+        if(i > 0 && i==j){
+        
+        //this is for full and specified amount
+            $( ".otherAmount" ).prop( "disabled", false);
+            $(".fullAmt").show();
+            individualTransaction = false;
+            //refresh_totalAmount(false);
+            
+        }else{
+        // invoice line item individually
+            $( ".otherAmount" ).prop( "disabled", true);
+            $(".fullAmt").hide();
+            $(".errorMsg").hide();
+            individualTransaction = true;
+            //refresh_totalAmount(true);
+        } 
+        
+    } 
+    function saveCollectData(){
+    	saveCollectFromAccount(individualTransaction);
+    	return false;
+	}
+	function disableOtherAmt(){
+		if(individualTransaction == true){
+			$( ".otherAmount" ).prop( "disabled", true);
+			$(".fullAmt").hide();
+	        $(".errorMsg").hide();
+		}
+	}
+    function ToggleBilling(optn){
+        if(optn == 'Alternate'){
+            $(".billing").show();
+            $(".elecBilling").hide();
+        }else{
+            $(".billing").hide();
+            $(".elecBilling").show();
+        }
+    }
+    
+    function ToggleCardInfo(optn){
+        if(optn == 'CA'){
+            $(".Checking").show();
+            $(".credit").hide();
+        }else{
+            $(".Checking").hide();
+            $(".credit").show();
+        }
+    }
+    
+    function TogglePayment(optn){ 
+        if(optn == 'OtherAmount'){
+            $(".otherPayment").show();
+            $(".invoiceSection").show();
+            $(".invHis").show();
+            
+        }else{
+        	individualTransaction = false;
+            $(".otherPayment").hide();
+            $(".invoiceSection").hide();
+            $(".invHis").hide();
+            $(".fullAmt").show();
+        }
+    }
+    
+     function isNumberKey(evt, val)
+      {
+         var charCode = (evt.which) ? evt.which : event.keyCode
+         if (charCode == 46) {
+            // Allow only 1 decimal point ('.')...
+            if((val) && (val.indexOf('.') >= 0))
+                return false;
+            else
+                return true;
+         }
+         
+         if (charCode > 31 && (charCode < 48 || charCode > 57))
+            return false;
+
+         return true;
+      }
+      
+      
+      function twoDecimalPlaces(obj){
+        var decimalVal = obj.value.split('.');
+         if(decimalVal.length > 1 && decimalVal[1].length > 2){
+            obj.value = obj.value.substring(0,obj.value.length -1);
+         }
+      }
+
+    function closeWin(){
+         var aid = window.parent.location.href.split('id=')[1];
+         aid = aid.split('&')[0];
+         //alert(window.opener.location.href);
+         window.opener.parent.location.href = 'https://'+document.domain+'/'+aid.trim();
+         //window.parent.opener.location.reload(true);
+         self.close();
+         //window.opener.location = self;
+        //opener.location.reload();
+        //window.close();
+    }
+    
+    //-------------------------------------------
+   // Function to only allow decimal data entry
+   //-------------------------------------------
+   function jsDecimals(e)
+   {
+      var evt = (e) ? e : window.event;
+      var key = (evt.keyCode) ? evt.keyCode : evt.which;
+      if(key != null) 
+      {
+          key = parseInt(key, 10);
+          if((key < 48 || key > 57) && (key < 96 || key > 105)) 
+          {
+              if(!jsIsUserFriendlyChar(key, "Decimals"))
+              {
+                  return false;
+              }
+          }
+          else 
+          {
+              if(evt.shiftKey)
+              {
+                  return false;
+              }
+          }
+      }
+      return true;
+   }        
+   
+   //------------------------------------------
+   // Function to check for user friendly keys
+   //------------------------------------------
+   function jsIsUserFriendlyChar(val, step) 
+   {
+      // Backspace, Tab, Enter, Insert, and Delete
+      if(val == 8 || val == 9 || val == 13 || val == 45 || val == 46)
+      {
+          return true;
+      }
+      // Ctrl, Alt, CapsLock, Home, End, and Arrows
+      if((val > 16 && val < 21) || (val > 34 && val < 41))
+      {
+          return true;
+      }
+      if (step == "Decimals")
+      {
+          if(val == 190 || val == 110)
+          {
+              return true;
+          }
+      }
+      // The rest
+      return false;
+   }
+   
+   function verifyInput(){
+       $(".errorMsg").hide();
+       $(".errorMsgInvLineItem").hide();
+       $(".errorMsgAmtInvLineItem").hide();
+       		if($(".refCode").val().length == 0 && individualTransaction == false){
+	           $(".errorMsg").show();
+	       }else if(individualTransaction){
+	       		var pass = true;
+	       		$(".amtToPay").each(function(index){
+		            if($(this).val() != 0 && $(this).val() != ''){
+		         		   	if($(this).closest('td').next('td').find('input').val() == ''){
+		         		   		$(this).closest('td').next('td').find('div').show();
+		         		   		pass = false;
+		         		   	}
+		         		   	if(eval($(this).closest('td').prev('td').text()) < $(this).val()){
+		         		   		$(this).closest('td').find('div').show();
+		         		   		pass = false;
+		         		   	}
+		            }
+		        });
+		        if(pass){
+		        	save_record(individualTransaction);
+		        	window.scroll(200,0);
+		        }
+	       }else{
+	           save_record(individualTransaction);
+	           window.scroll(200,0);
+	       }
+	       
+       }
+   
+   /* MP added for setting backaground of failed or voided transaction inpayment history*/
+   function setBackgroundColor(tdId,payment_status,voiding_event_no){
+    //alert(tdId+'  '+payment_status+'   '+voiding_event_no);
+    var td = document.getElementById(tdId);
+    if(td){
+     var tr = td.parentNode;
+     //alert(tr);
+     if(payment_status == 'Failed' || (voiding_event_no!=null && voiding_event_no !='')){
+        tr.style.background = "#FFE7C3";
+     }
+    }
+   }
+          
+   
+</script>
+
+<style>
+    .Checking PA{
+        display:none;
+    }
+    
+    .header{
+        text-align:right;
+    }
+    
+  
+#tabs_wrapper {
+    width: 98%;
+    margin:0 auto;
+    margin-top :2px;
+}
+#tabs_container {
+    border-bottom: 1px solid #ccc;
+    
+}
+#tabs {
+    list-style: none;
+    padding: 5px 0 4px 0;
+    margin: 0 0 0 20px;
+    font: 0.90em arial;
+}
+#tabs li {
+    display: inline;
+}
+#tabs li a {
+    border: 1px solid #ccc;
+    padding: 4px 6px;
+    text-decoration: none;
+    background-color: #eeeeee;
+    border-bottom: none;
+    outline: none;
+    border-radius: 5px 5px 0 0;
+    -moz-border-radius: 5px 5px 0 0;
+    -webkit-border-top-left-radius: 5px;
+    -webkit-border-top-right-radius: 5px;
+    color:#000;
+}
+#tabs li a:hover {
+    background-color: #dddddd;
+    padding: 4px 6px;
+}
+#tabs li.active a {
+    border-bottom: 1px solid #fff;
+    background-color: #fff;
+    padding: 4px 6px 5px 6px;
+    border-bottom: none;
+}
+#tabs li.active a:hover {
+    background-color: #eeeeee;
+    padding: 4px 6px 5px 6px;
+    border-bottom: none;
+}
+#tabs li a.icon_accept:hover {
+    padding-left: 24px;
+}
+
+#tabs_content_container {
+    border: 1px solid #ccc;
+    border-top: none;
+    padding: 10px;
+    width: 98.4%;
+}
+ul li, ol li {
+margin-left: 0em;
+padding-left: 0;
+}
+     
+</style>
+ <apex:actionstatus id="status">
+    <apex:facet name="start">
+        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 10%;opacity:.8;">
+            <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+        </div>
+    </apex:facet>
+</apex:actionstatus>
+<apex:outputPanel id="errMsg">
+	<apex:pageMessages ></apex:pageMessages>
+</apex:outputPanel>
+
+<apex:outputPanel rendered="{! !isHistoryDisplay}">
+  
+  <input type="button" style="float: right;margin-right: 20px;margin-top: -4px;" value="{!$Label.ARIA_PAYMENT_CREDIT_CLOSE}" onclick="self.close();"/>  
+</apex:outputPanel>
+ 
+    <apex:form id="frm" rendered="{!isHistoryDisplay}">
+    <apex:pagemessages escape="false"></apex:pagemessages>
+    
+           <div id="tabs_wrapper">
+    <div id="tabs_container">
+        <ul id="tabs">
+          
+            
+            <li class="active" ><a href="#"><b>{!$Label.ARIA_PAYMENT_CREDIT_PAYMENTS}</b></a></li>
+            <li><a href="/apex/AriaRefunds?id={!AccId}"><b>{!$Label.ARIA_PAYMENT_CREDIT_REFUNDS}</b></a></li>
+            <li><a href="/apex/AriaCredits?id={!AccId}"><b>{!$Label.ARIA_PAYMENT_CREDIT_CREDITS}</b></a></li>
+            <li><a href="/apex/AriaDispute_Write_Offs?id={!AccId}"><b>{!$Label.ARIA_PAYMENT_CREDIT_WRITE_OFF}</b></a></li>
+<!--        <li><a href="/apex/AriaReversal?id={!AccId}"><b>{!$Label.ARIA_PAYMENT_CREDIT_REVERSAL}</b></a></li> -->
+        </ul>
+    </div>
+    <div id="tabs_content_container">
+        <div id="tab1" class="tab_content" style="display: block;">
+           <apex:outputPanel layout="none" rendered="{!$ObjectType.Aria_Payment__c.accessible}">
+            <apex:actionFunction name="save_record" action="{!save_record_external_payment}" reRender="frm" status="status">
+            	<apex:param name="selIndividualTrans" value="" assignTo="{!individualTrans}"/>
+            </apex:actionFunction>
+           <apex:actionFunction id="callCollect" name="callCollectFromAccount" action="{!PostPayment}" reRender="frm" status="status" />
+           <apex:actionFunction id="saveCollect" name="saveCollectFromAccount" action="{!collect_from_account}" reRender="frm" status="status" >
+           		<apex:param name="selIndividualTrans" value="" assignTo="{!individualTrans}"/>
+           </apex:actionFunction>
+           
+           <apex:actionFunction id="record_external_payment" name="record_external_payment" action="{!record_external_payment}" reRender="frm" status="status" />
+           <apex:actionFunction id="complete_void_transaction" name="complete_void_transaction" action="{!call_IgnoreProEmail}" rerender="frm" status="status" oncomplete="void_transaction();"/> 
+           <apex:actionFunction id="void_transaction" name="void_transaction" action="{!void_transaction}" reRender="frm" status="status" />
+        <!-- apex action functions for paginations -->
+          <apex:actionFunction id="aFunction2" name="firstPage" action="{!firstBtnClick}" reRender="ariaPayHisblock" status="status" />
+          <apex:actionFunction id="aFunction3" name="prePage" action="{!previousBtnClick}" reRender="ariaPayHisblock" status="status" />
+          <apex:actionFunction id="aFunction4" name="nextPage" action="{!nextBtnClick}" reRender="ariaPayHisblock" status="status" />
+          <apex:actionFunction id="aFunction5" name="lastPage" action="{!lastBtnClick}" reRender="ariaPayHisblock" status="status" />
+          <apex:actionFunction id="aFunction6" name="setPageSize" reRender="ariaPayHisblock" status="status" >
+            <apex:param name="pSize" value="" assignTo="{!PageSize}"/>
+          </apex:actionFunction>
+    <!-- apex action functions for paginations ends-->
+        <apex:actionFunction name="PageChange" action="{!SwitchPaymentMethod}" reRender="frm,errMsg" status="status">
+            <apex:param name="selectedPaymethod" value="" assignTo="{!selectedPaymethod}"/>
+        </apex:actionFunction>
+        
+        <apex:actionFunction id="payHis" name="refresh_paymentHistory" action="{!get_Payment_History_By_planInstanceNo}" 
+        reRender="ariaPayHisblock" status="status" />
+        
+        <apex:actionFunction id="invHis" name="refresh_invoiceHistory" action="{!get_invoice_history}" 
+        reRender="invHisRec,invHisElect" status="status" />
+        
+        <!-- <apex:actionFunction id="totalAmt" name="refresh_totalAmount" action="{!get_Total_Amount}" 
+        reRender="invoiceSection" >
+            <!-- <apex:param name="selIndividualTrans" value="" assignTo="{!individualTrans}"/> 
+        </apex:actionFunction> -->
+        
+        <apex:outputPanel layout="none" rendered="{!$ObjectType.Aria_Payment__c.createable}">
+        
+        <apex:pageBlock id="pb" rendered="{!IF(paymentWin = 'PaymentElectronically' && isVoidPayment = false, true, false)}">
+            <apex:outputPanel layout="block" rendered="{! !showInterMediate}">
+            <apex:selectRadio value="{!transactionType}" onchange="PageChange(this.value);">
+                <apex:selectOptions value="{!Transactions}"></apex:selectOptions>
+            </apex:selectRadio>
+            <br/>
+                <!-- <apex:outputPanel >Fill in the form below to immediately collect funds from the electronic form of payment on file for this account: {!acc.Aria_Pay_Method__c}<br/><br/></apex:outputPanel> -->
+                 <apex:outputPanel >{!$Label.ARIA_PAYMENT_CREDIT_FILL_FORM} {!acc.Aria_Pay_Method__c}<br/><br/></apex:outputPanel>  
+             </apex:outputPanel>   
+                <!-- here put the success message -->
+            <apex:pageBlockSection rendered="{! !showInterMediate && !canChangeElectronicallyPayment}" columns="1" id="pbsec" title="{!$Label.ARIA_PAYMENT_CREDIT_PAYMENT_INFORMATION}" collapsible="false">
+                
+                <apex:pageBlockSectionItem >
+                    <!-- <apex:outputLabel >Form of Payment</apex:outputLabel> -->
+                     <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_FORM_PAYMENT}</apex:outputLabel> 
+                    <apex:outputPanel layout="block">
+                        <table width="100%" >
+                            <tr>
+                                <td width="250px">
+                                    <apex:selectRadio value="{!formMethod}" onchange="ToggleBilling(this.value);" layout="pageDirection">
+                                        <apex:selectOptions value="{!FormofPayment}"></apex:selectOptions>
+                                    </apex:selectRadio>
+                                </td>
+                                <td><div style="color:Red;margin-top: 6px;margin-left: -110px;}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{!formofPayMsg}</div></td>
+                            </tr>
+                        </table>
+                        
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem id="transSec1">
+                        <apex:outputLabel ></apex:outputLabel>
+                        <apex:outputPanel layout="block" id="transPanel1" styleClass="elecBilling" style="display:none;">
+                        	Payment Method &nbsp;&nbsp;&nbsp;
+                        	<apex:selectList value="{!selectedElecPayMethod}" size="1" >
+					            <apex:selectOptions value="{!elecPaymentList}"/>
+					        </apex:selectList>
+                        </apex:outputPanel>
+                        
+                </apex:pageBlockSectionItem>
+                		
+                <apex:pageBlockSectionItem id="transSec">
+                        <apex:outputLabel ></apex:outputLabel>
+                        
+                        
+                        <apex:outputPanel layout="block" id="transPanel" styleClass="billing" style="display:none;">
+                            <apex:pageBlockSection columns="1" id="transpbs" >
+                                    <apex:pageBlockSectionItem >
+                                         <!-- <apex:outputLabel >Alternate Billing Information</apex:outputLabel> -->
+                                         <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_ALTERNATE_BILLING_INFORMATION}</apex:outputLabel>
+                                         <apex:selectRadio value="{!billingType}" onchange="ToggleCardInfo(this.value);" >
+                                            <apex:selectOptions value="{!BillingMethod}"></apex:selectOptions>
+                                        </apex:selectRadio>
+                                    </apex:pageBlockSectionItem>
+                                    <apex:pageBlockSectionItem dataStyleClass="credit" labelStyleClass="credit" rendered="{!!showCreditCard}">
+                                             <!-- <apex:outputLabel >Credit Card Number</apex:outputLabel> -->
+                                             <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_CREDIT_CARD_NUMBER}</apex:outputLabel>
+                                             <apex:outputPanel layout="block">
+                                             <apex:inputText maxlength="16" value="{!uip.CCNumber}" onkeypress="return isNumberKey(event, '.')"  style="vertical-align:top;" />  <img src="{!URLFOR($Resource.PaymentIcon, '32/american_express_32.png')}" style="margin-top: -5px;" />
+                                                                 <img src="{!URLFOR($Resource.PaymentIcon, '32/discover_32.png')}" style="margin-top: -5px;" />
+                                                                 <img src="{!URLFOR($Resource.PaymentIcon, '32/mastercard_32.png')}" style="margin-top: -5px;" />
+                                                                 <img src="{!URLFOR($Resource.PaymentIcon, '32/visa_32.png')}" style="margin-top: -5px;" />
+                                         </apex:outputPanel>
+                                  
+                                     </apex:pageBlockSectionItem>
+                                     <apex:pageBlockSectionItem dataStyleClass="credit" labelStyleClass="credit" rendered="{!!showCreditCard}">
+                                             <!-- <apex:outputLabel >Expiration Date</apex:outputLabel> -->
+                                             <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_EXPIRATION_DATE}</apex:outputLabel>
+                                             <apex:outputpanel >
+                                                     <apex:selectList size="1" id="ccMonth" value="{!uip.CCMonth}">
+                                                        <apex:selectOptions value="{!ccMonths}"/>
+                                                    </apex:selectList>&nbsp;/&nbsp;
+                                                    <apex:selectList size="1" id="ccYear" value="{!uip.CCYear}">
+                                                        <apex:selectOptions value="{!ccYears}"/>
+                                                    </apex:selectList>
+                                             </apex:outputpanel>
+                                     </apex:pageBlockSectionItem> 
+                                     <apex:pageBlockSectionItem dataStyleClass="credit" labelStyleClass="credit" rendered="{!!showCreditCard}">
+                                            <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_CVV}</apex:outputLabel>
+                                             <apex:inputText maxlength="4" value="{!uip.CVV}" onkeypress="return isNumberKey(event, '.')"/>
+                                     </apex:pageBlockSectionItem>
+                                     
+                                     <apex:pageBlockSectionItem dataStyleClass="Checking" labelStyleClass="Checking" rendered="{!!showCheckingAccount}">
+                                             <apex:outputLabel >{!$Label.ARIA_REFUND_ROUTING_NUMBER}</apex:outputLabel>
+                                             <apex:inputtext value="{!uip.RoutingNumber}"/>
+                                     </apex:pageBlockSectionItem>
+                                     <apex:pageBlockSectionItem dataStyleClass="Checking" labelStyleClass="Checking" rendered="{!!showCheckingAccount}">
+                                             <apex:outputLabel >{!$Label.ARIA_REFUND_CHECKING_ACCOUNT_NUMBER}</apex:outputLabel>
+                                             <apex:inputtext value="{!uip.CheckingAccountNumber}"/>
+                                     </apex:pageBlockSectionItem>
+                                 </apex:pageBlockSection>
+                             </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    
+                         
+                <apex:pageBlockSectionItem rendered="{! !(showCheckingAccount && showCreditCard)}">
+                    <apex:outputLabel ></apex:outputLabel> 
+                    <apex:outputPanel layout="block"  styleClass="billing" style="display:none;" rendered="{! ((!isPersonaAccount) && !(showCheckingAccount && showCreditCard))}">
+                    
+                        <table width="100%" >
+                            <tr>
+                                <td align="right" width="17%" class="labelCol"><apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_FIRST_NAME}</apex:outputLabel></td>
+                                <td align="left" width="20%"  style="Padding-left:8px"><apex:inputText style="width:190px;" value="{!uip.FName}"/></td>
+                                <td align="right" width="9%" class="labelCol"> <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_LOCALITY}</apex:outputLabel></td>
+                                <td align="left" style="Padding-left:8px"><apex:inputtext style="width:190px;" value="{!uip.Locality}"/></td>
+                            </tr>
+                            <tr>
+                                <td align="right" width="17%" class="labelCol"><apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_LAST_NAME}</apex:outputLabel></td>
+                                <td align="left" width="20%" style="Padding-left:8px"><apex:inputtext style="width:190px;" value="{!uip.LName}"/></td>
+                                <td align="right" width="9%" class="labelCol"><apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_COUNTRY}</apex:outputLabel></td>
+                                <td align="left" style="Padding-left:8px"> <apex:inputField style="width:190px;" value="{!billingContact[tempCountry]}"/></td>
+                            </tr>
+                            <tr>
+                                <td align="right" width="17%" class="labelCol"><apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_COMPANY_NAME}</apex:outputLabel></td>
+                                <td align="left" width="20%" style="Padding-left:8px"><apex:inputtext style="width:190px;" value="{!uip.CompanyName}"/></td>
+                                <td align="right" width="9%" class="labelCol"> <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_STATE}</apex:outputLabel></td>
+                                <td align="left" style="Padding-left:8px"><apex:inputField style="width:190px;" value="{!billingContact[tempState]}"/></td>
+                            </tr>
+                            <tr>
+                                <td align="right" width="17%" class="labelCol"><apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_STREET_ADDRESS_1}</apex:outputLabel></td>
+                                <td align="left" width="20%" style="Padding-left:8px"><apex:inputtext style="width:190px;" value="{!uip.StreetAddress1}"/></td>
+                                <td align="right" width="9%" class="labelCol"> <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_POSTAL_CODE}</apex:outputLabel></td>
+                                <td align="left" style="Padding-left:8px"><apex:inputtext style="width:190px;" value="{!uip.PostalCode}"/></td>
+                            </tr>
+                            <tr>
+                                <td align="right" width="17%" class="labelCol"> <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_STREET_ADDRESS_2}</apex:outputLabel></td>
+                                <td align="left" width="20%" style="Padding-left:8px"><apex:inputtext style="width:190px;" value="{!uip.StreetAddress2}"/></td>
+                                <td align="right" width="9%" class="labelCol"><apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_HOME_PHONE}</apex:outputLabel></td>
+                                <td align="left" style="Padding-left:8px"> <apex:inputtext style="width:190px;" value="{!uip.HomePhone}"/></td>
+                            </tr>
+                            <tr>
+                                <td align="right" width="17%" class="labelCol"> <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_STREET_ADDRESS_3}</apex:outputLabel></td>
+                                <td align="left" width="20%" style="Padding-left:8px"><apex:inputtext style="width:190px;" value="{!uip.StreetAddress3}"/></td>
+                                <td align="right" width="9%" class="labelCol"> <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_CELL_PHONE}</apex:outputLabel></td>
+                                <td align="left" style="Padding-left:8px"><apex:inputtext style="width:190px;" value="{!uip.CellPhone}"/></td>
+                            </tr>
+                            <tr>
+                                <td align="right" width="17%" class="labelCol"><apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_CITY}</apex:outputLabel></td>
+                                <td align="left" width="20%" style="Padding-left:8px"> <apex:inputtext style="width:190px;" value="{!uip.City}"/></td>
+                                <td align="right" width="9%" class="labelCol"><apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_EMAIL}</apex:outputLabel></td>
+                                <td align="left" style="Padding-left:8px"><apex:inputtext style="width:190px;" value="{!uip.Email}"/></td>
+                            </tr>
+                            <tr>
+                                <td align="right" width="17%" class="labelCol"><apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_WORK_PHONE}</apex:outputLabel></td>
+                                <td align="left" width="20%" style="Padding-left:8px"><apex:inputtext style="width:190px;" value="{!uip.WorkPhone}"/></td>
+                                
+                            </tr>
+                            
+                        </table>
+                        </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+               
+                <apex:pageBlockSectionItem rendered="{! !(showCheckingAccount && showCreditCard)}">
+                     <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_PAYMENT_AMOUNT}</apex:outputLabel>
+                     <apex:outputPanel layout="block">
+                         <table width="100%" >
+                             <tr>
+                                 <td style="text-align: left;width: 230px;">
+                                     <apex:selectRadio value="{!payAmt}" onchange="TogglePayment(this.value)" layout="pageDirection">
+                                        <apex:selectOptions value="{!PaymentAmount}">
+                                     </apex:selectOptions>
+                                   </apex:selectRadio>
+                                 </td>
+                                 <td style="padding-top: 24px;">
+                                     <apex:outputPanel style="display:none; margin-left: -37px;" styleClass="otherPayment" layout="block">
+                                      <table width="100%">
+                                             <tr>
+                                                <td width="18%">
+                                         <apex:inputText styleClass="otherAmount" onkeyup="twoDecimalPlaces(this)" onkeypress="return isNumberKey(event, this.value);" value="{!uip.OtherAmount}"/></td><td><span>{!$Label.ARIA_PAYMENT_CREDIT_NOTE} {!accCurrency} 3.00.</span></td></tr></table></apex:outputPanel>
+                                 </td>
+                             </tr>
+                         </table>
+                         
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:outputpanel styleClass="invoiceSection" id="invoiceSection" rendered="{! !(showCheckingAccount && showCreditCard)}">
+<!--                    <apex:pageBlockSectionItem > -->
+                        <apex:outputPanel layout="block" style="float:right">
+                           <apex:outputLabel value="{!$Label.ARIA_PLAN_QUOTE_SUBSCRIPTIONS}" />&nbsp;&nbsp;&nbsp;&nbsp;
+                           <apex:selectList value="{!selSubIdForInvHis}" size="1" onchange="refresh_invoiceHistory()">
+                               <apex:selectOptions value="{!subscriptionList}"/>
+                           </apex:selectList>
+                        </apex:outputPanel>
+<!--                    </apex:pageBlockSectionItem> -->
+                    </apex:outputpanel>
+                    
+                    <apex:pageBlockTable value="{!collectPaymentWrapperList}" var="cpwl" id="invHisElect" styleClass="invHis" rendered="{! !(showCheckingAccount && showCreditCard)}">
+                        <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_REF_INVOICE_NO}" value="{!cpwl.refInvoiceNo}"/>
+                        <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_TRANSACTION_NUMBER}" value="{!cpwl.transNo}"/>
+                        <apex:column headerValue="{!$Label.ARIA_ACCOUNT_DETAIL_SUBSCRIPTION_ID}" value="{!cpwl.subId}"/>
+                        <apex:column headerValue="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_DESCRIPTION}" value="{!cpwl.description}"/>
+                        <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_TYPE_PLAN}" value="{!cpwl.typePlan}"/>
+                        <apex:column headerValue="{!$Label.ARIA_DISPUTE_BALANCE_DUE}" value="{!cpwl.balDue}"/>
+                        <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_AMOUNT_TO_PAY}" >
+                            <apex:inputtext value="{!cpwl.amountToPay}" styleClass="amtToPay" onkeypress="return isNumberKey(event, this.value);" onKeyDown="return DisableCtrlKey(event)" onMouseDown="DisableRightClick(event)"  onkeyup="twoDecimalPlaces(this),individualTrans()" />
+                        </apex:column>
+                    </apex:pageBlockTable>
+                    <!-- <apex:pageBlockSectionItem id="totAmtToPaySection">
+                        <apex:outputPanel layout="block" style="float:right">
+                           <apex:outputLabel value="{!$Label.ARIA_PAYMENT_CREDIT_TOTAL_AMOUNT_TO_PAY}:-" />&nbsp;&nbsp;&nbsp;&nbsp;
+                           <apex:outputLabel id="totAmtToPay" value="{!totalAmountToPay}" />
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem> -->
+<!--                 </apex:outputpanel> -->
+                <br/>
+                <apex:pageBlockSectionItem >
+                     <apex:outputLabel ></apex:outputLabel>
+                     <apex:outputPanel layout="block" style="text-align: right;padding-right: 1%;" rendered="{! !(showCheckingAccount && showCreditCard)}">
+                            
+                            <apex:commandButton value="{!$Label.ARIA_PAYMENT_CREDIT_COLLECT_FROM_ACCOUNT}" onclick="return saveCollectData();"/>
+                            <apex:commandButton value="{!$Label.ARIA_PAYMENT_CREDIT_CLOSE}" style="margin-left:10px;" onclick="return closeWin();"/>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            
+           
+             <apex:pageBlockSection id="paymentElectronicSmry" rendered="{!showInterMediate}" columns="1" collapsible="false">
+                <apex:outputPanel >
+                    <p>{!$Label.ARIA_REFUND_ELECTTONIC_PAYMENT}&nbsp;{!AmtType}&nbsp;{!$Label.ARIA_PAYMENT_CREDIT_OF}&nbsp; {!accCurrency}&nbsp;{!AmttoCollect}&nbsp;{!$Label.ARIA_PAYMENT_CREDIT_TO_THIS_ACCT}
+                    </p>
+                    <p>{!$Label.ARIA_PAYMENT_CREDIT_CONFIRM_ALL_ENTRIES}</p>
+                    <br/>
+                 </apex:outputPanel>
+                 <apex:pageBlockSectionItem >
+                   <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_PAYMENT_AMOUNT}:</apex:outputLabel>
+                   <apex:outputLabel >{!payAmtSummary}</apex:outputLabel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                   <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_PAYMENT_SRC}</apex:outputLabel>
+                   <apex:outputLabel >{!paySourceSummary}</apex:outputLabel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                   <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_APPLICATION_METHOD}</apex:outputLabel>
+                   <apex:outputPanel layout="block">
+                   <apex:outputLabel rendered="{!!individualTrans}">{!$Label.ARIA_PAYMENT_CREDIT_UNPAID_ITEMS}</apex:outputLabel>
+                   <apex:outputLabel rendered="{!individualTrans}" >
+                   			<apex:repeat value="{!collectPaymentWrapperList}" var="cpw">
+                   			<apex:outputPanel rendered="{!if(cpw.amountToPay > 0.0,true,false)}">
+				                <b>Invoice#</b> {!cpw.refInvoiceNo} <b>Amount:</b> {!UPPER(acc.Aria_Currency__c)} {!cpw.amountToPay}<br></br>
+				            </apex:outputPanel>  
+				           </apex:repeat> 
+                 </apex:outputLabel>
+                   </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                 <apex:outputPanel style="float:right">
+                    <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_CANCEL}" action="{!StepBack}"  reRender="frm" status="status"/>&nbsp;&nbsp;&nbsp;&nbsp;
+                    <apex:commandButton value="{!$Label.ARIA_REFUND_POST_PAYMENT}" action="{!call_IgnoreProEmail}" rerender="frm" status="status" oncomplete="callCollectFromAccount();"/>
+                </apex:outputPanel>
+             </apex:pageBlockSection>
+            
+           
+            
+        </apex:pageBlock>
+         
+        
+        <!-- it is for record payment Recieved -->
+        <apex:pageBlock id="pb2" rendered="{!IF(paymentWin = 'PaymentRecieved' && isVoidPayment = false && !canChangeRecordPaymentRecieved , true, false)}">
+                <apex:outputPanel rendered="{! !showInterMediate}">
+                    <apex:selectRadio value="{!transactionType}" onchange="PageChange(this.value);">
+                        <apex:selectOptions value="{!Transactions}"></apex:selectOptions>
+                    </apex:selectRadio>
+                  <p>{!$Label.ARIA_PAYMENT_CREDIT_CONFIRM_PAYMENTS_RECORDED}&nbsp;{!UPPER(acc.Aria_Currency__c)},&nbsp;{!$Label.ARIA_PAYMENT_CREDIT_CONFIRM_THE_CURRENCY_CODE}</p>
+                    <p>{!$Label.ARIA_PAYMENT_CREDIT_CONFIRM_SUPPLY_REF_CODE}</p>
+                    <br/>
+                    </apex:outputPanel>  
+            <apex:pageBlockSection columns="1" title="{!$Label.ARIA_PAYMENT_CREDIT_PAYMENT_INFORMATION}" collapsible="false" rendered="{! !showInterMediate }">
+                 <apex:pageBlockSectionItem >
+                   <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_CSR_COMMENTS}</apex:outputLabel>
+                   <apex:inputTextarea value="{!uip.comments}" cols="80" rows="8" />
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                     <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_REF_CODE}</apex:outputLabel>
+                     <apex:outputPanel layout="block" styleClass="requiredInput" >
+                     <apex:outputPanel layout="block" styleClass="requiredBlock fullAmt"></apex:outputPanel>
+                     <apex:inputText value="{!uip.ref_code}"  styleClass="refCode"/>
+                     <div class="errorMsg" style="display:none;"><strong>{!$Label.ARIA_REFUND_ERROR}</strong> {!$Label.ARIA_REFUND_REF_CODE_CANT_BLANK}</div>
+                     </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                     <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_PAYMENT_AMOUNT}</apex:outputLabel>
+                     <apex:outputPanel layout="block">
+                         <table width="100%">
+                             <tr>
+                                 <td style="text-align: left;width: 230px;">
+                                     <apex:selectRadio value="{!payAmt}" onchange="TogglePayment(this.value)" layout="pageDirection">
+                                        <apex:selectOptions value="{!PaymentAmount}">
+                                     </apex:selectOptions>
+                                   </apex:selectRadio>
+                                 </td>
+                                 <td style="padding-top: 24px;">
+                                     <apex:outputPanel style="display:none;margin-left: -37px;" styleClass="otherPayment" layout="block">
+                                         <table width="100%">
+                                             <tr>
+                                                     <td width="18%"><apex:inputText styleClass="otherAmount" onkeyup="twoDecimalPlaces(this)" onkeypress="return isNumberKey(event, this.value);" value="{!uip.OtherAmount}" /></td>
+                                                     <td><span>{!$Label.ARIA_REFUND_MINIMUM_ELECTRONICALLY}&nbsp;{!accCurrency} 3.00.
+                                     </span></td>
+                                             </tr>
+                                         </table>
+                                     
+                                     
+                                     
+                                     </apex:outputPanel>
+                                 </td>
+                             </tr>
+                         </table>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:outputLabel ></apex:outputLabel>
+                
+                <apex:outputpanel styleClass="invoiceSection" id="invoiceSection">
+                     <apex:outputPanel layout="block" style="float:right">
+                        <apex:outputLabel value="{!$Label.ARIA_PLAN_QUOTE_SUBSCRIPTIONS}" />&nbsp;&nbsp;&nbsp;&nbsp;
+                        <apex:selectList value="{!selSubIdForInvHis}" size="1" onchange="refresh_invoiceHistory()">
+                            <apex:selectOptions value="{!subscriptionList}"/>
+                        </apex:selectList>
+                     </apex:outputPanel>
+                 </apex:outputpanel>
+                    <!-- Record Payment -->
+                    <apex:pageBlockTable style="width:100%" value="{!collectPaymentWrapperList}" var="cpwl" id="invHisRec" styleClass="invHis" >
+                        <apex:column style="width:12%" headerValue="Reference Invoice Number" value="{!cpwl.refInvoiceNo}"/>
+                        <apex:column style="width:12%" headerValue="Transaction Number" value="{!cpwl.transNo}"/>
+                        <apex:column style="width:12%" headerValue="Subscription ID" value="{!cpwl.subId}"/>
+                        <apex:column style="width:10%" headerValue="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_DESCRIPTION}" value="{!cpwl.description}"/>
+                        <apex:column style="width:10%" headerValue="{!$Label.ARIA_PAYMENT_CREDIT_TYPE_PLAN}" value="{!cpwl.typePlan}"/>
+                        <apex:column style="width:10%" headerValue="{!$Label.ARIA_DISPUTE_BALANCE_DUE}" value="{!cpwl.balDue}"/>
+                         <apex:column style="width:18%" headerValue="{!$Label.ARIA_PAYMENT_CREDIT_AMOUNT_TO_PAY}" >
+                            <apex:inputtext value="{!cpwl.amountToPay}"  style="width:90%;" styleClass="amtToPay" onMouseDown="DisableRightClick(event)" onKeyDown="return DisableCtrlKey(event)" onkeypress="return isNumberKey(event, this.value);" onkeyup="individualTrans(),twoDecimalPlaces(this)" />
+                        	<div class="errorMsgAmtInvLineItem" style="display:none;"><Strong>Amount can't be more than {!accCurrency} {!cpwl.balDue}.</Strong></div>
+                        </apex:column>
+                        <apex:column style="width:16%" headerValue="Ref. Code(e.g. check no.)" >
+                        <apex:outputPanel layout="block" styleClass="requiredInput" >
+                     		<apex:outputPanel layout="block" styleClass="requiredBlock invLineItem"></apex:outputPanel>
+                           		 <apex:inputtext style="width:90%" value="{!cpwl.refInvLineItemNo}" />
+                            </apex:outputPanel>
+                           	<div class="errorMsgInvLineItem" style="display:none;"><strong>{!$Label.ARIA_REFUND_ERROR}</strong> {!$Label.ARIA_REFUND_REF_CODE_CANT_BLANK}</div>
+                           	
+                        </apex:column>
+                    </apex:pageBlockTable>
+                    
+                    <apex:outputPanel layout="block" style="text-align: right;padding-right: 1%;">
+                            
+                            <apex:commandButton value="{!$Label.ARIA_PAYMENT_CREDIT_POST_PAYMENT}" onclick=" verifyInput();  return false;" />
+                            <apex:commandButton value="{!$Label.ARIA_PAYMENT_CREDIT_CLOSE}" style="margin-left:10px;" onclick="return closeWin();"/>
+                    </apex:outputPanel>
+                
+             </apex:pageBlockSection>
+              
+             <apex:pageBlockSection id="summary_section"  rendered="{! showInterMediate}" columns="1" collapsible="false">
+                <apex:outputPanel >
+                    <p>{!$Label.ARIA_PAYMENT_CREDIT_POST_EXT_PAYMENT}&nbsp;{!AmtType}&nbsp;{!$Label.ARIA_PAYMENT_CREDIT_OF}&nbsp;{!accCurrency}&nbsp;{!AmttoCollect}&nbsp;{!$Label.ARIA_PAYMENT_CREDIT_TO_THIS_ACCT}</p>
+                    <p>{!$Label.ARIA_PAYMENT_CREDIT_CONFIRM_ALL_ENTRIES}</p>
+                    <br/>
+                 </apex:outputPanel>
+                 <apex:pageBlockSectionItem >
+                   <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_PAYMENT_AMOUNT}:</apex:outputLabel>
+                   <apex:outputLabel >{!payAmtSummary}</apex:outputLabel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!!individualTrans}">
+                   <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_PAYMENT_SRC}</apex:outputLabel>
+                   <apex:outputLabel >{!paySourceSummary}</apex:outputLabel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                   <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_APPLICATION_METHOD}</apex:outputLabel>
+                   <apex:outputPanel layout="block">
+                   <apex:outputLabel rendered="{!!individualTrans}">{!$Label.ARIA_PAYMENT_CREDIT_UNPAID_ITEMS}</apex:outputLabel>
+                   <apex:outputLabel rendered="{!individualTrans}" >
+                   			<apex:repeat value="{!collectPaymentWrapperList}" var="cpw">
+				                <apex:outputPanel rendered="{!if(cpw.amountToPay > 0.0,true,false)}">
+				                <b>Invoice#</b> {!cpw.refInvoiceNo} <b>Amount:</b>{!UPPER(acc.Aria_Currency__c)} {!cpw.amountToPay}<b> Reference Code</b> : {!cpw.refInvLineItemNo}<br></br>  
+				           	</apex:outputPanel>
+				           </apex:repeat> 
+                 </apex:outputLabel>
+                   </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                   <apex:outputLabel >Comments</apex:outputLabel>
+                   <apex:outputLabel >{!uip.comments}</apex:outputLabel>
+                </apex:pageBlockSectionItem>
+                 <apex:outputPanel layout="block" style="float:right;">
+                    <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_CANCEL}" action="{!StepBack}" oncomplete="individualTrans()" reRender="frm" status="status"/>&nbsp;&nbsp;&nbsp;&nbsp;
+                    <apex:commandButton value="{!$Label.ARIA_REFUND_POST_PAYMENT}" action="{!call_IgnoreProEmail}" rerender="frm" status="status" oncomplete="record_external_payment();"/>
+                </apex:outputPanel>
+             </apex:pageBlockSection>
+        </apex:pageBlock>
+        <!-- Page Block for void Payment -->
+        <apex:pageBlock id="pb_void_payment"  title="{!$Label.ARIA_REFUND_VOID_PAYMENT}" rendered="{!isVoidPayment}">
+            <apex:pageBlockSection id="pbs_void_payment"  columns="1" collapsible="false">
+                <apex:pageBlockSectionItem >
+                   <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_TRANS_ID}</apex:outputLabel>
+                   <apex:outputLabel >{!paymentToBeVoided.transaction_id}</apex:outputLabel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                   <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_DATE}</apex:outputLabel>
+                   <apex:outputLabel >{!paymentToBeVoided.payment_date}</apex:outputLabel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                   <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_SOURCE}</apex:outputLabel>
+                   <apex:outputLabel >{!paymentToBeVoided.payment_source}</apex:outputLabel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                   <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_STATUS}</apex:outputLabel>
+                   <apex:outputLabel >{!paymentToBeVoided.payment_status}</apex:outputLabel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                   <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_AMOUNT}</apex:outputLabel>
+                   <apex:outputText value="{0, number, 0.00}"  style="text-align:right;" >
+                       <apex:param value="{!paymentToBeVoided.payment_amount}" />
+                    </apex:outputText>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                   <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_REASON}</apex:outputLabel>
+                   <apex:outputPanel layout="block" styleClass="requiredInput">
+                         <apex:outputPanel layout="block" styleClass="requiredBlock"></apex:outputPanel>
+                         <apex:selectList value="{!void_reason}" size="1"><!--  required="true" label="Reason" >-->
+                           <apex:selectOptions value="{!void_reasons}"></apex:selectOptions>
+                         </apex:selectList>
+                  </apex:outputPanel>
+                  
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                   <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_CSR_COMMENTS}</apex:outputLabel>
+                   <apex:outputPanel layout="block" styleClass="requiredInput">
+                    <apex:outputPanel layout="block" styleClass="requiredBlock"></apex:outputPanel>
+                    <apex:inputTextarea value="{!void_comments}" rows="5" cols="110"/><!-- required="true" label="CSR Comments" />-->
+                   </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                 <apex:outputPanel layout="block" style="float:right;">
+                    <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_CANCEL}" immediate="true" action="{!cancel_void_payment}" reRender="frm" status="status"/>&nbsp;&nbsp;&nbsp;&nbsp;
+                    <apex:commandButton value="{!$Label.ARIA_REFUND_VOID_PAYMENT}" action="{!validate_void_transaction}" rerender="frm" status="status" oncomplete="if({!isValidToProceed}){complete_void_transaction();}" />
+                </apex:outputPanel>
+             </apex:pageBlockSection>
+        </apex:pageBlock>
+        </apex:outputPanel><!-- closing tag of output pannel which ensuring the creatable permission on the payment history object -->
+        
+        
+        <!--  Payment history code below in seperate pageBlock -->
+        <apex:pageBlock id="ariaPayHisblock" rendered="{!isHistoryDisplay }" title="{!$Label.ARIA_PAYMENT_CREDIT_PAYMENT_HISTORY}">
+        <div style="float:right">
+        <apex:outputLabel value="{!$Label.ARIA_PLAN_QUOTE_SUBSCRIPTIONS}" />&nbsp;&nbsp;&nbsp;&nbsp;
+        <apex:selectList value="{!selectedSubscriptionId}" size="1" onchange="refresh_paymentHistory()">
+            <apex:selectOptions value="{!subscriptionList}"/>
+        </apex:selectList>
+        </div>
+        <br />
+        <apex:outputPanel layout="block" style="background-color:hsl(195, 61%, 88%)">
+            <ul>
+               <li>{!$Label.ARIA_PAYMENT_CREDIT_VOID_PAYMENT}</li>
+           </ul>
+        </apex:outputPanel>
+        <div class="paginator">
+      <span class="left">
+         <span onmouseout="ListPaginator.unhoverSelector(this)" onmouseover="ListPaginator.hoverSelector(this)" onmousedown="ListPaginator.showSelector('item_paginator_rpp_target')" id="item_paginator_rpp_target" class="selectorTarget">
+            {!start}-{!ends}&nbsp;{!$Label.ARIA_PAYMENT_CREDIT_OF}&nbsp;{!totalRecords}
+            <table cellspacing="0" cellpadding="0" id="item_paginator_rpp" class="selector rpp">
+                <tbody>
+                <tr onmousedown="setPageSize(10);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=10,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">10</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                <tr onmousedown="setPageSize(25);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=25,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">25</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                <tr onmousedown="setPageSize(50);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=50,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td><td class="rppOpt">50</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                <tr onmousedown="setPageSize(100);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=100,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">100</td> <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                
+            </tbody>
+          </table>
+        <img src="/s.gif" class="selectArrow" />
+       </span>
+          
+      </span>
+      <span class="prevNextLinks">
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!previousButtonDisabled}">
+            <a href="javascript:firstPage();">
+                <img class="first" alt="{!$Label.ARIA_ACCT_HISTORY_FIRST_PAGE}" title="{!$Label.ARIA_ACCT_HISTORY_FIRST_PAGE}" src="/s.gif"/>
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!previousButtonDisabled}">
+            <img class="firstoff" src="/s.gif"/>
+            </apex:outputPanel>
+        </span>
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!previousButtonDisabled}">
+            <a href="javascript:prePage();">
+                <img class="prev" alt="{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}" title="{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}" src="/s.gif"/>{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!previousButtonDisabled}">
+            <img class="prevoff" src="/s.gif"/>{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}
+            </apex:outputPanel>
+        </span>
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!nextButtonDisabled}">
+            <a href="javascript:nextPage();">{!$Label.ARIA_PAYMENT_CREDIT_NEXT}
+                <img class="next" alt="{!$Label.ARIA_PAYMENT_CREDIT_NEXT}" title="{!$Label.ARIA_PAYMENT_CREDIT_NEXT}" src="/s.gif"/>
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!nextButtonDisabled}">
+            {!$Label.ARIA_PAYMENT_CREDIT_NEXT}<img class="nextoff" src="/s.gif"/>
+            </apex:outputPanel>
+        </span>
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!nextButtonDisabled}">
+            <a href="javascript:lastPage();">
+                <img class="last" alt="{!$Label.ARIA_REFUND_LAST_PAGE}" title="{!$Label.ARIA_REFUND_LAST_PAGE}" src="/s.gif"/>
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!nextButtonDisabled}">
+            <img class="lastoff" src="/s.gif"/>
+            </apex:outputPanel>
+        </span>
+     </span>
+     <span class="right">{!$Label.ARIA_PAYMENT_REFUND_PAGE} {!PageNumber} {!$Label.ARIA_PAYMENT_CREDIT_OF} {!TotalPageNumber}
+     <!--<input type="text" value="{!PageNumber}" onchange="jump(this.value);" maxlength="4" class="pageInput"/> of {!totalPageNumber}-->
+     </span>
+     </div>
+     
+       <apex:pageBlockTable columnClasses="crow" value="{!Histories}" var="t" rendered ="{!Histories.Size > 0}">
+                <apex:column >
+                    <apex:commandLink onclick="if(!confirm('{!$Label.ARIA_PAYMENT_CREDIT_VOID_PAYMENT_MESSAGE}')) return false;" value="{!$Label.ARIA_PAYMENT_CREDIT_VOID}" action="{!void_payment}" rendered="{!t.voidable_flag = 1 && $ObjectType.Aria_Payment__c.createable}" rerender="frm" status="status">
+                        <apex:param name="transaction_id" value="{!t.transaction_id}"/>
+                    </apex:commandLink>
+                 </apex:column>
+                 <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_TRANS_ID}" headerClass="headerlbl" >
+                     {!t.transaction_id}
+                 </apex:column>
+                  <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_DATE}" value="{!t.payment_date}"  headerClass="headerlbl" />
+                  <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_SOURCE}"  headerClass="headerlbl" value="{!t.payment_source}"  /> 
+                  <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_STATUS}"  headerClass="headerlbl"  value="{!t.payment_status}" />  
+                  <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_AMOUNT}" style="text-align:right;" headerClass="header">
+                      
+                   <apex:outputText value="{0, number, 0.00}"  style="text-align:right;" >
+                       <apex:param value="{!t.payment_amount}" />
+                      </apex:outputText>
+                  </apex:column>
+                  <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_APPLIED}" style="text-align:right;"  headerClass="header"  >
+                      <apex:outputText value="{0, number, 0.00}"  style="text-align:right;" >
+                       <apex:param value="{!t.applied_amount}" />
+                      </apex:outputText>
+                  </apex:column>
+                  
+                  <apex:column id="unapplied" headerValue="{!$Label.ARIA_PAYMENT_CREDIT_UNAPPLIED}" style="text-align:right;"  headerClass="header"  >
+                  <apex:outputText value="{0, number, 0.00}"  style="text-align:right;" >
+                       <apex:param value="{!t.payment_amount_left_to_apply}" />
+                      </apex:outputText>
+                  <script>
+                    setBackgroundColor("{!$Component.unapplied}","{!t.payment_status}","{!t.voiding_event_no}");
+                    //alert("{!t.voiding_event_no}{!t.payment_status}");
+                  </script>
+                  </apex:column>
+                  <!--<apex:column style="display:none" value="{!t.voiding_event_no}"/>-->
+                  
+              </apex:pageBlockTable>
+              <!--  In case No records Found the below pageblock table will be rendered -->
+              <apex:pageBlockTable value="{!Histories}" var="t" rendered="{!Histories.Size = 0}">
+                 <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_TRANS_ID}" headerClass="headerlbl" styleClass="drow" width="12%"/>
+                 <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_DATE}" width="11%" headerClass="headerlbl" styleClass="crow" />
+                 <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_SOURCE}"  width="25%" headerClass="headerlbl" styleClass="crow" />
+                 <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_STATUS}" width="12%" headerClass="headerlbl"  styleClass="drow" />
+                 <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_AMOUNT}"  width="20%" headerClass="headerlbl"  styleClass="lrow" />
+                 <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_APPLIED}" width="20%" headerClass="headerlbl"  styleClass="lrow" />
+                 <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_UNAPPLIED}" width="20%" headerClass="headerlbl"  styleClass="lrow" />
+                 <apex:facet name="footer">{!$Label.ARIA_PAYMENT_CREDIT_NO_PAYMENT_HISTORY}</apex:facet>
+              </apex:pageBlockTable>
+
+        
+     </apex:pageBlock>
+         <script>
+            
+              TogglePayment('{!payAmt}') 
+              ToggleBilling('{!formMethod}');
+              ToggleCardInfo('{!billingType}'); 
+              addEvent(document.body,"mousedown",function(a){ListPaginator.hideSelector('item_paginator_rpp_target')},!0); 
+              disableOtherAmt();
+        </script>
+        </apex:outputPanel>
+        <apex:outputPanel style="text-align:center;" layout="block" rendered="{! !$ObjectType.Aria_Payment__c.accessible}">
+            <p style="font-weight: 600;color: rgb(255, 82, 0);">{!$Label.ARIA_PAYMENT_CREDIT_CONFIRM_INSUFFICIENT_PERMISSION}</p>
+        </apex:outputPanel>
+       </div>
+       
+    </div>
+</div>
+    </apex:form>
+    
+ </apex:page>

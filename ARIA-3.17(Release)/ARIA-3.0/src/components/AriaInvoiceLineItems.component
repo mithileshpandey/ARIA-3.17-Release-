@@ -1,0 +1,40 @@
+<apex:component access="global" controller="AriaLineItemViewer">
+<apex:attribute name="opportunityId" description="This value defines the opportunity for which the rate tiers has to be listed" type="String" assignTo="{!opportunityId}"/>
+<apex:attribute name="quoteId" description="This value defines the quote for which the rate tiers has to be listed" type="String" assignTo="{!quoteId}"/>
+<apex:attribute name="planId" description="This value defines the plan for which the rate tiers has to be listed. Pass '*' to list all plans" type="String" assignTo="{!planId}"/>
+<apex:attribute name="contextInfo" description="This value defines context wether opportunity or quote" type="String" required="false" assignTo="{!context}" />
+<apex:attribute name="selectionContext" description="This value defines the context in which the component is used. Possible values are SelectMasterPlan, ReplaceMasterPlan, MaintainSuplementalPlan" type="String" required="false" assignTo="{!selectionContext}" />
+<style>
+.rightalign{
+    text-align:right;
+}
+
+</style>
+
+ <apex:pageBlock rendered="{!isLineItemDisplay}" >
+ 
+        <apex:pageBlockSection columns="1" collapsible="true" title="Discounted Items">
+            <apex:pageBlockSectionItem >
+                <apex:outputPanel layout="block">
+                <div style="line-height: 158%;font-family: verdana;">
+                <apex:variable value="{!1}" var="count"/>
+                <b>Coupons Applied:</b>
+                	<apex:repeat Value="{!applyCoupons}" var="c">
+                		<br/>{!FLOOR(count)} . {!c.Coupon_Code__c}
+                		<apex:variable var="count" value="{!count+ 1}"/>
+                	</apex:repeat></div><br/>
+                     <apex:pageBlockTable value="{!ariaPlanLineItems}" var="lineitem">
+                                 <apex:column value="{!lineitem.Client_Plan_Name__c}" headerValue="Client Plan" />
+                                 <apex:column value="{!lineitem.Invoice_Service_Name__c}" headerValue="Service Name"/>
+                                 <apex:column value="{!lineitem.Start_Date__c}" headerValue="Start Date"/>
+                                 <apex:column value="{!lineitem.Invoice_Units__c}" headerValue="Discounted Units" headerClass="rightalign" styleClass="rightalign"/>
+                                 <apex:column value="{!lineitem.Invoice_Rate_Per_Unit__c}" headerValue="Discount Rate Per Unit" headerClass="rightalign"  styleClass="rightalign"/>
+                                 <apex:column value="{!lineitem.Invoice_Line_Amount__c}" headerValue="Total Discount" headerClass="rightalign"  styleClass="rightalign"/>
+                    </apex:pageBlockTable>
+                </apex:outputPanel>
+                
+            </apex:pageBlockSectionItem>
+        </apex:pageBlockSection>
+     
+ </apex:pageBlock>  
+</apex:component>

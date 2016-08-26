@@ -1,0 +1,688 @@
+<apex:page standardController="Account" extensions="AriaAccountDetailInlineSummeryExtension">
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<style>
+  body{
+    font-family: Arial, Helvetica, sans-serif; font-size:12px;
+  }
+  #invoice_processbar {
+      background-color: #65cfe9;
+      color:#000000;
+      height: 10px;
+      width:{!invoiceProgressBarPercent}%;
+      max-width:170px;
+      float:left;
+  }
+  #payment_made {
+      background-color: #7ab800;
+      color:#000000;
+      height: 10px;
+      width:{!paymentMadeProgressBarPercent}%;
+      max-width:170px;
+      float:left; 
+  }
+  #payment_missed {
+      background-color: #fc4d50;
+      color:#000000;
+      height: 10px;
+      width:{!paymentMissedProgressBarPercent}%;
+      max-width:170px;
+      float:left;
+  }
+  #dunning {
+      background-color: #b382c7;
+      color:#000000;
+      height: 10px;
+      width:{!activeToDunningProgressBarPercent}%;
+      max-width:170px;
+      float:left;
+  }
+  
+  #mydiv { 
+      background-color: #FFFFFF;
+      color:#000000;
+      height: 40px;
+      width:140px;
+      padding:8px 8px 8px 8px;
+  }
+  #mydiv1 { 
+      background-color: #009DDC;
+      color:#FFFFFF;
+      height: 40px;
+      width:170px;
+      padding:8px 8px 8px 8px;
+      margin:8px 8px 8px 8px;
+      list-style:none; 
+      display:inline; 
+      float:left;
+  }
+  #mydiv2 { 
+      background-color: #6A72B0;
+      color:#FFFFFF;
+      height: 40px;
+      width:170px;
+      padding:8px 8px 8px 8px;
+      margin:8px 8px 8px 8px;
+      list-style:none; 
+      display:inline; 
+      float:left;
+  }
+  #mydiv3 { 
+      background-color: #009AA6;
+      color:#FFFFFF;
+      height: 40px;
+      width:170px;
+      padding:8px 8px 8px 8px;
+      margin:8px 8px 8px 8px;
+      list-style:none; 
+      display:inline; 
+      float:left;
+  }
+  #mydiv4 { 
+      background-color: {!accountStatusColor};
+      color:#FFFFFF;
+      height: 40px;
+      width:170px;
+      padding:8px 8px 8px 8px; 
+      margin:8px 8px 8px 8px;
+      list-style:none; 
+      display:inline; 
+      float:left;
+  }
+  .round-corner {
+      -webkit-border-radius: 3px 3px 3px 3px; 
+      -moz-border-radius: 3px 3px 3px 3px;
+      -o-border-radius: 3px 3px 3px 3px;
+      border-radius: 3px 3px 3px 3px;
+  }
+.style3 {font-size: 24px;}
+.style4 {color: #666666;}
+
+table.plantable {
+    font-family: verdana,arial,sans-serif;
+    font-size:12px;
+    color:#333333;
+    border-width: 1px;
+    border-color: #CCCCCC;
+    border-collapse: collapse;
+    text-align:left;
+}
+table.plantable th {
+    font-size:13px;
+    border-width: 1px;
+    padding: 6px;
+    border-style: solid;
+    border-color: #CCCCCC;
+    background-color:#D4D4D4;
+    height:25px;
+    background: #eeeeee; /* Old browsers */
+    background: -moz-linear-gradient(top,  #eeeeee 0%, #cccccc 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#eeeeee), color-stop(100%,#cccccc)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  #eeeeee 0%,#cccccc 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  #eeeeee 0%,#cccccc 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  #eeeeee 0%,#cccccc 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  #eeeeee 0%,#cccccc 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#eeeeee', endColorstr='#cccccc',GradientType=0 ); /* IE6-9 */
+
+
+}
+table.plantable td {
+    border-width: 1px;
+    padding: 6px;
+    border-style: solid;
+    border-color: #CCCCCC;
+    height:25px;
+}
+.style6 {font-size: 18px}
+.oddrowcolor td{
+    background-color:#FFFFFF !important;
+}
+.evenrowcolor td{
+    background-color:#eeeeee !important;
+}
+<!-- Progress bar -->
+#jquery-script-menu {
+position: fixed;
+height: 90px;
+width: 100%;
+top: 0;
+left: 0;
+border-top: 5px solid #316594;
+background: #fff;
+-moz-box-shadow: 0 2px 3px 0px rgba(0, 0, 0, 0.16);
+-webkit-box-shadow: 0 2px 3px 0px rgba(0, 0, 0, 0.16);
+box-shadow: 0 2px 3px 0px rgba(0, 0, 0, 0.16);
+z-index: 999999;
+padding: 10px 0;
+}
+
+.jquery-script-center {
+width: 960px;
+margin: 0 auto;
+}
+.jquery-script-center ul {
+width: 212px;
+float:left;
+line-height:45px;
+margin:0;
+padding:0;
+list-style:none;
+}
+.jquery-script-center a {
+    text-decoration:none;
+}
+.jquery-script-ads {
+width: 728px;
+height:90px;
+float:right;
+}
+.jquery-script-clear {
+clear:both;
+height:0;
+}
+.meter {
+    position: relative;
+    margin: 5px 0 5px 0; /* Just for demo spacing */
+    background: #C0C0C0;
+    -moz-border-radius: 25px;
+    -webkit-border-radius: 25px;
+    border-radius: 25px;
+    padding: 1px;
+    -webkit-box-shadow: inset 0 -1px 1px rgba(255,255,255,0.3);
+    -moz-box-shadow   : inset 0 -1px 1px rgba(255,255,255,0.3);
+    box-shadow        : inset 0 -1px 1px rgba(255,255,255,0.3);
+    width: 375px;
+    background-color: #EAEAEA;
+    left: 10px;
+    height: 20px;
+}
+.meter > span {
+    display: block;
+    height: 100%;
+       -webkit-border-top-right-radius: 8px;
+    -webkit-border-bottom-right-radius: 8px;
+           -moz-border-radius-topright: 8px;
+        -moz-border-radius-bottomright: 8px;
+               border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        -webkit-border-top-left-radius: 20px;
+     -webkit-border-bottom-left-radius: 20px;
+            -moz-border-radius-topleft: 20px;
+         -moz-border-radius-bottomleft: 20px;
+                border-top-left-radius: 20px;
+             border-bottom-left-radius: 20px;
+    background-color: rgb(43,194,83);
+    background-image: -webkit-gradient(
+      linear,
+      left bottom,
+      left top,
+      color-stop(0, rgb(43,194,83)),
+      color-stop(1, rgb(84,240,84))
+     );
+    background-image: -moz-linear-gradient(
+      center bottom,
+      rgb(43,194,83) 37%,
+      rgb(84,240,84) 69%
+     );
+    -webkit-box-shadow: 
+      inset 0 2px 9px  rgba(255,255,255,0.3),
+      inset 0 -2px 6px rgba(0,0,0,0.4);
+    -moz-box-shadow: 
+      inset 0 2px 9px  rgba(255,255,255,0.3),
+      inset 0 -2px 6px rgba(0,0,0,0.4);
+    box-shadow: 
+      inset 0 2px 9px  rgba(255,255,255,0.3),
+      inset 0 -2px 6px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+}
+.meter > span:after, .animate > span > span {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background-image: 
+       -webkit-gradient(linear, 0 0, 100% 100%, 
+          color-stop(.25, rgba(255, 255, 255, .2)), 
+          color-stop(.25, transparent), color-stop(.5, transparent), 
+          color-stop(.5, rgba(255, 255, 255, .2)), 
+          color-stop(.75, rgba(255, 255, 255, .2)), 
+          color-stop(.75, transparent), to(transparent)
+       );
+    background-image: 
+        -moz-linear-gradient(
+          -45deg, 
+          rgba(255, 255, 255, .2) 25%, 
+          transparent 25%, 
+          transparent 50%, 
+          rgba(255, 255, 255, .2) 50%, 
+          rgba(255, 255, 255, .2) 75%, 
+          transparent 75%, 
+          transparent
+       );
+    z-index: 1;
+    -webkit-background-size: 50px 50px;
+    -moz-background-size: 50px 50px;
+    -webkit-animation: move 2s linear infinite;
+       -webkit-border-top-right-radius: 8px;
+    -webkit-border-bottom-right-radius: 8px;
+           -moz-border-radius-topright: 8px;
+        -moz-border-radius-bottomright: 8px;
+               border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        -webkit-border-top-left-radius: 20px;
+     -webkit-border-bottom-left-radius: 20px;
+            -moz-border-radius-topleft: 20px;
+         -moz-border-radius-bottomleft: 20px;
+                border-top-left-radius: 20px;
+             border-bottom-left-radius: 20px;
+    overflow: hidden;
+}
+
+.animate > span:after {
+    display: none;
+}
+
+@-webkit-keyframes move {
+    0% {
+       background-position: 0 0;
+    }
+    100% {
+       background-position: 50px 50px;
+    }
+}
+
+.orange > span {
+    background-color: #f1a165;
+    background-image: -moz-linear-gradient(top, #f1a165, #f36d0a);
+    background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, #f1a165),color-stop(1, #f36d0a));
+    background-image: -webkit-linear-gradient(#f1a165, #f36d0a); 
+}
+
+.red > span {
+    background-color: #f0a3a3;
+    background-image: -moz-linear-gradient(top, #f0a3a3, #f42323);
+    background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, #f0a3a3),color-stop(1, #f42323));
+    background-image: -webkit-linear-gradient(#f0a3a3, #f42323);
+}
+
+.nostripes > span > span, .nostripes > span:after {
+    -webkit-animation: none;
+    background-image: none;
+}
+.style8 {font-size: 18px; font-weight: bold; }
+.style9 {font-size: 14px}
+.style10 {font-size: 12px}
+th {
+text-align: left;
+font-weight: bold;
+white-space: normal !important;
+}
+.selfpay td{
+	background:#7BB801;
+	color:#000000;
+}
+
+.anchornonedecoration{
+	text-decoration:none;
+	color:#000000;
+}
+
+.parentpay td{
+	background:#009DDC;
+	color:#000000;
+}
+.default td{
+	background:#FFFFFF;
+	color:#000000;
+}
+</style>
+<script>
+(function($){
+    $.fn.rotator = function(options){
+        var settings = $.extend({
+            starting: 0,
+            ending: {!nextBillDays},
+            percentage: false,
+            color: 'red',
+            lineWidth: 9,
+            timer: 20,
+            radius: 25,
+            fontStyle: 'Arial',
+            fontSize: '11pt',
+            fontColor: 'black',
+            backgroundColor: 'lightgray',
+            callback: function () {
+            }
+        }, options);
+        this.empty().append("<canvas height ="+this.height() + " width="+this.width()+" id='my-canvas'/ ></canvas>");
+        var canvas = document.getElementById('my-canvas');
+        var x = canvas.width / 2;
+        var y = canvas.height / 2;
+        var radius = settings.radius;
+        var context = canvas.getContext("2d");
+        if(settings.backgroundColor){
+            var ctx = canvas.getContext('2d');
+            ctx.arc(x, y, radius, 0, 2*Math.PI, false);
+            ctx.strokeStyle = settings.backgroundColor;
+            ctx.lineWidth = settings.lineWidth;
+            ctx.stroke()
+        }
+        var steps = settings.ending - settings.starting;
+        var step = settings.starting;
+        var z = setInterval(function(){
+            var text;
+            if(settings.percentage){text = step + "%"}else{text = step}
+            var start_angle = (1.5 + (step/50))*Math.PI;
+            var end_angle = (1.5 + (++step/50))*Math.PI;
+            context.beginPath();
+            context.arc(x, y, radius, start_angle, end_angle, false);
+            context.lineWidth = settings.lineWidth;
+            context.strokeStyle = settings.color;
+            context.stroke();
+            context.font = settings.fontSize + ' ' + settings.fontStyle;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillStyle = settings.fontColor;
+            context.clearRect(x - parseInt(settings.fontSize)*1.5, y - parseInt(settings.fontSize)/2, parseInt(settings.fontSize)*3, parseInt(settings.fontSize));
+            context.fillText(text, x , y );
+            if(step >= steps){
+                window.clearInterval(z);
+                if(settings.percentage){text = step + "%"}else{text = step}
+                context.clearRect(x - parseInt(settings.fontSize)*1.5, y - parseInt(settings.fontSize)/2, parseInt(settings.fontSize)*3, parseInt(settings.fontSize));
+                context.fillText(text, x , y );
+                if(typeof(settings.callback) == 'function'){
+                    settings.callback.call(this);
+                }
+            }
+        }, settings.timer)
+    }
+}(jQuery));
+
+// horizontal bar
+$(function() {
+    $(".meter > span").each(function() {
+        $(this)
+            .data("origWidth", $(this).width())
+            .width(0)
+            .animate({
+                width: $(this).data("origWidth")
+            }, 1200);
+    });
+});
+
+</script>
+<apex:form >
+<apex:pageMessages id="mymsg" />
+<table width="100%" border="0" cellpadding="8" cellspacing="0" bgcolor="#eeeeee" style="border:thin #cccccc solid;">
+  <tr>
+    <td height="29" align="center">
+    <table width="80%" border="0" cellspacing="0" cellpadding="8">
+      <apex:outputPanel rendered="{!mapOfComponents['LastActivity']}">
+	      <tr>
+	        <td style="font-size:15px;"><b>{!$Label.ARIA_CONNECTOR_SETTINGS_LAST_ACTIVITY}</b> : {!lastActivityonAccount}</td>
+	      </tr>
+      </apex:outputPanel>
+       <!--  <apex:outputPanel rendered="{!mapOfComponents['RecentComment']}">
+	      <tr>
+	        <td style="font-size:15px;"><b>Account Message</b> : {!lastCommentonAccount}</td>
+	      </tr>
+      </apex:outputPanel>--> 
+    </table></td> 
+  </tr>
+  <tr>
+    <td align="center"><table width="80%" border="0" cellspacing="0" cellpadding="4">
+      <tr>
+        <td width="32%" valign="top">
+        <table width="400" height="260" border="0" cellpadding="0" cellspacing="0" bgcolor="#FFFFFF" style="border:thin #cccccc solid;">
+          <tr>
+            <td>
+            <apex:outputPanel rendered="{!mapOfComponents['CurrentBalance']}">
+            <div id='mydiv' class="round-corner">
+              <label><span class="style4">{!$Label.ARIA_ACCOUNT_DETAIL_CURRENT_BALANCE}</span></label>
+              <br/>
+              <!--  <label class="style3"><apex:outputField value="{!account.Aria_Balance__c}"/></label> -->
+              <label style="font-size: 14px;" >{!UPPER(account.Aria_Currency__c)}&nbsp;</label>
+              <apex:outputText style="font-size: 22px;" value="{0, number,###,###,##0.00}">
+                <apex:param value="{!account.Aria_Balance__c}"/>
+              </apex:outputText> 
+            </div>
+            </apex:outputPanel>
+            </td>
+            <td><div id='mydiv' class="round-corner"><!-- 
+              <label><span class="style4">DAYS PAST DUE</span></label>
+              <br/>
+              <label class="style3">0</label> -->
+            </div> </td>
+          </tr>
+          <tr>
+            <td valign="middle">
+            <apex:outputPanel rendered="{!mapOfComponents['BillDueDate']}">
+            <div id='mydiv' class="round-corner" style="width:150px;">
+              <label><span class="style4">{!$Label.ARIA_ACCOUNT_DETAIL_BILL_DUE_DATE}</span></label>
+              <br/>
+              <label class="style3"><apex:outputText value="{0,date,MMM dd,YYYY}"><apex:param value="{!account.Aria_Next_Bill_Date__c}"/></apex:outputText></label>
+            </div>
+            </apex:outputPanel>
+            </td>
+            <td align="left">
+            <apex:outputPanel rendered="{!mapOfComponents['DaysUntilNextPayment']}">
+            	<div id='mydiv' class="round-corner" style="width:174px;"><label><span class="style4">{!$Label.ARIA_ACCOUNT_DETAIL_DAYS_UNTIL_NEXT_PAYMENT}</span></label><label class="style3"><apex:outputText value="{!nextBillDays}"></apex:outputText></label></div>
+            </apex:outputPanel>
+            </td>
+          </tr>
+          <apex:outputPanel rendered="{!mapOfComponents['Usages']}">
+          <tr>
+            <td height="77" colspan="2">
+               &nbsp;<span class="style8">&nbsp;&nbsp;{!$Label.ARIA_CONNECTOR_SETTINGS_USAGES}</span>
+               <br />
+               <div class="meter orange nostripes">
+               	 <span style="border-radius: 12px; -moz-border-radius: 12px; -webkit-border-radius: 12px;width: {!usagesProgressBarPercent}%"></span>
+               </div>
+               <div class="style9" style="text-align:center">{!totalUnits}/{!FLOOR(maxLimit)}</div>
+            </td>
+          </tr>
+          </apex:outputPanel>
+        </table></td>
+        <td width="36%" valign="top">&nbsp;</td>
+        <td width="32%" valign="top">
+        
+        <div style="width:410px">
+        	<apex:outputPanel rendered="{!mapOfComponents['AccountCreated']}">
+	            <li id='mydiv1' class="round-corner">
+	              <label>{!$Label.ARIA_ACCOUNT_DETAIL_ACCOUNT_CREATED}</label>
+	              <br/>
+	              <label class="style3"><apex:outputField value="{!account.Aria_Created_Date__c}"/></label>
+	            </li>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!mapOfComponents['CustomerFor']}">
+	            <li id='mydiv2' class="round-corner">
+	              <label>{!$Label.ARIA_ACCOUNT_DETAIL_CUSTOM_FOR}</label>
+	              <br/>
+	              <label class="style3">{!customerForMonth}</label>
+	              <label class="style10"> {!$Label.ARIA_ACCOUNT_DETAIL_CUSTOM_MONTHS}</label>
+	            </li>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!mapOfComponents['TotalCollectedAmount']}">
+	            <li id='mydiv3' class="round-corner">
+	              <label>{!$Label.ARIA_ACCOUNT_DETAIL_TOTAL_COLLECTED_MONTHS}</label>
+	              <br/>
+	              <label class="style3"><apex:outputText value="${!totalCollectedAmount}" /></label>
+	            </li>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!mapOfComponents['Status']}">
+	            <li id='mydiv4' class="round-corner">
+	              <label>{!$Label.ARIA_ACCOUNT_DETAIL_STATUS}</label>
+	              <br/>
+	              <label class="style3">{!UPPER(account.Aria_Status__c)}</label> 
+	            </li>
+	        </apex:outputPanel>
+        </div>
+        <table width="410" border="0" cellspacing="0" cellpadding="4">
+          <tr>
+            <td colspan="2"><table width="100%" border="0" cellspacing="0" cellpadding="8">
+              <apex:outputPanel rendered="{!mapOfComponents['InvoicesProcessed']}">
+              <tr>
+                <td width="36%">{!$Label.ARIA_CONNECTOR_SETTINGS_INVOICES_PROCESSED} </td>
+                <td width="64%"><div id='invoice_processbar'></div><span style="font-size:9px; padding-left:4px;"> {!totalInvoices}</span></td>
+              </tr>
+              </apex:outputPanel>
+              <apex:outputPanel rendered="{!mapOfComponents['PaymentsMade']}">
+              <tr>
+                <td>{!$Label.ARIA_CONNECTOR_SETTINGS_PAYMENTS_MADE} </td>
+                <td><div id='payment_made'></div><span style="font-size:9px; padding-left:4px;"> {!totalPaymentMade}</span></td>
+              </tr>
+              </apex:outputPanel>
+              <apex:outputPanel rendered="{!mapOfComponents['PaymentsMissed']}">
+              <tr>
+                <td>{!$Label.ARIA_CONNECTOR_SETTINGS_PAYMENTS_MISSED}</td>
+                <td><div id='payment_missed'></div><span style="font-size:9px; padding-left:4px;"> {!totalPaymentMissed}</span></td>
+              </tr>
+              </apex:outputPanel>
+              <apex:outputPanel rendered="{!mapOfComponents['FromActivetoDunning']}">
+              <tr>
+                <td>{!$Label.ARIA_CONNECTOR_SETTINGS_FROM_ACTIVE_TO_DUNNING} </td>
+                <td><div id='dunning'></div><span style="font-size:9px; padding-left:4px;"> {!totalActiveToDunning}</span></td>
+              </tr>
+              </apex:outputPanel>
+            </table></td>
+          </tr>
+          
+        </table></td>
+      </tr>
+    </table></td>
+  </tr>
+  <!-- Connector2.0 -->
+  <apex:outputPanel rendered="{!mapOfComponents['RecentComment']}">
+	      <tr>
+	        <td style="font-size:15px;">
+	        <table >
+		        <tr>
+		        <td>
+			        <div style="margin-left:148px;margin-right: 96px;"><b>{!$Label.ARIA_ACCOUNT_DETAIL_ACCOUNT_MESSAGE}</b> : {!lastCommentonAccount} 
+			        <div class="page2more">
+                    	{!lastExtraCommentonAccount}
+		            </div>
+		            <apex:commandlink style="color: hsl(2, 96%, 51%);font-weight: 600;" styleclass="morelink" onclick="ShowComment(); return false;" >{!$Label.ARIA_CREDIT_CLICK_MORE}..</apex:commandlink>
+		            </div>
+		            </td> </tr>
+		       <!--<tr>
+	            <td style="padding-left:94px;">
+	            	<apex:commandlink style="color: hsl(2, 96%, 51%);font-weight: 600;" styleclass="morelink" onclick="ShowComment(); return false;" >more..</apex:commandlink>
+	            </td>            
+		      </tr>-->
+	      </table>
+	      </td>
+	      </tr>
+  </apex:outputPanel>
+  <apex:outputPanel rendered="{!mapOfComponents['Plans']}">
+  <tr>
+    <td height="29" align="center">
+    <table width="80%" border="0" cellspacing="0" cellpadding="8" style="border-left:thin #cccccc solid;border-right:thin #cccccc solid;border-bottom:thin #cccccc solid; border-top: 3px #236fbd solid;">
+      <tr>
+        <th width="18" align="left" style="font-size::18px;"><span class="style6">{!$Label.ARIA_CONNECTOR_SETTINGS_PLANS}</span></th>
+      </tr>
+      <tr>
+        <th height="41" align="left">
+        <div style="height:120px;overflow-y:auto;">
+        <table width="100%" border="1" cellspacing="0" cellpadding="0" class="plantable" id="plantable">
+          <thead>
+          <tr>
+            <th height="34">{!$Label.ARIA_PLAN_VIEW_PLAN_NAME} </th>
+            <th>{!$Label.ARIA_DISPUTE_DESCRIPTION}</th>
+            <th>{!$Label.ARIA_ACCOUNT_DETAIL_SUBSCRIPTION_ID}</th>
+            <th style="text-align:right">{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PRICE}</th>
+          </tr>   
+          </thead>
+          <tbody> 
+          <apex:variable var="planRow" value="{!0}" /> 
+          <apex:repeat value="{!activeAriaPlans}" var="theAcctPlan">
+              <tr class="{!IF(MOD(planRow,2)=0,'evenrowcolor','oddrowcolor')}">
+                <td width="25%" height="34" bgcolor="#FFFFFF">{!theAcctPlan.Name}</td> 
+                <td width="40%" bgcolor="#FFFFFF">{!theAcctPlan.Client_Plan__r.Description__c}</td>
+                <td width="20%" bgcolor="#FFFFFF">{!theAcctPlan.Client_Plan_Instance_Id__c}</td>
+                <td width="15%" align="right" bgcolor="#FFFFFF"><apex:outputField value="{!theAcctPlan.MMR_Total__c}" /></td>
+              </tr>
+           <apex:variable var="planRow" value="{!planRow+1}" />
+          </apex:repeat>
+          </tbody>
+        </table></div></th>
+      </tr>
+    </table></td>
+  </tr>
+  </apex:outputPanel>
+  
+  <apex:outputPanel rendered="{!mapOfComponents['AccountHierarchy']}"> 
+  <tr>
+    <td height="29" align="center">
+    <table width="80%" border="0" cellspacing="0" cellpadding="8" style="border-left:thin #cccccc solid;border-right:thin #cccccc solid;border-bottom:thin #cccccc solid; border-top: 3px #236fbd solid;">
+      <tr>
+        <th width="18" align="left" style="font-size::18px;"><span class="style6">{!$Label.ARIA_CONNECTOR_SETTINGS_ACCOUNT_HIERARCHY}</span></th>
+      </tr>
+      <tr>
+        <th height="41" align="left">
+        <div style="height:120px;overflow-y:auto;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" class="plantable" id="plantable">
+        <thead>
+          <tr>
+            <th height="34">{!$Label.ARIA_CONNECTOR_SETTINGS_ACCOUNT_NAME} </th>
+            <th>Status</th>
+            <th style="text-align:right">{!$Label.ARIA_HIERARCHY_MRR_TOTAL}</th>
+          </tr>   
+          </thead>
+          <tbody> 
+         <apex:outputPanel layout="none" rendered="{!IF(accountHierarchy.parentId!=null,true,false)}">
+          <tr class="{!IF(accountHierarchy.parent.Aria_Responsibility_Level__c='Standard Self-Pay','selfpay',IF(accountHierarchy.parent.Aria_Responsibility_Level__c='Parent Pay','parentpay','default'))}">
+            <td height="34">&nbsp;&nbsp;<apex:outputlink styleClass="anchornonedecoration" value="/{!accountHierarchy.parentId}" target="_blank">{!accountHierarchy.parent.name}</apex:outputlink> </td>
+            <td>{!accountHierarchy.parent.Aria_Status__c}</td>
+            <td align="right"><apex:outputField value="{!accountHierarchy.parent.Aria_MRR_Total__c}" /></td>
+          </tr> 
+          </apex:outputPanel>  
+          
+          <tr class="{!IF(accountHierarchy.Aria_Responsibility_Level__c='Standard Self-Pay','selfpay',IF(accountHierarchy.Aria_Responsibility_Level__c='Parent Pay','parentpay',''))}">
+            <td height="34" style="{!IF(accountHierarchy.parentId!=null,'padding-left:40px;','')}">&nbsp;&nbsp;{!accountHierarchy.name}</td>
+            <td>{!accountHierarchy.Aria_Status__c}</td>
+            <td align="right"><apex:outputField value="{!accountHierarchy.Aria_MRR_Total__c}" /></td>
+          </tr> 
+          
+           <apex:outputPanel layout="none" rendered="{!IF(accountHierarchy!=null && accountHierarchy.childaccounts!=null && accountHierarchy.childaccounts.size>0,true,false)}">
+          <apex:repeat value="{!accountHierarchy.childaccounts}" var="theAcctChild">
+              <tr class="{!IF(theAcctChild.Aria_Responsibility_Level__c='Standard Self-Pay','selfpay',IF(theAcctChild.Aria_Responsibility_Level__c='Parent Pay','parentpay','default'))}">
+            	<td height="34" style="{!IF(accountHierarchy.parentId!=null,'padding-left:80px;','padding-left:40px;')}">&nbsp;&nbsp;<apex:outputlink styleClass="anchornonedecoration" value="/{!theAcctChild.Id}" target="_blank">{!theAcctChild.name}</apex:outputlink> </td>
+            	<td>{!theAcctChild.Aria_Status__c}</td>
+            	<td align="right"><apex:outputField value="{!theAcctChild.Aria_MRR_Total__c}" /></td>
+          	</tr> 
+          </apex:repeat>
+          </apex:outputPanel> 
+          </tbody> 
+        </table></div></th>
+      </tr>
+    </table></td>
+  </tr>
+  </apex:outputPanel>
+</table>
+<script>
+ $(window).load(function () {
+    $("#rotator").rotator();
+ });
+ 
+ $(document).ready(function(){
+ 	var a = '{!lastExtraCommentonAccount}';
+ 	if(a.length>=1){
+ 		$('.morelink').show();
+ 		$('.page2more').hide();
+ 	}else{
+ 		$('.morelink').hide();
+ 	}
+ 	});
+ 	
+  function ShowComment(){
+  	if($('.page2more').css('display')=='none'){
+  		 $('.page2more').show(); 
+  		 $('.morelink').html('less..'); 
+  	}else{
+  		 $('.page2more').hide(); 
+  		 $('.morelink').html('more..');
+    }
+  }  
+</script>
+</apex:form>
+</apex:page>

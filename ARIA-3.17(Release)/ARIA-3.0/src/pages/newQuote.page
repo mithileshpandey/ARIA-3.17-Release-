@@ -1,0 +1,8 @@
+<apex:page showHeader="false" controller="redirectNewQuoteController"  action="{!redirectPage}">
+ <apex:pageBlock rendered="{!showQuoteError}">
+    <apex:pagemessages id="errorQuoteMessage" ></apex:pagemessages>
+    <apex:form >
+        <apex:commandButton value="Back" immediate="true" action="{!cancel}"></apex:commandButton>
+    </apex:form>
+ </apex:pageBlock>
+</apex:page>

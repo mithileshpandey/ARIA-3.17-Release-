@@ -1,0 +1,69 @@
+<apex:page docType="html-5.0" standardController="Account" extensions="AriaAccountPlanViewerAccountExtension">
+
+<apex:tabPanel switchType="client" selectedTab="activePlans" id="theTabPanel"> 
+    <apex:tab label="{!$Label.ARIA_PAYMENT_ACTIVE_PLANS}" name="activePlans" id="activePlans">
+        <!-- <c:AriaAccountPlanHierarchyViewer accountId1="{!account.Id}" componentContext="Account" rendered="{!!billingGroupEnable}"/> --> 
+        <c:AriaAccountPlanHierarchyBGViewer accountId1="{!account.Id}" componentContext="Account" />
+         
+    </apex:tab> 
+    <apex:tab label="{!$Label.ARIA_PAYMENT_PREVIOUS_MASTER_PLANS}" name="previousMasterPlans" id="previousMasterPlans">
+        <apex:pageBlock >
+                <apex:pageBlockTable value="{!inactiveMasterPlans}" var="theAcctPlan" >
+                    <apex:column >
+                      <apex:facet name="header">{!$Label.ARIA_PLAN_VIEW_PLAN_NAME}</apex:facet>
+                      <apex:outputlabel value="{!theAcctPlan.Client_Plan__r.Name}" escape="false"/>
+                    </apex:column>
+                    <apex:column >
+                      <apex:facet name="header">{!$Label.ARIA_PLAN_VIEW_PLAN_DESCRIPTION}</apex:facet>
+                      
+                      {!theAcctPlan.Client_Plan__r.Description__c}
+
+                    </apex:column>                      
+                    <apex:column width="150">
+                      <apex:facet name="header">{!$Label.ARIA_DISPUTE_UNITS}</apex:facet>
+                      
+                      <apex:outputText id="units" value="{!theAcctPlan.Units__c}"  style="text-align:right;" />
+ 
+                    </apex:column>
+                    <apex:column width="150">
+                      <apex:facet name="header">Status</apex:facet>
+                      <apex:outputText id="planStatus" value="{!theAcctPlan.Status__c}"  style="text-align:right;" />
+                    </apex:column>
+                    
+                    <apex:column width="200">
+                      <apex:facet name="header">Termination Date</apex:facet>
+                      
+                      <apex:outputText id="terminationDate" value="{!theAcctPlan.Termination_Date__c}"  style="text-align:right;" />
+ 
+                    </apex:column>
+                
+                </apex:pageBlockTable>
+        </apex:pageBlock>
+    </apex:tab> 
+    <apex:tab label="{!$Label.ARIA_PAYMENT_SUPPLEMENTAL_PLAN_HISTORY}" name="suplementPlanHistory" id="suplementPlanHistory">
+        <apex:pageBlock >
+                <apex:pageBlockTable value="{!inactiveSuplementalPlans}" var="theAcctPlan" >
+                    <apex:column >
+                      <apex:facet name="header">{!$Label.ARIA_PLAN_VIEW_PLAN_NAME}</apex:facet>
+                      <apex:outputlabel value="{!theAcctPlan.Client_Plan__r.Name}" escape="false"/>
+                    </apex:column>
+                    <apex:column >
+                      <apex:facet name="header">{!$Label.ARIA_PLAN_VIEW_PLAN_DESCRIPTION}</apex:facet>
+                      
+                      {!theAcctPlan.Client_Plan__r.Description__c}
+
+                    </apex:column>                      
+                    <apex:column width="150">
+                      <apex:facet name="header">{!$Label.ARIA_DISPUTE_UNITS}</apex:facet>
+                      
+                      <apex:outputText id="units" value="{!theAcctPlan.Units__c}"  style="text-align:right;" />
+ 
+                    </apex:column>
+                
+                </apex:pageBlockTable>
+        </apex:pageBlock>   
+    </apex:tab>     
+</apex:tabPanel>
+
+
+</apex:page>

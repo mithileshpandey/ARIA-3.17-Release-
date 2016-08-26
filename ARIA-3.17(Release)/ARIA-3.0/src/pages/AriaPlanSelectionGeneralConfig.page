@@ -1,0 +1,321 @@
+<apex:page controller="AriaPlanSelectionConfigCtrl" sidebar="false">
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.Chosen, 'chosen.jquery.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.Chosen, 'docsupport/prism.js')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.Chosen, 'docsupport/prism.css')}"/> 
+<apex:stylesheet value="{!URLFOR($Resource.Chosen, 'chosen.css')}"/>
+	<style> 
+	.planTable { 
+	  	 width:100%; 
+	   border-collapse:collapse; 
+	}
+	.planheader td{
+	    color:#fff;
+	    line-height:26px;
+	    background-color:#a6afa2;
+	    padding-top:1px;
+	    
+	}
+	.planTable td{
+	
+	    padding-top:1px;
+	    border-width: 1px;
+	    border-style:inset;
+	}
+	.checkBoxStyleProfile  { 
+	    width: 17px;
+	    height: 17px;
+	}
+	.checkBoxStyleProfile1  { 
+	    width: 17px;
+	    height: 17px;
+	}
+	.checkBoxStyle{
+	    width: 17px;
+	    height: 17px;
+	}
+	.checkAllcheckbox{
+	    width: 18px;
+	    height: 16px;
+	}
+	.oddrowcolor{
+	    background-color:#FFFFFF;
+	}
+	.evenrowcolor{
+	    background-color:#d0e9f1;
+	}
+	#tabs_container {
+    border-bottom: 1px solid #ccc; 
+    
+}
+	#tabs {
+	    list-style: none;
+	    padding: 5px 0 4px 0;
+	    margin: 0 0 0 20px;
+	    font: 0.90em arial;
+	}
+	#tabs li {
+	    display: inline;
+	}
+	#tabs li a {
+	    border: 1px solid #ccc;
+	    padding: 4px 6px;
+	    text-decoration: none;
+	    background-color: #eeeeee;
+	    border-bottom: none;
+	    outline: none;
+	    border-radius: 5px 5px 0 0;
+	    -moz-border-radius: 5px 5px 0 0;
+	    -webkit-border-top-left-radius: 5px;
+	    -webkit-border-top-right-radius: 5px;
+	    color:#000;
+	}
+	#tabs li a:hover {
+	    background-color: #dddddd;
+	    padding: 4px 6px;
+	}
+	#tabs li.active a {
+	    border-bottom: 1px solid #fff;
+	    background-color: #fff;
+	    padding: 4px 6px 5px 6px; 
+	    border-bottom: none;
+	}
+	#tabs li.active a:hover {
+	    background-color: #eeeeee;
+	    padding: 4px 6px 5px 6px;
+	    border-bottom: none;
+	}
+	#tabs li a.icon_accept:hover {
+	    padding-left: 24px;
+	}
+	
+	#tabs_content_container {
+	    border: 1px solid #ccc;
+	    border-top: none;
+	    padding: 10px;
+	    width: 98.4%;
+	}
+	ul li, ol li {
+	margin-left: 0em;
+	padding-left: 0;
+	}
+	</style>
+	<script>
+		function callBilling(p){
+        if(p == 'BillingTab'){
+            return false;
+        }else{
+            billing();
+            return false;
+        }
+    }
+
+    function callSearchAcct(p){
+        if(p == 'AccountTab'){
+        }else{
+            acctSrch();
+        }
+        return false;
+    }
+    
+    function callGeneralConfig(p){
+        if(p == 'OtherConfigTab'){
+        }else{
+            Call_general();
+        }
+        return false;
+    }
+    
+    function callUsageType(p){
+        if(p == 'usagetypeTab'){
+        }else{
+            usageType();
+        }
+        return false;
+    }
+
+    function callPriceBookConfig(p){
+    
+        if(p == 'PriceBookConfig'){
+        }else{
+
+            PriceBookConfig();
+        }
+        return false;
+    }
+    
+    function callproductSupplementalTab(p){
+    
+        if(p == 'productSupplementalTab'){
+        }else{
+
+            ProductSupplementalTab();
+        }
+        return false;
+    }
+
+ 
+    function callCustomSectionTab(p){
+    
+        if(p == 'customSectionTab'){
+        }else{
+
+            ActCustomSection();
+        }
+        return false;
+    }
+	 function callCustomPermissionTab(p){
+    
+        if(p == 'customPermissionTab'){
+        }else{
+
+            ActCustomPermission();
+        }
+        return false;
+    }
+    
+    function callTaxPercentageTab(p){
+    
+        if(p == 'taxPercentageTab'){
+        }else{
+
+            ActTaxPercentage();
+        }
+        return false;
+    }
+    
+	function callAccountSnapshot(p){
+	        if(p == 'accountsnapshotTab'){
+	        }else{
+	            accountSnapshot();
+	        }
+	        return false;
+	    }
+	</script>
+	<apex:form >
+	<div id="tabs_container">
+            <ul id="tabs">
+                <li><b><a href="/apex/AriaConnectorSettings?t=BillingTab">{!$Label.ARIA_GENERAL_CONFIG_BILLING_OPTIONS}</a></b></li>
+                <li><b><a href="/apex/AriaConnectorSettings?t=accttab">{!$Label.ARIA_GENERAL_CONFIG_SEARCH_ACCOUNT}</a></b></li>
+                <li><b><a href="/apex/AriaConnectorSettings?t=othrConfigtab">{!$Label.ARIA_GENERAL_CONFIG_OTHER_CONFIGS}</a></b></li>
+                <li><b><a href="/apex/AriaConnectorSettings?t=usagetypeTab">{!$Label.ARIA_GENERAL_CONFIG_USAGE_TYPES}</a></b></li>
+                <li><b><a href="/apex/AriaConnectorSettings?t=ScreenConfigTab">{!$Label.ARIA_GENERAL_CONFIG_SCREEN_CONFIG}</a></b></li>
+                <!-- <li><b><a href="/apex/AriaConnectorSettings?t=DiscountTab">{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_DISCOUNT_RULES}</a></b></li> -->
+                <apex:outputPanel rendered="{!refreshFromAria}"><li><b><a href="/apex/AriaConnectorSettings?t=accountsnapshotTab">{!$Label.ARIA_GENERAL_CONFIG_QUICK_VIEW}</a></b></li></apex:outputPanel>
+                <li class="active"><b><a href="#">{!$Label.ARIA_GENERAL_CONFIG_PLAN_SELECTION}</a></b></li>
+                <li><b><a href="/apex/AriaConnectorSettings?t=PriceBookConfigTab">{!$Label.ARIA_GENERAL_CONFIG_PRICE_BOOK_CONFIG}</a></b></li> 
+                <li><b><a href="/apex/AriaConnectorSettings?t=customSectionTab">{!$Label.ARIA_GENERAL_CONFIG_CUSTOM_SECTION}</a></b></li>
+                <li><b><a href="/apex/AriaTaxPercentage">Tax Percentage</a></b></li>
+				<li><b><a href="/apex/AriaConnectorSettings?t=customPermissionsTab">Custom Permissions</a></b></li>                
+            </ul>
+        </div> <br></br>
+        <apex:pageBlock >
+	<apex:actionstatus id="status">
+    <apex:facet name="start">
+        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 20%;opacity:.8;">
+            <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+            
+            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+        </div>
+    </apex:facet>
+</apex:actionstatus>  
+
+<apex:actionFunction name="nextPlans" action="{!nextPlans}" rerender="planSel" status="status"/>
+<apex:actionFunction name="previousPlans" action="{!previousPlans}" rerender="planSel" status="status"/>
+<apex:actionFunction name="firstPlans" action="{!firstPlans}" rerender="planSel" status="status"/>
+<apex:actionFunction name="lastPlans" action="{!lastPlans}" rerender="planSel" status="status"/>     
+	<apex:outputPanel id="planSel">	
+	<table width="100%" border="0" cellspacing="0" cellpadding="0" class="planTable">
+	<tr>
+	   	 <td colspan="4" style="text-align:center;height:25px;">
+	              	<apex:outputLink disabled="{!!hasPrevious}" onclick="firstPlans();return false;" value=""> <img id="firstPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/first_0.png')}" class="paggingIconExt" title="First"/> </apex:outputLink>
+	              &nbsp;<apex:outputLink disabled="{!!hasPrevious}" onclick="previousPlans();return false;" > <img id="prevPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/previous_0.png')}" class="paggingIconExt" title="Previous"/> </apex:outputLink>
+	              &nbsp;<span class="paggingText"> Showing {!recordCountFrom}-{!recordCountTo} of {!totalNoOfProducts} Products </span>&nbsp;<apex:outputLink disabled="{!!hasNext}" onclick="nextPlans();return false;" value=""> <img id="nextPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/next_0.png')}"  class="paggingIconExt" title="Next"/> </apex:outputLink>
+	              &nbsp;<apex:outputLink disabled="{!!hasNext}" onclick="lastPlans();return false;" > <img id="lastPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/last_0.png')}" class="paggingIconExt" title="Last"/> </apex:outputLink>
+             </td> 
+         </tr>
+		<tr class="planheader">
+		  <td align="center" width="30.7%"><b>{!$Label.ARIA_GENERAL_CONFIG_PLAN}</b></td>
+		  <td align="center" width="10%"><b>Plan Type</b></td>
+		  <td align="center" width="8%" style="display:none;"><b>Is Promotional</b></td>
+		  <td align="center" width="8.5%">
+		       <b>{!$Label.ARIA_GENERAL_CONFIG_ALL_PROFILES}</b> 
+		       <apex:inputcheckbox title="Select all plan" styleclass="checkAllcheckbox" value="{!checkAllCheckBoxes}" onchange="checkallcheckboxes()" />
+		  </td>
+		  <td align="center" width="40%"><b>{!$Label.ARIA_GENERAL_CONFIG_SELECT_PROFILE}</b></td> 
+		</tr> 
+		 
+		 <apex:variable var="planRow" value="{!0}" /> 
+	    <apex:repeat value="{!availablePlans}" var="p">   
+	    
+	     <tr class="{!IF(MOD(planRow,2)=0,'evenrowcolor','oddrowcolor')}"> 
+	         <td width="30.7%" style="{!if(p.planType='S','padding-left: 30px;','')}">&nbsp;&nbsp;&nbsp;<b>{!p.planName}</b></td>
+	         <td align="center" width="10%">{!p.planType}</td>
+	         <td width="8.5%" align="center"><apex:inputCheckbox id="chkAllProfiles" styleClass="checkBoxStyle" value="{!p.isAllProfiles}" onchange="showHideElement(this.checked,'.chosen-container',this.parentNode)"/></td>
+	         <td width="40%" style="padding-left:2px;" >
+	           <div>
+	             <apex:selectList style="width:430px;" tabindex="3" styleClass="chosen-select" title="{!$Label.ARIA_GENERAL_CONFIG_CHOOSE_PROFILE}" size="1" multiselect="true" value="{!p.profileIds}">
+	                 <apex:selectOptions value="{!profileOptions}"></apex:selectOptions>
+	             </apex:selectList>
+	              </div> 
+	        </td>
+	        <apex:variable var="planRow" value="{!planRow + 1}" />     
+	     </tr>
+	     
+	   </apex:repeat> 
+	<tr>
+	    <td colspan="5" align="center">
+	      <apex:commandButton action="{!savePlanVisibility}" style="margin-top:5px;" value="{!$Label.ARIA_PLAN_VIEW_SAVE_CHANGES}" reRender="planSelectionTab" status="status"/>
+	      </td>
+	  </tr>
+	</table>
+	
+	<script>
+	  function checkallcheckboxes(){
+        if($('.checkAllcheckbox').prop("checked") == false){
+            $.each($('.checkBoxStyle'),function(i,v){
+                 $(v).attr("checked",false);
+                 showHideElement(this.checked,'.chosen-container',this.parentNode);
+            });
+        }
+        if($('.checkAllcheckbox').prop("checked") == true){
+            $.each($('.checkBoxStyle'),function(i,v){ 
+                $(v).attr("checked",true);
+                showHideElement(this.checked,'.chosen-container',this.parentNode);
+            });
+        }       
+    } 
+       function hideProfilesInput(){
+          $.each($('.checkBoxStyle'),function(i,v){
+              if($(v).attr("checked")){ 
+                   $(v).parent().next("td").children("div").hide();
+               }
+          });
+       }
+       
+       function showHideElement(isShow,selector,td){
+       
+           if(isShow == true){
+           
+               $(td).next("td").children("div").hide();
+           }
+           else{
+               $(td).next("td").children("div").show();
+           }
+       }
+       var config = {
+         '.chosen-select'           : {},
+         '.chosen-select-deselect'  : {allow_single_deselect:true},
+         '.chosen-select-no-single' : {disable_search_threshold:10},
+         '.chosen-select-no-results': {no_results_text:'Oops, nothing found!'},
+         '.chosen-select-width'     : {width:"95%"}
+       }
+       for (var selector in config) {
+         $(selector).chosen(config[selector]);
+       }
+       hideProfilesInput();
+    </script>
+    </apex:outputPanel>
+    </apex:pageBlock>
+    </apex:form>
+</apex:page>

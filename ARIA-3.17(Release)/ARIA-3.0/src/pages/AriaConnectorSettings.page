@@ -1,0 +1,2131 @@
+<apex:page sidebar="false" controller="AriaConnectorSettingController" id="pg" >
+
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.Chosen, 'chosen.jquery.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.Chosen, 'docsupport/prism.js')}"/>
+<!--
+<apex:stylesheet value="{!URLFOR($Resource.Chosen, 'docsupport/style.css')}"/>-->
+<apex:stylesheet value="{!URLFOR($Resource.Chosen, 'docsupport/prism.css')}"/> 
+<apex:stylesheet value="{!URLFOR($Resource.Chosen, 'chosen.css')}"/> 
+
+<style>
+.divborder tr td{
+        border:0px !important;
+    }
+    
+.checkBoxStyleProfile  { 
+    width: 17px;
+    height: 17px;
+}
+.checkBoxStyleProfile1  { 
+    width: 17px;
+    height: 17px;
+}
+
+#tabs_wrapper {
+    width: 98%;
+    margin:0 auto;
+    margin-top :2px;
+}
+#tabs_container {
+    border-bottom: 1px solid #ccc; 
+    
+}
+#tabs {
+    list-style: none;
+    padding: 5px 0 4px 0;
+    margin: 0 0 0 20px;
+    font: 0.90em arial;
+}
+#tabs li {
+    display: inline;
+}
+#tabs li a {
+    border: 1px solid #ccc;
+    padding: 4px 6px;
+    text-decoration: none;
+    background-color: #eeeeee;
+    border-bottom: none;
+    outline: none;
+    border-radius: 5px 5px 0 0;
+    -moz-border-radius: 5px 5px 0 0;
+    -webkit-border-top-left-radius: 5px;
+    -webkit-border-top-right-radius: 5px;
+    color:#000;
+}
+#tabs li a:hover {
+    background-color: #dddddd;
+    padding: 4px 6px;
+}
+#tabs li.active a {
+    border-bottom: 1px solid #fff;
+    background-color: #fff;
+    padding: 4px 6px 5px 6px; 
+    border-bottom: none;
+}
+#tabs li.active a:hover {
+    background-color: #eeeeee;
+    padding: 4px 6px 5px 6px;
+    border-bottom: none;
+}
+#tabs li a.icon_accept:hover {
+    padding-left: 24px;
+}
+
+#tabs_content_container {
+    border: 1px solid #ccc;
+    border-top: none;
+    padding: 10px;
+    width: 98.4%;
+}
+ul li, ol li {
+margin-left: 0em;
+padding-left: 0;
+}
+
+.checkBoxStyle{
+    width: 17px;
+    height: 17px;
+}
+.checkAllcheckbox{
+    width: 18px;
+    height: 16px;
+}
+.oddrowcolor{
+    background-color:#FFFFFF;
+}
+.evenrowcolor{
+    background-color:#d0e9f1;
+}
+
+.planTable {
+   width:100%; 
+   border-collapse:collapse; 
+}
+.planheader td{
+    color:#fff;
+    line-height:26px;
+    background-color:#a6afa2;
+    padding-top:1px;
+    
+}
+.planTable td{
+
+    padding-top:1px;
+    border-width: 1px;
+    border-style:inset;
+}
+
+.permissiontable td{
+
+    padding-top:1px;
+    border-width: 1px;
+    border-style:inset;
+}
+
+.permissiontable tr{
+
+    height : 30px;
+
+}
+
+.per
+.chkboxCls{
+  width: 19px;
+  height: 25px;
+  padding: 0 5px 0 0;
+
+
+  display: block;
+  clear: left;
+}
+  
+ .jSF_Error{
+     border:2px solid #CC0000;
+ }
+ .jSF_Msg{
+     color:#CC0000;
+     margin-top:0px;
+ }
+ .jSF_MsgPosition{
+     color:#CC0000;
+     margin-top:0px;
+     width: 50%;
+     float: left;
+ }
+ .jSF_MsgNavigation{
+     color:#CC0000;
+     margin-top:0px;
+     width: 50%;
+     float: right;
+ }
+  </style>
+  
+<script>
+
+    function toggleProRateCharges(val,hidePanel){
+            if(val == 'Anniversary Date'){
+                document.getElementById(hidePanel).style.display = 'none';
+            }else if(val == 'Begin Immediately'){
+                document.getElementById(hidePanel).style.display = '';
+            }
+    }
+    
+    function toggleProRateStarts(val,lableid, panelid){
+        if(val == 'Yes'){
+             document.getElementById(lableid).style.display = '';
+             document.getElementById(panelid).style.display = '';
+        }else{
+             document.getElementById(lableid).style.display = 'none';
+             document.getElementById(panelid).style.display = 'none';
+        }
+    }
+    
+    function toggleProRateStartsValues(val){
+    
+       
+         if(val == 'Offset Days'){
+             document.getElementById('pg:frm:pb:masterSec:txtOffDays').style.display = '';
+             document.getElementById('pg:frm:pb:masterSec:txtDate').style.display = 'none';
+        }else{
+             document.getElementById('pg:frm:pb:masterSec:txtDate').style.display = '';
+             document.getElementById('pg:frm:pb:masterSec:txtOffDays').style.display = 'none';
+        }
+        
+        if(val == ''){
+             document.getElementById('pg:frm:pb:masterSec:txtDate').style.display = 'none';
+             document.getElementById('pg:frm:pb:masterSec:txtOffDays').style.display = 'none';
+        }
+    
+    }
+    
+    function toggleSuppProRateStartsValues(val){
+    
+       
+         if(val == 'Offset Days'){
+             document.getElementById('pg:frm:pb:SupplementSec:txtOffDays').style.display = '';
+             document.getElementById('pg:frm:pb:SupplementSec:txtDateSupp').style.display = 'none';
+        }else{
+             document.getElementById('pg:frm:pb:SupplementSec:txtDateSupp').style.display = '';
+             document.getElementById('pg:frm:pb:SupplementSec:txtOffDays').style.display = 'none';
+        }
+        
+        if(val == ''){
+             document.getElementById('pg:frm:pb:SupplementSec:txtDateSupp').style.display = 'none';
+             document.getElementById('pg:frm:pb:SupplementSec:txtOffDays').style.display = 'none';
+        }
+    
+    }
+
+    
+        function callScreen(p){
+            
+                if(p == 'ScreenConfigTab'){
+                    return false;
+                }else{
+                    screenConfig();
+                    return false;
+                }
+            }
+            function callDiscount(p){
+                if(p == 'DiscountTab'){
+                    return false;
+                }else{
+                    discount();
+                    return false;
+                }
+            }
+
+    function callBilling(p){
+        if(p == 'BillingTab'){
+            return false;
+        }else{
+            billing();
+            return false;
+        }
+    }
+
+    function callSearchAcct(p){
+        if(p == 'AccountTab'){
+        }else{
+            acctSrch();
+        }
+        return false;
+    }
+    
+    function callGeneralConfig(p){
+        if(p == 'OtherConfigTab'){
+        }else{
+            Call_general();
+        }
+        return false;
+    }
+    
+    function callUsageType(p){
+        if(p == 'usagetypeTab'){
+        }else{
+            usageType();
+        }
+        return false;
+    }
+
+    function callPriceBookConfig(p){
+    
+        if(p == 'PriceBookConfig'){
+        }else{
+
+            PriceBookConfig();
+        }
+        return false;
+    }
+    
+    function callproductSupplementalTab(p){
+    
+        if(p == 'productSupplementalTab'){
+        }else{
+
+            ProductSupplementalTab();
+        }
+        return false;
+    }
+
+ 
+    function callCustomSectionTab(p){
+    
+        if(p == 'customSectionTab'){
+        }else{
+
+            ActCustomSection();
+        }
+        return false;
+    }
+	 function callCustomPermissionTab(p){
+    
+        if(p == 'customPermissionTab'){
+        }else{
+
+            ActCustomPermission();
+        }
+        return false;
+    }
+    
+    /*function callTaxPercentageTab(p){
+    
+        if(p == 'taxPercentageTab'){
+        }else{
+
+            ActTaxPercentage();
+        }
+        return false;
+    }*/
+    
+function callAccountSnapshot(p){
+        if(p == 'accountsnapshotTab'){
+        }else{
+            accountSnapshot();
+        }
+        return false;
+    }
+    function switchToPlanTab(p){
+        if(p == 'planTab'){
+
+
+        }else{
+            planTab();
+
+        }
+        return false;
+    }
+    function EnableDisableAcctContactOpt(val){
+     
+      if(val == true || val == 'true'){
+            $(".contactOpt").removeAttr('disabled');
+        }else{
+            $(".contactOpt").attr('disabled',true);
+            $(".contactOpt").attr('checked',false);
+            $(".contactOpt option:contains('Earliest Created Date')").attr('selected', 'selected');
+        }
+      
+    }
+    function discountFunc111(){
+        var flag = false;
+        $(".discountStyle").each(function(i, val){
+           var x = this.id;
+           var y = document.getElementById(x).value;
+            $(".discountStyle").each(function(j, val1){
+                var z = document.getElementById(this.id).value;
+                if(x!=this.id && y==z){
+                flag=true;
+                //alert(x +'       '+this.id);
+                     //alert(y+'   '+z);
+                     //alert('match'); 
+                     return false;
+                }
+            });
+            //return false;
+        });
+        if(flag){
+             alert('{!$Label.ARIA_GENERAL_CONFIG_SAME_PROFILE_MESSAGE}');
+             return false;
+        }else{
+             discountFuncCall();
+             //return true;
+        }
+    }
+
+    function savePriceBookFunc11(){
+        var flag1 = false;
+        $(".multiCurrEnbldStyle").each(function(i, val){
+           var y = this.value;
+           $(".multiCurrEnbldStyle").each(function(j, val1){
+                var z = this.value;
+                if(i!=j && y==z && y!='' && z!=''){
+                  flag1=true;
+                  return false;
+                }
+            });
+        });
+        
+        var flag2 = false;
+        $(".nonCurrEnbldStyle").each(function(k, val){
+           var y1 = this.value;
+           $(".nonCurrEnbldStyle").each(function(m, val1){
+                var z1 = this.value;
+                if(k!=m && y1==z1 && y1!='' && z1!=''){
+                  flag2=true;
+                  return false;
+                }
+            });
+        });
+        
+        var checkduplicateValue = [];
+        var flag3=false;
+        var optionvalue;
+        $.each($('.defaultPriceChk'),function(i,v){
+            checkduplicateValue.push($(v).val());
+        });
+        var nondefault=[];
+
+        $.each($('.nondefaultCurrency'),function(i,v){
+            nondefault.push($(v).val());
+        });
+        
+        var z=new Array(); 
+        for(var i=0;i<nondefault.length;i++){
+            z = z.concat(nondefault[i]); 
+        }
+        checkduplicateValue = checkduplicateValue.concat(z);
+        
+        
+
+        for(var i=0;i<checkduplicateValue.length;i++){
+            for(var j=i+1;j<checkduplicateValue.length;j++){
+                if(checkduplicateValue[i]!=""){
+                    if(checkduplicateValue[i]==checkduplicateValue[j]){
+                        optionvalue=$(".defaultPriceChk > option[value='"+checkduplicateValue[i]+"']").html();
+                        flag3=true;
+                        break;
+                    }
+                }
+
+
+            }
+        }
+        
+        if(flag1){
+             alert('{!$Label.ARIA_CONNECTOR_SETTINGS_MULTI_CURRENCY_ENABLED_MESSAGE}');
+             return false;
+        }else if(flag2){
+             alert('{!$Label.ARIA_CONNECTOR_SETTINGS_NON_CURRENCY_ENABLED_MESSAGE}');
+             return false;       
+        }else if(flag3){
+            alert('{!$Label.ARIA_CONNECTOR_SETTINGS_CANNOT_SELECT_SAME_CURRENCY_MESSAGE}'+optionvalue);
+            return false;
+        }else{
+            savePriceBookConfigFuncCall();
+        }
+        return false;
+    }
+    function disElement(isDis,td){
+        if(isDis==true){
+            $(td).prev("td").children(".defaultPriceChk").val('');
+            $(td).prev("td").children(".defaultPriceChk").prop("disabled", true);
+        }else{
+            $(td).prev("td").children(".defaultPriceChk").prop("disabled", false);
+        }
+    }
+    
+    function DeleteCustomSection()
+	{
+		var Delete = confirm("Are you sure?")
+		return Delete;
+	}
+    
+</script>
+
+<apex:actionstatus id="status">
+    <apex:facet name="start">
+        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 20%;opacity:.8;">
+            <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+            
+            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+        </div>
+    </apex:facet>
+</apex:actionstatus>             
+<apex:form id="frm">
+    <apex:pagemessages id="pgmsg"></apex:pagemessages>
+
+
+     <apex:actionFunction name="billing" action="{!switchToBillingTab}" reRender="frm" status="status"/>
+     <apex:actionFunction name="acctSrch" action="{!switchToAccountSearch}" reRender="frm" status="status"/>
+     <apex:actionFunction name="Call_general" action="{!switchToGeneralConfig}" reRender="frm" status="status"/>
+     <apex:actionFunction name="usageType" action="{!switchToUsageType}" reRender="frm" status="status"/>
+     <apex:actionFunction name="screenConfig" action="{!switchToScreenTab}" reRender="frm" status="status"/>
+     <apex:actionFunction name="discount" action="{!switchToDiscountTab}" reRender="frm" status="status"/>
+     <apex:actionFunction name="accountSnapshot" action="{!switchToAccountSnapshot}" reRender="frm" status="status"/>     
+     <apex:actionFunction name="planTab" action="{!switchToPlansTab}" reRender="frm" status="status"/>
+     <apex:actionFunction name="PriceBookConfig" action="{!switchToPriceBookConfig}" reRender="frm" status="status"/> 
+     <apex:actionFunction name="ProductSupplementalTab" action="{!switchToProductSupplemental}" reRender="frm" status="status"/> 
+     <apex:actionFunction name="save_S1_Limit" action="{!save_S1_LoadingLimit}" reRender="frm" status="status"/> 
+<!--      <apex:actionFunction name="save_AriaBillingGroup" action="{!save_AriaEnableBillingGroup}" reRender="frm" status="status"/>  -->
+	 <apex:actionFunction name="refreshProductFieldsAction" action="{!refreshProductFields}" status="status" reRender="prodSuppblock" />
+	
+	<apex:actionFunction name="ActCustomSection" action="{!switchToCustomSectionm}" reRender="frm" status="status"/>
+	<apex:actionFunction name="ActTaxPercentage" action="{!switchToTaxPercentage}" reRender="frm" status="status"/>
+	<apex:actionFunction name="ActCustomPermission" action="{!switchToCustomPermission}" reRender="frm" status="status"/>	
+        <div id="tabs_wrapper">
+        
+          <div id="tabs_container">
+            <ul id="tabs">
+                <li class="{!IF(activeTab = 'BillingTab','active','')}"><b><apex:commandLink value="{!$Label.ARIA_GENERAL_CONFIG_BILLING_OPTIONS}" onclick="return callBilling('{!activeTab}');" id="BillingTab"/></b></li>
+                <li class="{!IF(activeTab = 'AccountTab','active','')}"><b><apex:commandLink value="{!$Label.ARIA_GENERAL_CONFIG_SEARCH_ACCOUNT}" onclick="return callSearchAcct('{!activeTab}');" id="accttab"/></b></li>
+                <li class="{!IF(activeTab = 'OtherConfigTab','active','')}"><b><apex:commandLink value="{!$Label.ARIA_GENERAL_CONFIG_OTHER_CONFIGS}" onclick="return callGeneralConfig('{!activeTab}');" id="othrConfigtab"/></b></li>
+                <li class="{!IF(activeTab = 'usagetypeTab','active','')}"><b><apex:commandLink value="{!$Label.ARIA_GENERAL_CONFIG_USAGE_TYPES}" onclick="return callUsageType('{!activeTab}');" id="usagetypeTab"/></b></li>
+                <li class="{!IF(activeTab = 'ScreenConfigTab','active','')}"><b><apex:commandLink value="{!$Label.ARIA_GENERAL_CONFIG_SCREEN_CONFIG}" onclick="return callScreen('{!activeTab}');" id="ScreenConfigTab"/></b></li>
+                <li style="display:none;" class="{!IF(activeTab = 'DiscountTab','active','')}"><b><apex:commandLink value="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_DISCOUNT_RULES}" onclick="return callDiscount('{!activeTab}');" id="DiscountTab"/></b></li>
+                <apex:outputPanel rendered="{!refreshFromAria}"><li class="{!IF(activeTab = 'accountsnapshotTab','active','')}"><b><apex:commandLink value="{!$Label.ARIA_GENERAL_CONFIG_QUICK_VIEW}" onclick="return callAccountSnapshot('{!activeTab}');" id="accountsnapshotTab"/></b></li></apex:outputPanel>
+                <li class="{!IF(activeTab = 'planTab','active','')}"><a href="/apex/AriaPlanSelectionGeneralConfig"><b>{!$Label.ARIA_GENERAL_CONFIG_PLAN_SELECTION}</b></a></li>
+                <li class="{!IF(activeTab = 'priceBookConfig','active','')}"><b><apex:commandLink value="{!$Label.ARIA_GENERAL_CONFIG_PRICE_BOOK_CONFIG}" onclick="return callPriceBookConfig('{!activeTab}');" id="PriceBookConfigTab"/></b></li> 
+                <li class="{!IF(activeTab = 'customSection','active','')}"><b><apex:commandLink value="{!$Label.ARIA_GENERAL_CONFIG_CUSTOM_SECTION}" onclick="return callCustomSectionTab('{!activeTab}');" id="customSectionTab"/></b></li>
+                <li class="{!IF(activeTab = 'taxPercentageTab','active','')}"><b><a href="/apex/AriaTaxPercentage">Tax Percentage</a></b></li>
+		<li class="{!IF(activeTab = 'customPermissionTab','active','')}"><b><apex:commandLink value="Custom Permissions" onclick="return callCustomPermissionTab('{!activeTab}');" id="customPermissionsTab"/></b></li>                
+            </ul>
+        </div>
+    <div id="tabs_content_container">
+        <div id="tab1" class="tab_content" style="display: block;">
+        
+            <apex:pageBlock id="pb" mode="inlineEdit" rendered="{!IF(activeTab = 'BillingTab',true,false)}">
+            
+               
+               <apex:pageBlockSection columns="1" collapsible="true" title="{!$Label.ARIA_GENERAL_CONFIG_MASTER_PLAN}" id="masterSec" >
+               
+                                   <apex:outputPanel layout="block" id="pnlMaster">
+                    <table border="0" class="list " cellspacing="0" cellpadding="0">
+                        <tr class="headerRow ">
+                           
+                            <td>
+                                <apex:outputLabel value="{!$Label.ARIA_GENERAL_CONFIG_BILLING_OPTIONS}"></apex:outputLabel>
+                            </td>
+                        </tr>
+                        <tr>
+                            
+                            <td>
+                                 
+                                 <table border="0" width="100%" cellspacing="0" cellpadding="0" id="tblBillingOptions" class="divborder">
+                                    <tr id="trBeginWhen" >
+                                        <td width="20%"  >
+                                            <apex:outputLabel value="{!$Label.ARIA_GENERAL_CONFIG_BEGIN_WHEN}"></apex:outputLabel>
+                                        </td>
+                                        <td >
+                                            <apex:selectRadio style="border-left:dotted 1px #ccc;" value="{!billingVars.begainWhenMaster}" onclick="toggleProRateCharges(this.value, 'trProrateCharges');" styleClass="divborder" layout="pageDirection" id="rdBeginWhen"  >
+                                                 <apex:selectOption itemValue="Anniversary Date" itemLabel="{!$Label.ARIA_GENERAL_CONFIG_ANNIVERSARY_DATE}"  />
+                                                 <apex:selectOption itemValue="Begin Immediately" itemLabel="{!$Label.ARIA_GENERAL_CONFIG_BEGIN_IMMEDIATELY}" />
+                                            </apex:selectRadio>
+                                        </td>
+                                        </tr>
+                                        <tr><td colspan="2"><hr/></td></tr>
+                                        <tr id="trProrateCharges" style="border: 0px; border-top:solid 1px #ccc;">
+                                        <td style="border: 0px; border-top:solid 1px #ccc;"><apex:outputLabel id="lblProRateCharge" value="{!$Label.ARIA_CONNECTOR_PRO_RATE_CHARGES}"  /></td>
+                                        <td style="border: 0px; border-top:solid 1px #ccc;">
+                                            <apex:outputPanel id="thePanelPRC" style="display:block;" LAyout="block">
+                                                <apex:panelGrid columns="3" id="pnlGrid" styleClass="divborder" style="border:0px; border-left:dotted 1px #ccc;">
+                                                    <apex:selectRadio style="border-right:dotted 1px #ccc;" styleClass="divborder" layout="pageDirection" rendered="true" onclick="toggleProRateStarts(this.value,'pg:frm:pb:masterSec:hideLabel','pg:frm:pb:masterSec:thePanel');" value="{!billingVars.ProRateChargesMaster}" id="rdRateCharge" > <!-- resetProRateStarts(); -->
+                                                         <apex:selectOption itemValue="Yes" itemLabel="{!$Label.ARIA_CONNECTOR_YES}"/>
+                                                         <apex:selectOption itemValue="No"  itemLabel="{!$Label.ARIA_CONNECTOR_NO}"/>
+                                                         <apex:selectOption itemValue="Full Pro-ration"  itemLabel="{!$Label.ARIA_CONNECTOR_FULL_PRO_ROTATION}" />
+                                                         <apex:selectOption itemValue="Charge Pro-ration Only"  itemLabel="{!$Label.ARIA_CONNECTOR_CHANGE_PRO_ROTATION_ONLY}"/>
+                                                         <apex:selectOption itemValue="Credit Pro-ration Only"  itemLabel="{!$Label.ARIA_CONNECTOR_CREDIT_PRO_ROTATION_ONLY}"/>
+                                                    </apex:selectRadio>
+                                                   
+                                                    <apex:outputLabel id="hideLabel" value="Pro-Rate Starts?" />
+                                                    <apex:outputPanel id="thePanel" style="display:; " layout="block">
+                                                        <apex:panelGrid columns="2" style="border-left:dotted 1px #ccc;border-right:dotted 1px #ccc;" >
+                                                            <apex:selectRadio styleClass="divborder" layout="pageDirection" id="rdRateStarts" value="{!billingVars.ProRateStartsMaster}" onclick="toggleProRateStartsValues(this.value)" >
+                                                                 <apex:selectOption itemValue="Offset Days" itemLabel="{!$Label.ARIA_CONNECTOR_OFFSET_MONTHS}"/>
+                                                                 <!-- <apex:selectOption itemValue="Paid Thru Date" itemLabel="Paid Thru Date"/>  -->
+                                                                 <apex:selectOption itemValue="Alternate Date" itemLabel="{!$Label.ARIA_CONNECTOR_ALTERNATE_PRO_RATION_DATE}"/>
+                                                            </apex:selectRadio>
+                                                            <apex:outputPanel >
+                                                                <apex:inputText value="{!billingVars.offSetMonthtxtMaster}" style="display:block;"  id="txtOffDays" maxlength="6" size="5" onKeypress="if (event.keyCode < 44 || event.keyCode > 57 || event.keyCode==45 || event.keyCode==47) event.returnValue = false;" />
+                                                                <br/><br/>
+                                                                <apex:inputText value="{!billingVars.alternateDate}"  style="display:block;" onkeypress="return false;" onfocus="DatePicker.pickDate(false, '{!$Component.txtDate}', false);" id="txtDate" size="11" />
+                                                            </apex:outputPanel>
+                                                        </apex:panelGrid>
+                                                    </apex:outputPanel>
+                                                </apex:panelGrid>
+                                                <apex:actionStatus startText="{!$Label.ARIA_GENERAL_CONFIG_LOADING}" id="myStatus"></apex:actionStatus>
+                                            </apex:outputPanel>
+                                        </td>
+                                    </tr>
+                                        </table>
+                                        </td>
+                       </tr> 
+                         
+                                        
+                    </table>
+                    </apex:outputPanel>
+                </apex:pageBlockSection>        
+
+                
+                
+                <apex:pageBlockSection columns="1" collapsible="true" title="{!$Label.ARIA_GENERAL_CONFIG_SUPPLEMENTAL_PLAN}" id="SupplementSec">
+                    <apex:outputPanel layout="block" style="disabled:true" >
+                    <table border="0" class="list " cellspacing="0" cellpadding="0">
+                        <tr class="headerRow ">
+                            
+                            <td>
+                                 <apex:outputLabel value="{!$Label.ARIA_GENERAL_CONFIG_BILLING_OPTIONS}"></apex:outputLabel>
+                            </td>
+                        </tr>
+                        <tr>
+                            
+                            <td>
+                                 
+                                 <table border="0" width="100%" cellspacing="0" cellpadding="0" id="tblBillingOptions" >
+                                    <tr id="trBeginWhen" >
+                                        <td width="20%" style="border: 0px; " >
+                                            <apex:outputLabel value="{!$Label.ARIA_GENERAL_CONFIG_BEGIN_WHEN}"></apex:outputLabel>
+                                        </td>
+                                        <td style="border: 0px; ">
+                                            <apex:selectRadio style="border-left:dotted 1px #ccc;" value="{!billingVars.begainWhenSupp}" styleClass="divborder" layout="pageDirection" id="rdBeginWhen"  onclick="toggleProRateCharges(this.value, 'trProrateChargesSupp');">
+                                                 <apex:selectOption itemValue="Anniversary Date" itemLabel="{!$Label.ARIA_GENERAL_CONFIG_ANNIVERSARY_DATE}"  />
+                                                 <apex:selectOption itemValue="Begin Immediately" itemLabel="{!$Label.ARIA_GENERAL_CONFIG_BEGIN_IMMEDIATELY}"/>
+                                            </apex:selectRadio>
+                                        </td>
+                                        </tr>
+                                        <tr><td style="border: 0px;" colspan="2"><hr/></td></tr>
+                                        <tr id="trProrateChargesSupp">
+                                        <td style="border: 0px;"><apex:outputLabel id="lblProRateCharge" value="{!$Label.ARIA_CONNECTOR_PRO_RATE_CHARGES}"  /></td>
+                                        <td style="border: 0px;">
+                                            <apex:outputPanel id="thePanelPRC" >
+                                                <apex:panelGrid columns="3" styleClass="divborder" style="border:0px; border-left:dotted 1px #ccc;" >
+                                                    <apex:selectRadio style="border-right:dotted 1px #ccc;" value="{!billingVars.ProRateChargesSupp}" styleClass="divborder" onclick="toggleProRateStarts(this.value,'pg:frm:pb:SupplementSec:hideLabel1','pg:frm:pb:SupplementSec:thePanel1');"  layout="pageDirection" rendered="true" id="rdRateCharge" > <!-- resetProRateStarts(); -->
+                                                         <apex:selectOption itemValue="Yes" itemLabel="{!$Label.ARIA_CONNECTOR_YES}"/>
+                                                         <apex:selectOption itemValue="No"  itemLabel="{!$Label.ARIA_CONNECTOR_NO}"/> 
+                                                        
+                                                    </apex:selectRadio>
+                                                   
+                                                    <apex:outputLabel id="hideLabel1" value="Pro-Rate Starts?" />
+                                                    <apex:outputPanel id="thePanel1" style="display:block; " layout="block">
+                                                        <apex:panelGrid columns="2" style="border-left:dotted 1px #ccc;border-right:dotted 1px #ccc;" >
+                                                            <apex:selectRadio styleClass="divborder" layout="pageDirection" id="rdRateStarts" value="{!billingVars.ProRateStartsSupp}" onclick="toggleSuppProRateStartsValues(this.value);"  >
+                                                                 <apex:selectOption itemValue="Offset Days" itemLabel="{!$Label.ARIA_CONNECTOR_OFFSET_MONTHS}"/>
+                                                                 <!-- <apex:selectOption itemValue="Paid Thru Date" itemLabel="Paid Thru Date"/>  -->
+                                                                 <apex:selectOption itemValue="Alternate Date" itemLabel="{!$Label.ARIA_CONNECTOR_ALTERNATE_PRO_RATION_DATE}"/>
+                                                            </apex:selectRadio>
+                                                            <apex:outputPanel >
+                                                                <apex:inputText value="{!billingVars.offSetMonthtxtSupp}" style="display:block;"  id="txtOffDays" maxlength="6" size="5" onKeypress="if (event.keyCode < 44 || event.keyCode > 57 || event.keyCode==45 || event.keyCode==47) event.returnValue = false;" />
+                                                                <br/><br/>
+                                                                <apex:inputText value="{!billingVars.alternateSupp}"  style="display:block;" onkeypress="return false;" onfocus="DatePicker.pickDate(false, '{!$Component.txtDateSupp}', false);"  id="txtDateSupp" size="11" />
+                                                            </apex:outputPanel>
+                                                        </apex:panelGrid>
+                                                    </apex:outputPanel>
+                                                </apex:panelGrid>
+                                                <apex:actionStatus startText="{!$Label.ARIA_GENERAL_CONFIG_LOADING}" id="myStatus"></apex:actionStatus>
+                                            </apex:outputPanel>
+                                        </td>
+                                    </tr>
+                                        </table>
+                                        </td>
+                       </tr>
+                         
+                                        
+                    </table>
+                    </apex:outputPanel>
+                    <apex:outputPanel layout="block" style="float:right;">
+                        
+                             <apex:commandButton value=" {!$Label.ARIA_PLAN_VIEW_SAVE_CHANGES}" action="{!SaveChanges}" reRender="frm" status="status"/>&nbsp;&nbsp;&nbsp;
+                             <apex:commandButton value=" {!$Label.ARIA_PLAN_VIEW_RESET_VALUES}" Action="{!ResetValues}" reRender="frm" status="status"/>
+                       
+                       
+                        
+                        
+                        <script>
+                                toggleProRateCharges('{!billingVars.begainWhenMaster}','trProrateCharges');
+                                toggleProRateStarts('{!billingVars.ProRateChargesMaster}', 'pg:frm:pb:masterSec:hideLabel','pg:frm:pb:masterSec:thePanel');
+                                toggleProRateStartsValues('{!billingVars.ProRateStartsMaster}');
+                                
+                                toggleProRateCharges('{!billingVars.begainWhenSupp}','trProrateChargesSupp');
+                                toggleProRateStarts('{!billingVars.ProRateChargesSupp}', 'pg:frm:pb:SupplementSec:hideLabel1','pg:frm:pb:SupplementSec:thePanel1');
+                                toggleSuppProRateStartsValues('{!billingVars.ProRateStartsSupp}');
+                                
+                               
+                            </script>
+                    </apex:outputPanel>
+                </apex:pageBlockSection>         
+            </apex:pageBlock>
+            <!-- Search Account Tab-->
+            <apex:pageBlock rendered="{!IF(activeTab = 'AccountTab',true,false)}" >
+                <apex:pageBlockSection title="{!$Label.ARIA_GENERAL_CONFIG_ENABLE_ACCOUNT_SEARCH}" columns="1"  >
+                   
+                    <apex:pageBlockSectionItem >
+                    
+                    <apex:outputLabel style="font-size:15px;font-family: Arial;" value="{!$Label.ARIA_GENERAL_CONFIG_SEARCH_BY}"></apex:outputLabel>
+                    
+                    <apex:outputPanel layout="block">
+                            <!--   <div class="requiredInput"><div class="requiredBlock">&nbsp;</div><apex:inputCheckbox value="{!acctWrapper.isAcctName}" onclick="EnableDisableAcctContactOpt(this.checked);"  id="chkCompname" /><apex:outputLabel for="chkCompname">Company Name</apex:outputLabel>
+                             </div>-->
+                              <apex:selectList size="1" value="{!acctWrapper.acct_srch_by}" style="width:250px;font-size:14px;padding-left: 10px;" styleClass="acctsrchoptn" onchange="ToggleActSerchOpt(this.value);">
+                                <apex:selectOption itemLabel="{!$Label.ARIA_CONNECTOR_SETTINGS_NONE}" itemValue="--None--"></apex:selectOption>
+                                  <apex:selectOption itemLabel="{!$Label.ARIA_CONNECTOR_SETTINGS_ACCOUNT_NAME}" itemValue="Account Name"></apex:selectOption>
+                                  <apex:selectOption itemLabel="{!$Label.ARIA_CONNECTOR_SETTINGS_CLIENT_ACCOUNT_ID}" itemValue="Client Account Id"></apex:selectOption>
+                                  <apex:selectOption itemLabel="{!$Label.ARIA_CONNECTOR_SETTINGS_USER_ID}" itemValue="User Id"></apex:selectOption>
+                              </apex:selectList>
+                        </apex:outputPanel> 
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem dataStyleclass="srchByAcct" labelStyleClass="srchByAcct" >
+                     <apex:outputLabel ></apex:outputLabel>
+                        <apex:outputPanel layout="block">
+                             <apex:inputCheckbox label="" styleClass="contactOpt" value="{!acctWrapper.isAcctOwnerContact}" id="chbAccountContact"/>
+                             <apex:outputLabel for="chbAccountContact">{!$Label.ARIA_CONNECTOR_SETTINGS_ACCOUNT_OWNER_CONTACT}</apex:outputLabel>
+                             <apex:outputLabel style="padding-left: 200px;">{!$Label.ARIA_CONNECTOR_SETTINGS_IN_CASE_OF_MULTIPLE_ACCOUNTS}</apex:outputLabel>
+                              <apex:selectList size="1"  style="margin-left: 20px;" styleClass="contactOpt" value="{!acctWrapper.pickingCriteria}">
+                                  <apex:selectOption itemLabel="{!$Label.ARIA_CONNECTOR_SETTINGS_EARLIEST_CREATED_DATE}" itemValue="Earliest Created Date"></apex:selectOption>
+                                  <apex:selectOption itemLabel="{!$Label.ARIA_CONNECTOR_SETTINGS_LAST_CREATED_DATE}" itemValue="Last Created Date"></apex:selectOption>
+                                  <apex:selectOption itemLabel="{!$Label.ARIA_CONNECTOR_SETTINGS_EARLIEST_MODIFIED_DATE}" itemValue="Earliest Modified Date"></apex:selectOption>
+                                  <apex:selectOption itemLabel="{!$Label.ARIA_CONNECTOR_SETTINGS_LAST_MODIFIED_DATE}" itemValue="Last Modified Date"></apex:selectOption>
+                              </apex:selectList>
+
+
+
+
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <!-- 
+                    <apex:pageBlockSectionItem dataStyleclass="srchByAcct" labelStyleClass="srchByAcct">
+                     <apex:outputLabel ></apex:outputLabel>
+                        <apex:outputPanel layout="block">
+                             <apex:inputCheckbox label="" styleClass="contactOpt" value="{!acctWrapper.isAcctBillingContact}" id="chbBillingContact"/>
+                             <apex:outputLabel for="chbBillingContact">{!$Label.ARIA_PAYMENT_BILLING_CONTACT}</apex:outputLabel>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                     -->
+                    <apex:pageblockSectionItem >
+                         <apex:outputPanel layout="block" style="float:right;padding-top: 15%;">
+                            
+                            <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_SETTINGS}" action="{!SaveAcctSearchSettings}" reRender="frm" status="status"/>&nbsp;&nbsp;&nbsp;
+                            <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_RESET_VALUES}" action="{!resetAccountSearch}" reRender="frm" status="status"/>
+                            
+                            <script>
+
+                                 ToggleActSerchOpt('{!acctWrapper.acct_srch_by}');
+                                 function ToggleActSerchOpt(val){
+                                     if(val == 'Account Name'){
+                                         $(".srchByAcct").show();
+                                     }else{
+                                         $(".srchByAcct").hide();
+                                     }
+                                 }
+                            </script>
+                        </apex:outputPanel>
+                    </apex:pageblockSectionItem>
+                </apex:pageBlockSection>
+               
+            </apex:pageBlock>
+            
+
+
+
+            <!-- other config setting can display over here -->           
+             <apex:pageBlock rendered="{!IF(activeTab = 'OtherConfigTab',true,false)}" id="othConfPb" >
+                 
+                 <apex:pageBlockSection title="{!$Label.ARIA_GENERAL_CONFIG_ACCOUNT_SECTION}" collapsible="false"  columns="1">
+                    <apex:pageBlockSectionItem id="accountSection">
+                        
+                        <apex:outputLabel style="font-weight: 600;" value="{!$Label.ARIA_GENERAL_CONFIG_ACCOUNT_STATUS}"></apex:outputLabel>
+                           <apex:outputPanel layout="block" id="outpanal">
+                                <apex:outputPanel layout="block" style="float:left;">
+                                  <apex:selectList value="{!def_account_status}" size="1">
+                                      <apex:selectOptions value="{!Account_status}"></apex:selectOptions>
+                                  </apex:selectList>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageblockSectionItem >
+                    		<apex:outputPanel layout="block" style="float:left;white-space:nowrap;">
+                    			<apex:inputCheckbox value="{!enableAccountBillingPopUp}"/> 
+								<apex:outputLabel style="font-weight: bold;" value="Disable New Account Billing Popup for Add/Modify Plans" />
+                    		</apex:outputPanel> 
+                         <apex:outputPanel layout="block" style="float:right;margin-top:30px;">                        
+                            <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_SETTINGS}" action="{!SaveAccountConfig}" reRender="frm" status="status"/>&nbsp;&nbsp;&nbsp;
+                            <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_RESET_VALUES}" rendered="false" action="{!ResetAccountConfig}" reRender="frm" status="status"/>
+                        </apex:outputPanel>
+                    </apex:pageblockSectionItem>
+                </apex:pageBlockSection>
+                
+                <apex:pageBlockSection title="{!$Label.ARIA_GENERAL_CONFIG_CONTRACT_SECTION}" collapsible="false">
+                    <apex:pageBlockSectionItem id="contractCompletion">
+                        
+                        <apex:outputLabel style="font-weight: 600;">{!$Label.ARIA_GENERAL_CONFIG_CONTRACT_COMPLETION}</apex:outputLabel>
+                           <apex:outputPanel layout="block" id="outpanal">
+                                <apex:outputPanel layout="block" style="float:left;">
+                                <apex:selectRadio value="{!contract_completion}"  layout="pageDirection">
+                                    <apex:selectOptions value="{!ContractCompletion}" />
+                                  </apex:selectRadio>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    
+                    
+                    <apex:pageblockSectionItem >
+                         <apex:outputPanel layout="block" style="float:right;padding-top: 15%;">
+                           
+                             <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_SETTINGS}" action="{!save_contractConfig}" reRender="frm" status="status"/>&nbsp;&nbsp;&nbsp;
+                            <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_RESET_VALUES}" rendered="false" action="{!reset_contractConfig}" reRender="frm" status="status"/>
+
+
+
+
+                          
+                        </apex:outputPanel>
+                    </apex:pageblockSectionItem>
+                </apex:pageBlockSection>
+                 
+                 <apex:pageBlockSection title="{!$Label.ARIA_GENERAL_CONFIG_ACCOUNT_UID_PWD}" collapsible="false" columns="1">
+                     <apex:pageBlockSectionItem rendered="{!isMsgActpwusrid}" >
+                         <apex:pagemessages ></apex:pagemessages>
+                     </apex:pageBlockSectionItem>
+                     <apex:pageBlockSectionItem >
+                     <apex:outputLabel ></apex:outputLabel>
+                         
+                         <span style="font-size: 11px;color: #756B6B;word-spacing: .5px;">{!$Label.ARIA_GENERAL_CONFIG_LEAVE_BLANK}</span>
+                     </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem id="acctusrid">
+                        
+                        <apex:outputLabel style="font-weight: 600;" value="{!$Label.ARIA_GENERAL_CONFIG_ARIA_ACCT_UID}"></apex:outputLabel>
+                        <apex:outputPanel layout="block" id="usridPnl">
+                            <apex:outputPanel layout="block" style="float:left;">
+                                <apex:inputText size="30" value="{!aria_acct_usr_id}"/> 
+                            </apex:outputPanel>         
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                         
+                         <apex:outputLabel style="font-weight: 600;" value="{!$Label.ARIA_GENERAL_CONFIG_ARIA_ACCT_PWD}"></apex:outputLabel>
+                        <apex:outputPanel layout="block" id="outpanal">
+                            <apex:inputtext size="30" value="{!aria_acct_pwd}"/>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageblockSectionItem >
+                         <apex:outputPanel layout="block" style="float:right;">
+                            
+                          
+                            <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_SETTINGS}" action="{!Save_acct_Credential}"  reRender="othConfPb" status="status"/>&nbsp;
+                           
+                         </apex:outputPanel>
+                    </apex:pageblockSectionItem>
+                </apex:pageBlockSection>
+                
+                
+                
+                <apex:pageBlockSection title="{!$Label.ARIA_GENERAL_CONFIG_OPP_BEHAVIOUR}" collapsible="false" columns="1">
+                     <apex:pageBlockSectionItem rendered="{!isMsgOppBhv}" >
+                         <apex:pagemessages rendered="{!isMsgOppBhv}"></apex:pagemessages>
+                     </apex:pageBlockSectionItem>
+                     
+                    <apex:pageBlockSectionItem id="oppCreationOpn">
+                         <apex:outputLabel style="font-weight: 600;"></apex:outputLabel>
+                           <apex:outputPanel layout="block" id="outpanal">
+                                <apex:outputPanel layout="block" style="float:left;width: 30%;">
+                                <apex:selectRadio layout="pageDirection" value="{!Opp_mode}" onchange="enableOrderList(this.value);">
+                                    <apex:selectOptions value="{!OppCreationOption}" />
+                                  </apex:selectRadio>
+                                </apex:outputPanel>
+                                <apex:outputPanel layout="block" style=" margin-left: 30%;padding-top:3%; ">
+                                    
+                                    <apex:outputLabel value="{!$Label.ARIA_GENERAL_CONFIG_MULTIPLE_OPP}" ></apex:outputLabel>
+                                      <apex:selectList size="1"  style="margin-left: 10px;" styleClass="ordrBy" value="{!opp_order_by}">
+                                          <apex:selectOption itemLabel="{!$Label.ARIA_CONNECTOR_SETTINGS_EARLIEST_CREATED_DATE}" itemValue="CreatedDate ASC"></apex:selectOption>
+                                          <apex:selectOption itemLabel="{!$Label.ARIA_CONNECTOR_SETTINGS_LAST_CREATED_DATE}" itemValue="CreatedDate DESC"></apex:selectOption>
+                                          <apex:selectOption itemLabel="{!$Label.ARIA_CONNECTOR_SETTINGS_EARLIEST_MODIFIED_DATE}" itemValue="LastModifiedDate ASC"></apex:selectOption>
+                                          <apex:selectOption itemLabel="{!$Label.ARIA_CONNECTOR_SETTINGS_LAST_MODIFIED_DATE}" itemValue="LastModifiedDate DESC"></apex:selectOption>
+                                      </apex:selectList>
+                                </apex:outputPanel>
+                            </apex:outputPanel> 
+                    </apex:pageBlockSectionItem>
+                  
+                    <apex:pageblockSectionItem >
+                         <apex:outputPanel layout="block" style="float:right;">
+                            
+                            
+                            <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_SETTINGS}" reRender="othConfPb" action="{!saveConfigOppCreation}" status="status"/>&nbsp; 
+                           
+                         </apex:outputPanel>
+                    </apex:pageblockSectionItem>
+                </apex:pageBlockSection>
+                <apex:pageBlockSection title="Default value for the commit and saveasdraft" collapsible="false" columns="1">
+                    <apex:pageblockSectionItem >
+                        <apex:outputPanel >
+                            <apex:inputCheckbox value="{!allow_commit}"/>
+                            <apex:outputLabel style="font-weight: 600;" ><b>{!$Label.ARIA_CONNECTOR_SETTINGS_ALLOW_COMMIT}</b></apex:outputLabel>
+                        </apex:outputPanel>
+                    </apex:pageblockSectionItem>
+                    <apex:pageblockSectionItem >
+                        <apex:outputPanel >
+                            <apex:inputCheckbox value="{!allow_Save_As_Draft}"/>
+                            <apex:outputLabel style="font-weight: 600;"><b>{!$Label.ARIA_CONNECTOR_SETTINGS_ALLOW_SAVE_AS_DRAFT}</b></apex:outputLabel>
+                        </apex:outputPanel>
+                    </apex:pageblockSectionItem>
+                    <apex:pageblockSectionItem >
+                         <apex:outputPanel layout="block" style="float:right;">
+                            <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_SETTINGS}" reRender="othConfPb" action="{!saveCommitAttr}" status="status"/>&nbsp; 
+                         </apex:outputPanel>
+                    </apex:pageblockSectionItem>
+                </apex:pageBlockSection>
+                <script>
+                    function enableOrderList(val){ 
+                        $(".ordrBy").attr("disabled", false);
+                        if(val == 'Create New Opportunity'){
+                            $(".ordrBy").attr("disabled", true);    
+                        }
+                    }
+                    enableOrderList('{!Opp_mode}');
+                
+                </script>
+                
+                
+              <apex:pageBlockSection title="{!$Label.ARIA_CONNECTOR_SETTINGS_MOBILE_SEARCH_CONFIG} "  collapsible="false" columns="1">
+                    <apex:pageBlockSectionItem id="maxLoadLimit">
+                        <apex:outputLabel style="font-weight: 600;">
+                            <span class="helpButton">
+                                {!$Label.ARIA_CONNECTOR_SETTINGS_MAX_PLAN_LOADING_LIMIT}
+                                <img src="/s.gif" alt="" class="helpOrb" title="{!$Label.ARIA_CONNECTOR_SETTINGS_MAX_PLAN_LOADING_LIMIT_MSG}"/>
+                            </span>
+                        </apex:outputLabel>
+                        <apex:outputPanel layout="block" id="usridPnl">
+                            <apex:outputPanel layout="block" style="float:left;">
+                                <apex:inputText maxlength="3" size="30" value="{!max_loading_limit}" id="max_loading_limit"/> 
+                            </apex:outputPanel>         
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    
+                    <apex:pageBlockSectionItem id="maxSearchLimit">     
+                        <apex:outputLabel style="font-weight: 600;">
+                            <span class="helpButton">
+                                {!$Label.ARIA_CONNECTOR_SETTINGS_MAX_PLAN_SEARCH_LIMIT}
+                                <img src="/s.gif" alt="" class="helpOrb" title="{!$Label.ARIA_CONNECTOR_SETTINGS_MAX_PLAN_SEARCH_LIMIT_MSG}"/>
+                            </span>
+                        </apex:outputLabel>
+                        <apex:outputPanel layout="block">
+                            <apex:inputtext maxlength="4" size="30" value="{!max_search_limit}" id="max_search_limit"/>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageblockSectionItem >
+                         <apex:outputPanel layout="block" style="float:right;">
+                            <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_SETTINGS}" onClick="validateS1Limit(); return false;"  status="status"/>&nbsp;     
+                         </apex:outputPanel>
+                    </apex:pageblockSectionItem>
+                    
+                     <script>   
+                            function validateS1Limit(){
+                                var max_loading_limit = document.getElementById('{!$Component.maxLoadLimit.max_loading_limit}');
+                                var max_search_limit = document.getElementById('{!$Component.maxSearchLimit.max_search_limit}');
+                                if(max_loading_limit.value.trim() == '' || max_loading_limit.value.trim() == 0){
+                                    alert('Plan loading limit should not be blank or zero');
+                                    return false;
+                                }else if(isPositiveInteger(max_loading_limit.value.trim()) == false ){
+                                    alert('Plan loading limit should be numeric');
+                                    return false;
+                                }else if(max_search_limit.value.trim() == '' || max_search_limit.value.trim() == 0){
+                                    alert('Plan search limit should not be blank or zero');
+                                    return false;
+                                }else if(isPositiveInteger(max_search_limit.value.trim()) == false){
+                                    alert('Plan search limit should be numeric');
+                                    return false;
+                                }else{
+                                    save_S1_Limit();
+                                    return true;
+                                }                              
+                            }
+                            function isPositiveInteger(val) {
+                                    //return val == "0" || ((val | 0) > 0 && val % 1 == 0);
+                                    return !!val.match(/^[0-9]+$/);
+                            }
+                     </script>
+                 </apex:pageBlockSection>
+               
+               
+               <!-- <apex:pageBlockSection title="Billing Group Functionality"  collapsible="false" columns="1">
+                    <apex:pageBlockSectionItem id="maxLoadLimit">
+                        <apex:outputLabel style="font-weight: 600;">Enable</apex:outputLabel>
+                        <apex:outputPanel layout="block" id="usridPnl">
+                            <apex:outputPanel layout="block" style="float:left;">
+                              <apex:inputCheckbox value="{!enableBillingGroup}"/>
+                            </apex:outputPanel>         
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    
+                    <apex:pageblockSectionItem >
+                         <apex:outputPanel layout="block" style="float:right;">
+                            <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_SETTINGS}" onClick="save_AriaBillingGroup(); return false;"  status="status"/>&nbsp;     
+                         </apex:outputPanel>
+                    </apex:pageblockSectionItem>
+                 </apex:pageBlockSection> -->
+                
+            </apex:pageBlock>
+            
+            <!-- this section is for usage type to display and select by users-->
+            <apex:pageBlock rendered="{!IF(activeTab = 'usagetypeTab',true,false)}" id="usagePB">
+                <apex:pagemessages ></apex:pagemessages>
+                <apex:pageBlockSection columns="1" title="{!$Label.ARIA_GENERAL_CONFIG_ANY_USAGE_TYPES}" collapsible="false">
+                    <apex:pageBlockSectionItem >
+                        
+                        <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_REFRESH_USAGE_TYPES}" reRender="usagePB" style="margin-top: 5px;margin-left: 43%;margin-bottom: 20px;" action="{!Refresh_usage_type}" status="status"/>
+                    </apex:pageBlockSectionItem>
+                    
+                    <apex:pageBlockSectionItem id="newConSecItm">
+                        <apex:outputLabel ></apex:outputLabel>
+                        <apex:outputPanel layout="block" id="usgtppnl" style="width: 90%;float: left;">
+                                <table width="100%" border="0" cellPadding="0" cellSpacing = "0">
+                                    <tr>
+                                        <td >
+                                            
+                                             <apex:outputLabel ><b>{!$Label.ARIA_GENERAL_CONFIG_AVAILABLE_USAGE_TYPE}</b><br/></apex:outputLabel> 
+                                            <apex:selectList multiselect="true" style="width: 100%;" styleClass="usg_typ" size="20" ondblclick="SelectMoveRows('usg_typ','sel_usg_typ',true)" id="optyItem">
+                                                <apex:selectOptions value="{!user_types}"/>
+                                            </apex:selectList> 
+                                        </td>
+                                        <td style="padding-top: 84px;padding-left: 25px;width:65px;">
+                                            <input name="btn-add" style="width: 35px;font-weight: bold;font-size: 18px;" id="btn-add1" type="button" value=">" onClick="SelectMoveRows('usg_typ','sel_usg_typ',true)" title ="{!$Label.ARIA_GENERAL_CONFIG_MOVE_RIGHT}"/>
+                                            <br/><br/>
+                                            <input width="50px" style="width: 35px;font-weight: bold;font-size: 18px;" name="btn-add" id="btn-remove1" type="button" value="<" onClick="SelectMoveRows('sel_usg_typ','usg_typ',true)" title ="{!$Label.ARIA_GENERAL_CONFIG_MOVE_LEFT}"/>
+                                            <br/><br/>
+                                            <input name="btn-add" style="width: 35px;font-weight: bold;font-size: 18px;" id="btn-add1" type="button" value=">>" onClick="SelectMoveRows('usg_typ','sel_usg_typ',false)" title ="{!$Label.ARIA_GENERAL_CONFIG_MOVE_ALL_RIGHT}"/>
+                                            <br/><br/>
+                                            <input name="btn-add" style="width: 35px;font-weight: bold;font-size: 18px;" id="btn-remove1" type="button" value="<<" onClick="SelectMoveRows('sel_usg_typ','usg_typ',false)" title ="{!$Label.ARIA_GENERAL_CONFIG_MOVE_ALL_LEFT}"/>
+
+                                        </td>
+                                        <td width="50%">
+                                            
+                                            <apex:outputLabel ><b>{!$Label.ARIA_GENERAL_CONFIG_SELECTED_USAGE_TYPE}</b><br/></apex:outputLabel>
+                                            <apex:selectList multiselect="true" size="20" id="selItem" style="margin-top: 5px;width: 78%;float:left;" styleClass="sel_usg_typ" ondblclick="SelectMoveRows('sel_usg_typ','usg_typ',true)">
+                                               <apex:selectOptions value="{!sel_usg_type}"/>
+                                            </apex:selectList>
+                                        </td>
+                                    </tr>
+                                </table>
+                           
+                        </apex:outputPanel>
+                 </apex:pageBlockSectionItem>
+                 <apex:pageBlockSectionItem >
+                 
+                        <apex:outputPanel layout="block" style="text-align:center;">
+                            
+                           
+                                
+                                 <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_SETTINGS}"  action="{!Save_Selected_UsageType}" reRender="usagePB" status="status"/>
+                                <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_CANCEL}"  action="{!switchToUsageType}" style="margin-left: 20px;" reRender="usagePB" status="status"/>
+                                                        
+                            <apex:inputHidden id="sel_usg_itms"  value="{!sel_usage_items_id}"/>
+                            
+                            <script>
+                                function SelectMoveRows(s1,s2,isAll)
+                                    {
+                                        var SS1 = $('.'+s1);
+                                        var SS2 = $('.'+s2);
+                                        var SelID='';
+                                        var Selval='';
+                                        if(isAll){
+                                            $('.'+s1+' option:selected').each( function() {
+                                                $('.'+s2).append("<option value='"+$(this).val()+"'>"+$(this).text()+"</option>");
+                                                $(this).remove();
+                                            });
+                                         }else{
+                                             $('.'+s1+' option').each( function() {
+                                               $('.'+s2).append("<option value='"+$(this).val()+"'>"+$(this).text()+"</option>");
+                                               $(this).remove();
+                                            });
+                                         }
+                                        var options = $('.sel_usg_typ option');
+                                        for(i=0;i<options.length;i++){
+                                            if(Selval.length > 0 )Selval= Selval+ ';';
+                                             Selval+=options[i].value; 
+                                        }
+                                        document.getElementById("{!$Component.sel_usg_itms}").value = Selval;
+                                        
+                                        if(s1 == 'usg_typ' && isAll){
+                                            $('.sel_usg_typ option').sort(NASort).appendTo('.sel_usg_typ');
+                                        }
+                                        else if(s1 == 'sel_usg_typ' && isAll){    
+                                            $('.usg_typ option').sort(NASort).appendTo('.usg_typ');
+                                        }
+                                        
+                                    }
+                                    
+                                    
+                                    function NASort(a, b) {    
+                                        if (a.innerHTML == 'NA') {
+                                            return 1;   
+                                        }
+                                        else if (b.innerHTML == 'NA') {
+                                            return -1;   
+                                        }       
+                                        return (a.innerHTML > b.innerHTML) ? 1 : -1;
+                                    };
+                                                            
+                            </script>
+                            
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    
+                </apex:pageBlockSection>
+            </apex:pageBlock>
+
+
+            <!-- Product Supplemental -->    
+        <apex:pageBlock rendered="false"  id="prodSuppblock"><!-- rendered="{!IF(activeTab = 'productSupplementalTab',true,false)}" -->
+                <apex:pagemessages ></apex:pagemessages>
+                <apex:pageBlockSection columns="1" title="{!$Label.ARIA_CONNECTOR_SETTINGS_ARIA_PRODUCT_SUPPLEMENTAL}" collapsible="false">
+                    <apex:pageBlockSectionItem >
+                        <apex:commandButton value="{!$Label.ARIA_CONNECTOR_SETTINGS_REFRESH_SUPLLEMENTAL_FIELDS}" style="margin-top: 5px;margin-left: 43%;margin-bottom: 20px;" action="{!Refresh_prodSupplemental_type}" status="status" rerender="none"/><!-- oncomplete="refreshProductFieldsAction();"  -->
+                    </apex:pageBlockSectionItem>
+                    
+                    <apex:pageBlockSectionItem id="newConSecItm2">
+                        <apex:outputLabel ></apex:outputLabel>
+                        <apex:outputPanel layout="block" id="usgtppnl2" style="width: 90%;float: left;">
+                                <table width="100%" border="0" cellPadding="0" cellSpacing = "0">
+                                    <tr>
+                                        <td >
+                                             <apex:outputLabel ><b>{!$Label.ARIA_CONNECTOR_SETTINGS_AVAILABLE_FIELDS}</b><br/></apex:outputLabel>
+                                            <apex:selectList multiselect="true" style="width: 100%;" styleClass="prod_typ" size="20" ondblclick="SelectMoveRows('prod_typ','sel_prod_typ',true)" id="optyItem">
+                                                <apex:selectOptions value="{!prod_types}"/>
+                                            </apex:selectList>
+                                        </td>
+                                        <td style="padding-top: 84px;padding-left: 25px;width:65px;">
+                                            <input name="btn-add" style="width: 35px;font-weight: bold;font-size: 18px;" id="btn-add1" type="button" value=">" onClick="SelectMoveRows('prod_typ','sel_prod_typ',true)" title ="{!$Label.ARIA_GENERAL_CONFIG_MOVE_RIGHT}"/>
+                                            <br/><br/>
+                                            <input width="50px" style="width: 35px;font-weight: bold;font-size: 18px;" name="btn-add" id="btn-remove1" type="button" value="<" onClick="SelectMoveRows('sel_prod_typ','prod_typ',true)" title ="{!$Label.ARIA_GENERAL_CONFIG_MOVE_LEFT}"/>
+                                            <br/><br/>
+                                            <input name="btn-add" style="width: 35px;font-weight: bold;font-size: 18px;" id="btn-add1" type="button" value=">>" onClick="SelectMoveRows('prod_typ','sel_prod_typ',false)" title ="{!$Label.ARIA_GENERAL_CONFIG_MOVE_ALL_RIGHT}"/>
+                                            <br/><br/>
+                                            <input name="btn-add" style="width: 35px;font-weight: bold;font-size: 18px;" id="btn-remove1" type="button" value="<<" onClick="SelectMoveRows('sel_prod_typ','prod_typ',false)" title ="{!$Label.ARIA_GENERAL_CONFIG_MOVE_ALL_LEFT}"/>
+
+                                        </td>
+                                        <td width="50%">
+                                            <apex:outputLabel ><b>{!$Label.ARIA_CONNECTOR_SETTINGS_SELECTED_FIELDS}</b><br/></apex:outputLabel>
+                                            <apex:selectList multiselect="true" size="20" id="selItem" style="margin-top: 5px;width: 78%;float:left;" styleClass="sel_prod_typ" ondblclick="SelectMoveRows('sel_prod_typ','prod_typ',true)">
+                                               <apex:selectOptions value="{!sel_prod_type}"/>
+                                            </apex:selectList>
+                                        </td>
+                                    </tr>
+                                </table>
+                           
+                        </apex:outputPanel>
+                 </apex:pageBlockSectionItem>
+                 <apex:pageBlockSectionItem >
+                 
+                        <apex:outputPanel layout="block" style="text-align:center;">
+                            
+                           
+                                
+                                 <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_SETTINGS}"  action="{!Save_Selected_ProductSupplemental}" reRender="prodSuppblock" status="status"/>
+                                <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_CANCEL}"  action="{!switchToProductSupplemental}" style="margin-left: 20px;" reRender="prodSuppblock" status="status"/>
+                                                        
+                            <apex:inputHidden id="sel_prod_itms"  value="{!sel_prod_items_id}"/>
+                            
+                            <script>
+                                function SelectMoveRows(s1,s2,isAll)
+                                    {
+                                        var SS1 = $('.'+s1);
+                                        var SS2 = $('.'+s2);
+                                        var SelID='';
+                                        var Selval='';
+                                        if(isAll){
+                                            $('.'+s1+' option:selected').each( function() {
+                                                $('.'+s2).append("<option value='"+$(this).val()+"'>"+$(this).text()+"</option>");
+                                                $(this).remove();
+                                            });
+                                         }else{
+                                             $('.'+s1+' option').each( function() {
+                                               $('.'+s2).append("<option value='"+$(this).val()+"'>"+$(this).text()+"</option>");
+                                               $(this).remove();
+                                            });
+                                         }
+                                        var options = $('.sel_prod_typ option');
+                                        for(i=0;i<options.length;i++){
+                                            if(Selval.length > 0 )Selval= Selval+ ';';
+                                             Selval+=options[i].value; 
+                                        }
+                                        document.getElementById("{!$Component.sel_prod_itms}").value = Selval;
+                                        
+                                        if(s1 == 'prod_typ' && isAll){
+                                            $('.sel_prod_typ option').sort(NASort).appendTo('.sel_prod_typ');
+                                        }
+                                        else if(s1 == 'sel_prod_typ' && isAll){    
+                                            $('.prod_typ option').sort(NASort).appendTo('.prod_typ');
+                                        }
+                                        
+                                    }
+                                    
+                                    
+                                    function NASort(a, b) {    
+                                        if (a.innerHTML == 'NA') {
+                                            return 1;   
+                                        }
+                                        else if (b.innerHTML == 'NA') {
+                                            return -1;   
+                                        }       
+                                        return (a.innerHTML > b.innerHTML) ? 1 : -1;
+                                    };
+                                                            
+                            </script>
+                            
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    
+                </apex:pageBlockSection>
+            </apex:pageBlock>
+            
+            <!-- screen config tab -->
+            <apex:pageBlock id="pbAddress" mode="inlineEdit" rendered="{!IF(activeTab = 'ScreenConfigTab',true,false)}">
+                <!--<apex:pageBlockSection columns="1" collapsible="true" title="Configure Address Section" id="addressSec" >
+                    <apex:outputPanel layout="block" id="addConfig">
+                    <table width="100%" border="0" cellspacing="2" cellpadding="2">
+                      <tr>
+                        <td width="8%" height="31">&nbsp;</td>
+                        <td width="9%" align="center"><b>Address</b></td> 
+                        <td width="11%" align="center"><b>Existing Contact</b> </td>
+                        <td width="10%" align="center"><b>New Contact</b> </td>
+                        <td align="center" width="8%"><b>All Profiles</b></td>
+                        <td width="17%" align="center"><b>Profiles</b></td>
+                        <td align="left">&nbsp;</td>
+                      </tr>
+                      <apex:repeat value="{!addNewRowAddress}" var="CV">
+                          <tr>
+                            <td height="31">&nbsp;</td>
+                            <td align="center"><apex:inputCheckbox value="{!CV.Address}" styleClass="checkBoxStyle" label="{!CV.Address}" /> </td>
+                            <td align="center"><apex:inputCheckbox value="{!CV.Exist_Contact}" styleClass="checkBoxStyle" label="{!CV.Address}" /></td>
+                            <td align="center"><apex:inputCheckbox value="{!CV.New_Contact}" styleClass="checkBoxStyle" label="{!CV.Address}" /></td>
+                            <td width="8.6%" align="center"><apex:inputCheckbox styleClass="checkBoxStyleProfile" value="{!CV.isAllProfiles}" onchange="showHideElement(this.checked,'.chosen-container',this.parentNode)"/></td>
+                            <td style="position:absolute;">
+                                <apex:selectList tabindex="3" style="width:430px;" styleClass="chosen-select" title="Choose a Profile..." size="1" multiselect="true" value="{!CV.profileIds}">
+                            <apex:selectOptions value="{!profileOptions}"></apex:selectOptions>
+                        </apex:selectList>
+                            </td>
+                            <td align="left">&nbsp;</td>
+                          </tr>
+                      </apex:repeat>
+                      
+                    <tr>
+                        <td height="31" align="left"><apex:commandButton value="+Add More" action="{!AddRowForAddressSettings}" reRender="pbAddress" status="status" /> </td>
+                        <td align="left">&nbsp;</td>
+                        <td align="right"></td>
+                        <td align="left"><apex:commandButton value="Save Settings" action="{!SaveAddressSettings}"  reRender="pbAddress" status="status" style="margin-top:24px;"/> </td>
+                        <td align="left">&nbsp;</td>
+                        <td align="right">&nbsp;</td>
+                        <td align="right"></td>
+                      </tr> 
+                  
+                    </table>
+                    </apex:outputPanel>
+                </apex:pageBlockSection>   
+                     
+                <apex:pageBlockSection columns="1" collapsible="true" title="Configure UI Section" id="uiSec" >
+                    <apex:outputPanel layout="block" id="uiConfig">
+                    <table width="100%" border="0" cellspacing="2" cellpadding="2">
+                      <tr>
+                        <td width="8%" height="31">&nbsp;</td>
+                        <td width="9%" align="center"><b>Billing Options</b> </td>
+                        <td width="11%" align="center"><b>Payments</b></td>
+                        <td width="10%" align="center"><b>One Time Products</b></td>
+                        <td width="8%" align="center"><b>Promotions</b></td>
+                        <td width="10%" align="center"><b>Termed Agreements</b></td>
+                        <td align="center" width="8%"><b>All Profiles</b></td>
+                        <td width="17%" align="center"><b>Profiles</b></td>
+                        <td  align="left">&nbsp;</td>
+                      </tr>
+                      <apex:repeat value="{!addNewRowScreen}" var="CV">
+                      <tr>
+                        <td height="31">&nbsp;</td>
+                        <td align="center"><apex:inputCheckbox value="{!CV.Bill_Sec}" styleClass="checkBoxStyle" label="{!CV.Bill_Sec}" /> </td>
+                        <td align="center"><apex:inputCheckbox value="{!CV.Payment_Sec}" styleClass="checkBoxStyle" label="{!CV.Bill_Sec}" /> </td>
+                        <td align="center"><apex:inputCheckbox value="{!CV.Order_Sec}" styleClass="checkBoxStyle" label="{!CV.Bill_Sec}" /> </td>
+                        <td align="center"><apex:inputCheckbox value="{!CV.Promo_Cd_Sec}" styleClass="checkBoxStyle" label="{!CV.Bill_Sec}" /> </td>
+                        <td align="center"><apex:inputCheckbox value="{!CV.Contract_Sec}" styleClass="checkBoxStyle" label="{!CV.Bill_Sec}" /> </td>
+                        <td width="8.6%" align="center"><apex:inputCheckbox styleClass="checkBoxStyleProfile" value="{!CV.isAllProfiles}" onchange="showHideElement(this.checked,'.chosen-container',this.parentNode)"/></td>
+                                <td style="position:absolute;"><apex:selectList tabindex="3" style="width:430px;" styleClass="chosen-select" title="Choose a Profile..." size="1" multiselect="true" value="{!CV.profileIds}">
+                            <apex:selectOptions value="{!profileOptions}"></apex:selectOptions>
+                        </apex:selectList></td>
+                        <td align="left">&nbsp;</td>
+                      </tr>
+                     </apex:repeat>
+                     
+                      <tr>
+                        <td height="31" align="left"><apex:commandButton value="+Add More" action="{!AddRowForScreenSettings}" reRender="pbAddress" status="status"/></td>
+                        <td align="left">&nbsp;</td>
+                        <td align="right"></td>
+                        <td align="left"><apex:commandButton value="Save Settings" action="{!SavePgSectionSettings}" reRender="pbAddress" status="status" style="margin-top:24px;"/> </td>
+                        <td align="left">&nbsp;</td>
+                        <td align="right">&nbsp;</td>
+                        <td align="right"></td>
+                      </tr>
+                    </table>
+                    </apex:outputPanel>
+                </apex:pageBlockSection>-->
+                
+                <apex:pageBlockSection columns="1" collapsible="true" title="{!$Label.ARIA_GENERAL_CONFIG_ADD_SECTION}" id="addressSec" rendered="false">
+                    <apex:outputPanel layout="block" id="addConfig">
+                    <table width="100%" border="0" cellspacing="2" cellpadding="2">
+                    <tr>
+                   
+                    
+                    <td width="135px"><b>{!$Label.ARIA_GENERAL_CONFIG_ADDRESSES}</b></td>
+                    <td width="120px"><b>{!$Label.ARIA_GENERAL_CONFIG_ALL_PROFILES}</b></td>
+                    <td width="117px"><b>{!$Label.ARIA_GENERAL_CONFIG_SELECT_PROFILE}</b></td>
+                    
+                    </tr>
+                    <apex:repeat value="{!addressValue}" var="cv">
+                    <tr>
+                        <td ><b>{!cv.Name}</b></td>
+                        <td ><apex:inputCheckbox styleClass="checkBoxStyleProfile" value="{!cv.allProfile}" onchange="showHideElement(this.checked,'.chosen-container',this.parentNode)"/></td>
+                            <td>
+                                
+                                <apex:selectList tabindex="3" style="width:430px;" styleClass="chosen-select" title="{!$Label.ARIA_GENERAL_CONFIG_CHOOSE_PROFILE}" size="1" multiselect="true" value="{!cv.selectProfiles}">
+                            <apex:selectOptions value="{!profileOptions}"></apex:selectOptions>
+                        </apex:selectList>
+                        </td>
+                    </tr>
+                    </apex:repeat>
+                     <tr>
+                        <!--<td height="31" align="left"><apex:commandButton value="+Add More" action="{!AddRowForAddressSettings}" reRender="pbAddress" status="status" /> </td>-->
+                        <td align="right"></td>
+                        
+                        <td align="left"><apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_SETTINGS}" action="{!SaveAddressSettings}"  reRender="pbAddress" status="status" style="margin-top:24px;"/> </td>
+                        <td align="left">&nbsp;</td>
+                        <td align="right">&nbsp;</td>
+                        <td align="right"></td>
+                      </tr> 
+                    </table>
+                    </apex:outputPanel>
+                </apex:pageBlockSection>
+                
+                
+                
+                
+                
+                
+                <apex:pageBlockSection columns="1" collapsible="true" title="{!$Label.ARIA_GENERAL_CONFIG_UI_SECTION}" id="uiSec" rendered="false">
+                    <apex:outputPanel layout="block" id="uiConfig">
+                    <table width="100%" border="0" cellspacing="2" cellpadding="2">
+                    <tr>
+                  
+                    
+                    <td width="182px;"><b>{!$Label.ARIA_GENERAL_CONFIG_SCREEN_CONFIG}</b></td>
+                    <td width="112px;"><b>{!$Label.ARIA_GENERAL_CONFIG_ALL_PROFILES}</b></td>
+                    <td width="152px;"><b>{!$Label.ARIA_GENERAL_CONFIG_SELECT_PROFILE}</b></td>
+                    
+                    </tr>
+                    <apex:repeat value="{!screenValue}" var="cv">
+                    <tr>
+                         <td><b>{!cv.Name}</b> </td>                            
+                        <td ><apex:inputCheckbox styleClass="checkBoxStyleProfile" value="{!cv.allProfile}" onchange="showHideElement(this.checked,'.chosen-container',this.parentNode)"/></td>
+                        <td>                            
+                             <apex:selectList tabindex="3" style="width:430px;" styleClass="chosen-select" title="{!$Label.ARIA_GENERAL_CONFIG_CHOOSE_PROFILE}" size="1" multiselect="true" value="{!cv.selectProfiles}"> 
+                            
+                            <apex:selectOptions value="{!profileOptions}"></apex:selectOptions>
+                        </apex:selectList> 
+                        </td>
+                    </tr>
+                    </apex:repeat>
+                    <tr>
+                        <!-- <td height="31" align="left"><apex:commandButton value="+Add More" action="{!AddRowForScreenSettings}" reRender="pbAddress" status="status"/></td>-->
+                        <td align="right"></td>
+                        
+                        <td align="left"><apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_SETTINGS}" action="{!savepgsettings}" reRender="pbAddress" status="status" style="margin-top:24px;"/> </td>
+                        <td align="left">&nbsp;</td>
+                        <td align="right">&nbsp;</td>
+                        <td align="right"></td>
+                      </tr>
+                    </table>
+                    </apex:outputPanel>
+                </apex:pageBlockSection>
+                
+                
+                
+                
+                
+                
+                
+                
+                
+  <!--Connector 2.0 Navigation Settings-->              
+                
+                <apex:pageBlockSection columns="1" collapsible="true" title="{!$Label.ARIA_GENERAL_CONFIG_NAV_UI_SECTION}" id="nvSec" >
+                    <apex:outputPanel layout="block" id="nvConfig">
+                    <table width="100%" border="0" cellspacing="2" cellpadding="2">
+                      <tr>
+                        <td width="2%"><b></b></td> 
+                       
+                        <td width="3%" style="padding-left:4%;"><b>{!$Label.ARIA_ITEM_VIEW_NAME}</b> </td>
+                        <td width="10%" style="padding-left:6%;"><b>{!$Label.ARIA_GENERAL_CONFIG_URL}</b></td>
+                        <td width="3%" style="padding-left:2%;"><b>{!$Label.ARIA_GENERAL_CONFIG_WIDTH}</b></td>
+                        <td width="3%" style="padding-left:2%;"><b>{!$Label.ARIA_GENERAL_CONFIG_HEIGHT}</b></td>
+                        <td width="20%" style="padding-left:7%;"><b>{!$Label.ARIA_GENERAL_CONFIG_POSITION}</b></td>
+                        <td width="4%"><b>{!$Label.ARIA_GENERAL_CONFIG_MANDATORY}</b></td>
+                        <td width="6%"><b>{!$Label.ARIA_GENERAL_CONFIG_ALL_PROFILES}</b></td>
+                        <td width="28%"><b>{!$Label.ARIA_GENERAL_CONFIG_SELECT_PROFILE}</b></td>
+                        
+                        <!--<td align="left">&nbsp;</td>-->
+                      </tr>
+                      <apex:repeat value="{!navigationVars}" var="nv">
+                      <tr>
+                        
+                        <td>
+                         <apex:commandlink rendered="{!navigationVars.size > 1}" onclick="if(!confirm('Are you sure you want to delete this link?')) return false;" action="{!deleteRow}" value="{!$Label.ARIA_GENERAL_CONFIG_DELETE}" id="theCommandLinkDelete" rerender="nvSec" immediate="true" status="status">
+                         <apex:param name="number" value="{!nv.numberId}" assignTo="{!navigationRow}"/>
+                        <!--<apex:param name="url" value="{!nv.Url}" assignTo="{!Url}"/>
+                        <apex:param name="list" value="{!nv.profileIds}" assignTo="{!profileList}"/>
+                        <apex:param name="profile" value="{!nv.isAllProfiles}" assignTo="{!allprofile}"/>-->
+                        </apex:commandlink></td>
+                        <td width="3%" ><apex:inputText value="{!nv.name}"  style="width: 115px;" styleClass="jSF_Required"/></td>
+                        <td width="10%"><apex:inputText value="{!nv.Url}"  style="width: 162px;" styleClass="jSF_Required" /> </td>
+                        <td width="3%"><apex:inputText value="{!nv.width}" style="width: 68px;" styleClass="nvwidth" /> </td>
+                        <td width="3%"><apex:inputText value="{!nv.height}" style="width: 68px;" styleClass="nvheight" /> </td>
+                        <td width="20%"><apex:selectList value="{!nv.set_positionOption}" size="1" style="width: 100px;" styleClass="positionStyle">
+                                        <apex:selectOptions value="{!nv.positionOption}"></apex:selectOptions>
+                                            </apex:selectList>
+                        &nbsp;From&nbsp;<apex:selectList value="{!nv.set_screenOption}" size="1" style="width: 101px;" styleClass="navigationStyle">
+                                        <apex:selectOptions value="{!nv.screenOption}"></apex:selectOptions>
+                                            </apex:selectList>
+                        </td>                   
+                        <td width="4%" style="padding-left:1.5%;"><apex:inputCheckbox value="{!nv.is_Mandatory}" styleClass="checkBoxStyle"/></td>
+                        <td width="6%" style="padding-left:2%;"><apex:inputCheckbox styleClass="checkBoxStyleProfile" value="{!nv.isAllProfiles}" onchange="showHideElement(this.checked,'.chosen-container',this.parentNode)"/></td>
+                        
+                        <td width="28%"><apex:selectList tabindex="3" style="width:332px;" styleClass="chosen-select" title="{!$Label.ARIA_GENERAL_CONFIG_CHOOSE_PROFILE}" size="1" multiselect="true" value="{!nv.profileIds}">
+                            <apex:selectOptions value="{!profileOptions}"></apex:selectOptions>
+                        </apex:selectList>
+                        </td>
+                        <!--<td align="left">&nbsp;</td>-->
+                      </tr>
+                     </apex:repeat>
+                     
+                     <!-- Temp Add New Row for Screen Section -->
+                      <tr>
+                        
+                         <td height="31" align="left" colspan="2"><apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_ADD_MORE}" action="{!AddRowForNavigationSettings}" reRender="nvSec" status="status"/></td>
+                        <td align="left">&nbsp;</td>
+                        <td align="right"></td>
+                        
+                        <td align="left" colspan="2"><apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_SETTINGS}" onclick="if(!validate()) return false;" action="{!SaveNvSectionSettings}" reRender="nvSec" status="status" style="margin-top:24px;"/> </td>
+                        <td align="left">&nbsp;</td>
+                        <td align="right">&nbsp;</td>
+                      </tr>
+                    </table>
+                    </apex:outputPanel>
+                     <script>
+                        function hideProfilesInput(){
+                           $.each($('.checkBoxStyleProfile'),function(i,v){
+                               if($(v).attr("checked")){ 
+                                    $(v).parent().next("td").children("div").hide();
+                                }
+                           });
+                        }
+                        
+                        function showHideElement(isShow,selector,td){
+                            console.log($(td).next("td").children("div"));
+                            //console.log(td);
+                            if(isShow == true){
+                                $(td).next("td").children("div").hide();
+                            }
+                            else{
+                                $(td).next("td").children("div").show();
+                            }
+                        }
+                        var config = {
+                          '.chosen-select'           : {},
+                          '.chosen-select-deselect'  : {allow_single_deselect:true},
+                          '.chosen-select-no-single' : {disable_search_threshold:10},
+                          '.chosen-select-no-results': {no_results_text:'Oops, nothing found!'},
+                          '.chosen-select-width'     : {width:"95%"}
+                        }
+                        for (var selector in config) {
+                          $(selector).chosen(config[selector]);
+                        }
+                        hideProfilesInput();
+                        </script>
+                </apex:pageBlockSection>        
+      
+                        
+            </apex:pageBlock>   
+            <!-- discount tab -->
+            <apex:actionFunction name="discountFuncCall" action="{!SaveDiscountRuleSettings}" reRender="pbDiscount" />
+             <apex:pageBlock id="pbDiscount" mode="inlineEdit" rendered="{!IF(activeTab = 'DiscountTab',true,false)}">
+                <apex:pageBlockSection columns="1" collapsible="true" title="{!$Label.ARIA_CONNECTOR_SETTINGS_DISCOUNT_RULE_SECTION}" id="discountSec" >
+                    <apex:outputPanel layout="block" id="discountConfig">              
+                     <table width="100%" border="1" cellspacing="0" cellpadding="4">
+                        <tr>
+                            <th width="2%" style="text-align:center">&nbsp;</th>
+                            <th width="38%" style="text-align:center">{!$Label.ARIA_CONNECTOR_SETTINGS_DISCOUNT_PROFILES}</th>
+                            <th width="20%" style="text-align:center">{!$Label.ARIA_CONNECTOR_SETTINGS_COMBO_LIMIT} </th>
+                            <th width="20%" style="text-align:center">{!$Label.ARIA_CONNECTOR_SETTINGS_MONTH_SERVICE} </th>
+                            <th width="20%" style="text-align:center">{!$Label.ARIA_CONNECTOR_SETTINGS_STANDARD_SERVICE} </th>
+                        </tr>
+                        <apex:repeat value="{!addDiscountRules}" var="DR">
+                        <tr>
+                            <td width="28">
+                                <apex:inputCheckbox value="{!DR.applyStatus}" styleClass="checkBoxStyle" label="{!DR.applyStatus}" />
+                            </td>
+                            <td align="center">
+                                <apex:selectList value="{!DR.sel_profile}" size="1" style="width: 250px;" styleClass="discountStyle" id="test">
+                                    <apex:selectOptions value="{!ListUserProfiles}"></apex:selectOptions>
+                                </apex:selectList>
+                            </td>
+                            <td align="center"><apex:inputText value="{!DR.comboLimit}" style="width: 100px;"></apex:inputText></td>
+                            <td align="center"><apex:inputText value="{!DR.monthServiceDiscount}" style="width: 100px;"></apex:inputText></td>
+                            <td align="center"><apex:inputText value="{!DR.standardServiceDiscount}" style="width: 100px;"></apex:inputText>%</td>
+                        </tr>
+                        </apex:repeat>
+                        <tr>
+                            <td colspan="5" align="center"><apex:commandButton value="  Save  " onclick="return discountFunc111();" status="status" style="margin-top:24px;"/></td>
+                        </tr>
+                     </table>
+                    </apex:outputPanel>
+                </apex:pageBlockSection>  
+            </apex:pageBlock>  
+
+
+            <!-- Quick View Tab -->
+                <apex:actionFunction name="callActFunc" action="{!readComponentValue}" reRender="snapPanel" status="status"/>
+            <apex:actionFunction name="callActFuncOnChkBox" action="{!saveComponentValues}" reRender="snapPanel" status="status"/>
+            
+            <apex:pageBlock rendered="{!IF(activeTab = 'accountsnapshotTab',true,false)}"  >
+                
+                <!--apex:pageBlockButtons style="float:right;"-->
+                
+                <div style="text-align:center;">
+                    <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_CHANGES}" action="{!save}" reRender="frm" status="status" />
+                </div>
+                
+                
+                <apex:pageBlockSection title="Quick View Components" columns="1"  collapsible="true"  >
+                
+                <!-- --------- Quick view Components starts here by Dhir Kumar ------SFDCDEV-92-----1 April 2015-------- -->
+                
+                 <script>
+                                 
+                if($('.Usagecomp').prop('checked')){                    
+                   $('#usgLim').show();
+                }else{
+                   $('#usgLim').hide();
+                }
+                 
+                 function isNumber(evt) {
+                    evt = (evt) ? evt : window.event;
+                    var charCode = (evt.which) ? evt.which : evt.keyCode;
+                    if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+                        return false;
+                    }
+                    return true;
+                 }
+                 
+                    function showhidepanel(event, outputPanel) {
+                        //alert(event);
+                       if(event==false || event=='false') {
+                            document.getElementById(outputPanel).style.display = 'none';
+                       }else{
+                            document.getElementById(outputPanel).style.display = 'block';
+                       }        
+                    }
+                    </Script>
+                
+                    <apex:pageBlockTable value="{!readQuickViewValues}" width="100%" var="c" id="table">
+                        <apex:column value="{!c.name}" headerValue="Name" width="20%" />
+                        <apex:column headerValue="Component Image" width="40%">
+                            <apex:outputPanel layout="block" style="display: inline;float: left;"><apex:image url="{! URLFOR($Resource.SimCust_Snap, c.imageName) }"/></apex:outputPanel> 
+                            
+                            <apex:outputPanel styleClass="maxusglmt" style="display: inline;float: left;margin-left: 17%;margin-top: 3%;" layout="block" rendered="{!IF(c.name = 'Usages',true,false)}" id="usgLim">
+                            <script>
+                                showhidepanel('{!c.showHide}', '{!$Component.usgLim}');
+                            </script>
+                                <apex:outputLabel value="Set Max Usage limit" for="usgLimit" id="clabel"></apex:outputLabel>&nbsp;&nbsp;&nbsp;
+                                <apex:inputtext styleclass="uasgLimit" id="usgLimit" value="{!c.usageLimit}" onkeypress="return isNumber(event)" html-placeholder="Set Max Usage limit"/>
+                            </apex:outputPanel>
+                        </apex:column>
+                        <apex:column headerValue="Show Hide Component" style="text-align:center;">
+                            <apex:inputCheckbox value="{!c.showHide}" styleclass="inpCheckbox" onchange="showhidepanel(this.checked,'{!$Component.usgLim}');"/>                         
+                        </apex:column>
+                        
+                    </apex:pageBlockTable>
+                   
+                <!-- ------Quick view Components starts here by Dhir Kumar ------SFDCDEV-92-----1 April 2015------ -->
+                
+                    <!-- <apex:pageBlockSectionItem >
+                       <apex:outputLabel ><b>Select Component: </b><br/></apex:outputLabel>
+                       <apex:selectList value="{!accSnapSelectedVal}" size="1" onchange="callActFunc();" styleclass="Usagecomp">
+                            <apex:selectOptions value="{!ListOfAccountSnapComponents}"></apex:selectOptions>  -->
+                           <!-- <apex:actionSupport event="onchange" reRender="snapPanel"/> -->
+                     <!--   </apex:selectList>
+                    </apex:pageBlockSectionItem>
+                    
+                    <apex:outputPanel id="snapPanel">
+                    <script>
+                    
+                    var a = $('.Usagecomp').val(); 
+                    if(a == 'Usages'){ 
+                       $('.usageLim').show();
+                    }else{
+                       $('.usageLim').hide();
+                    }
+                    </script>
+                    <script>
+                        function isNumber(evt) {
+                            evt = (evt) ? evt : window.event;
+                            var charCode = (evt.which) ? evt.which : evt.keyCode;
+                            if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+                                return false;
+                            }
+                            return true;
+                        }
+                    </script>
+                        <apex:outputPanel id="rendPanelVal" rendered="{!renderFlag}">
+                        <table width="100%" border="0" cellspacing="5" cellpadding="5">
+                          <tr>
+                            <td width="27%" height="60">&nbsp;</td>
+                            <td width="73%">
+                                <apex:outputLabel ><b>Component Image: </b><br/></apex:outputLabel>
+                                <apex:image url="{! URLFOR($Resource.SimCust_Snap, accSnapSelectedVal + '.png') }"/>
+                            </td>
+                          </tr>
+                          <tr class="usageLim">
+                              <td>&nbsp;</td>
+                              <td> 
+                                    <apex:outputLabel for="usgLimit1"><b>Usage Limit : </b><br/></apex:outputLabel>
+                                    <apex:inputText id="usgLimit1" value="{!usageLimit}" onkeypress="return isNumber(event)"/ >
+                              </td>
+                          </tr> 
+                          
+                          <tr>
+                            
+                            <td height="40">&nbsp;</td>
+                            <td> 
+                                 <apex:outputLabel for="chbShowHideComp"><b>Show Hide Component: </b><br/></apex:outputLabel>
+                                 <apex:inputCheckbox label="" styleClass="contactOpt" value="{!showHideFlag}" id="chbShowHideComp" onclick="callActFuncOnChkBox();" />
+                            </td>
+                          </tr>
+                        </table>
+                        </apex:outputPanel>
+                    </apex:outputPanel>  -->
+                </apex:pageBlockSection>
+                <div style="text-align:center;">
+                    <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_CHANGES}" action="{!save}" reRender="frm" status="status" />
+                </div>
+            </apex:pageBlock>
+            
+            
+            
+            
+            
+            
+            <!-- plan selection starts here -->
+          <!--   <apex:pageBlock mode="maindetail" rendered="{!IF(activeTab = 'planTab',true,false)}" id="planSelectionTab">
+            	<c:PlanSelectionConfig />
+            </apex:pageBlock> -->
+
+            <!-- PriceBook Tab--> 
+            <apex:pageBlock rendered="{!IF(activeTab = 'priceBookConfig',true,false)}" id="pbConfigBlock">
+                <apex:pagemessages ></apex:pagemessages>
+                
+                <apex:pageBlockSection columns="1" title="{!$Label.ARIA_GENERAL_CONFIG_PRICEBOOK_CONFIG}" collapsible="false">                 
+                    <apex:pageBlockSectionItem id="newConSecItm1">
+                        <apex:outputLabel ></apex:outputLabel>
+                        <apex:outputPanel layout="block" id="usgtppnl1" style="width: 90%;float: left;">
+                                <table width="100%" border="0" cellPadding="0" cellSpacing = "0">
+                                    <tr>
+                                        <td>
+                                            
+                                            <apex:outputLabel ><b>{!$Label.ARIA_GENERAL_CONFIG_AVAILABLE_PRICEBOOKS}</b><br/></apex:outputLabel>
+                                            <apex:selectList multiselect="true" style="height:300px;width: 100%;" styleClass="pb" size="20" ondblclick="SelectMoveRows('pb','sel_pb',true)" id="optyItem">
+                                            <apex:selectOptions value="{!price_book}"/> 
+                                           </apex:selectList>
+                                        </td>
+                                        <td style="padding-top: 84px;padding-left: 25px;width:65px;">
+                                            <input name="btn-add" style="width: 35px;font-weight: bold;font-size: 18px;" id="btn-add1" type="button" value=">" onClick="SelectMoveRows('pb','sel_pb',true)" title ="{!$Label.ARIA_GENERAL_CONFIG_MOVE_RIGHT}"/>
+                                            <br/><br/>
+                                            <input width="50px" style="width: 35px;font-weight: bold;font-size: 18px;" name="btn-add" id="btn-remove1" type="button" value="<" onClick="SelectMoveRows('sel_pb','pb',true)" title ="{!$Label.ARIA_GENERAL_CONFIG_MOVE_LEFT}"/>
+                                            <br/><br/>
+                                            <input name="btn-add" style="width: 35px;font-weight: bold;font-size: 18px;" id="btn-add1" type="button" value=">>" onClick="SelectMoveRows('pb','sel_pb',false)" title ="{!$Label.ARIA_GENERAL_CONFIG_MOVE_ALL_RIGHT}"/>
+                                            <br/><br/>
+                                            <input name="btn-add" style="width: 35px;font-weight: bold;font-size: 18px;" id="btn-remove1" type="button" value="<<" onClick="SelectMoveRows('sel_pb','pb',false)" title ="{!$Label.ARIA_GENERAL_CONFIG_MOVE_ALL_LEFT}"/>
+                                        </td>
+                                        <td width="50%">
+                                            
+                                            <apex:outputLabel ><b>{!$Label.ARIA_GENERAL_CONFIG_SELECTED_PRICEBOOKS}</b><br/></apex:outputLabel>
+                                            <apex:selectList multiselect="true" size="20" id="selItem" style="height:300px;margin-top: 5px;width: 78%;float:left;" styleClass="sel_pb" ondblclick="SelectMoveRows('sel_pb','pb',true)">
+                                               <apex:selectOptions value="{!sel_price_book}"/>
+                                            </apex:selectList> 
+                                        </td>
+                                    </tr>
+                                </table>
+                           
+                        </apex:outputPanel>
+                 </apex:pageBlockSectionItem>
+                 <apex:pageBlockSectionItem >
+                        <apex:outputPanel layout="block" style="text-align:center;">
+                            
+                            
+                            <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_SETTINGS}"  action="{!Save_Selected_PriceBooks}" reRender="pbConfigBlock" status="status"/>
+                            <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_CANCEL}"  action="{!switchToPriceBookConfig}" style="margin-left: 20px;" reRender="pbConfigBlock" status="status"/>
+                            <apex:inputHidden id="sel_pb_itms"  value="{!sel_pb_items_id}"/>
+                            
+                            <script>
+                                var standardPriceBookList = '{!standardPriceBookEntries}';
+                                var standardPBArr = standardPriceBookList.split(',');
+                                function contains(a, obj) {
+                                    for (var i = 0; i < a.length; i++) {
+                                        if (a[i] === obj) {
+                                            return true;
+                                        }
+                                    }
+                                    return false;
+                                }
+                                var Selval='';
+                                var options = $('.sel_pb option');
+                                //alert(options[0].value);
+                                for(i=0;i<options.length;i++){
+                                    if(Selval.length > 0 )Selval= Selval+ ';';
+                                     Selval+=options[i].value; 
+                                }
+                                document.getElementById("{!$Component.sel_pb_itms}").value = Selval;
+                                //alert(document.getElementById("{!$Component.sel_pb_itms}").value);
+                                function SelectMoveRows(s1,s2,isAll)
+                                {
+                                    var SS1 = $('.'+s1);
+                                    var SS2 = $('.'+s2);
+                                    var SelID='';
+                                    var Selval='';
+                                    if(isAll){
+                                        $('.'+s1+' option:selected').each( function() {
+                                             if(contains(standardPBArr,$(this).val())){
+                                                //alert('standard');
+                                             }else{
+                                                 $('.'+s2).append("<option value='"+$(this).val()+"'>"+$(this).text()+"</option>");
+                                                 $(this).remove();
+                                             }
+                                        });
+                                    }else{
+                                         $('.'+s1+' option').each( function() {
+                                            if(contains(standardPBArr,$(this).val())){
+                                                //alert('standard');
+                                            }else{
+                                                $('.'+s2).append("<option value='"+$(this).val()+"'>"+$(this).text()+"</option>");
+                                                $(this).remove();
+                                            }
+                                        });
+                                    }
+                                    var options = $('.sel_pb option');
+                                    for(i=0;i<options.length;i++){
+                                        if(Selval.length > 0 )Selval= Selval+ ';';
+                                         Selval+=options[i].value; 
+                                    }
+                                    document.getElementById("{!$Component.sel_pb_itms}").value = Selval;
+                                    
+                                    if(s1 == 'pb' && isAll){
+                                        $('.sel_pb option').sort(NASort).appendTo('.sel_pb');
+                                    }
+                                    else if(s1 == 'sel_pb' && isAll){    
+                                        $('.pb option').sort(NASort).appendTo('.pb');
+                                    }  
+                                }
+                                function NASort(a, b) {    
+                                    if (a.innerHTML == 'NA') {
+                                        return 1;   
+                                    }
+                                    else if (b.innerHTML == 'NA') {
+                                        return -1;   
+                                    }       
+                                    return (a.innerHTML > b.innerHTML) ? 1 : -1;
+                                };
+                                                        
+                            </script>  
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    
+                </apex:pageBlockSection>
+            </apex:pageBlock>
+            
+              <!-- Custom Section Tab--> 
+            <apex:pageBlock rendered="{!IF(activeTab = 'customSection',true,false)}" id="customSection">
+                <!-- <apex:pagemessages ></apex:pagemessages> -->
+                
+	                    	<table width="100%" border="0" cellspacing="2" cellpadding="4">
+	                    		<tr><td colspan="3" bgcolor="#993" style="color:white;"><b>{!$Label.ARIA_GENERAL_CONFIG_CUSTOM_SECTION}</b></td></tr>
+	                    	</table>
+	                    	<center>
+	                    	<table width="70%" border="0" cellspacing="0" cellpadding="3">
+	                    		<tr>
+	                    			<td><b>Section Name</b></td>
+	                    			<td colspan="2">
+		                    			<div class="requiredInput"><div class="requiredBlock"></div>
+		                    				<apex:inputField style="width:300pt" value="{!objCustomAction.Name}"/>
+		                    			</div>
+	                    			</td>
+	                    		</tr>
+	                    		<tr>
+	                    			<td><b>Visible</b></td>
+	                    			<td colspan="2"><apex:inputField value="{!objCustomAction.Active__c}"/><br/><small>All visible custom section will be display on "Add/Modify Screen"</small> </td>
+	                    		</tr>
+	                    		<tr>
+	                    			<td valign="top">
+	                    				<b>Section Content</b>
+	                    			</td>
+	                    			<td valign="top" colspan="2"><apex:inputField value="{!objCustomAction.Content__c}" style="width:600px;height:100px"/><br/><small>Enter HTML and script content here with tag like &lt;script&gt;&lt;/script&gt;,&lt;html&gt;&lt;/html&gt;</small></td>
+	                    		</tr>
+	                    		<!-- <tr>
+	                    			<td valign="top">
+	                    				<b>Page Section Content</b>
+	                    			</td>
+	                    			<td valign="top" colspan="2"><apex:inputField value="{!objCustomAction.Page_Content__c}" style="width:500px;height:80px"/><br/><small>Enter HTML and script content here with tag like &lt;script&gt;&lt;/script&gt;,&lt;html&gt;&lt;/html&gt;</small></td>
+	                    		</tr> -->
+	                    		<tr>
+	                    			<td><b>Position</b></td>
+	                    			<td colspan="2">
+	                    				<apex:selectList size="1" value="{!objCustomAction.Position_Alignment__c}">
+                                        	<apex:selectOptions value="{!LstPositionOption}"></apex:selectOptions>
+                                        </apex:selectList>
+                                        &nbsp;&nbsp;From&nbsp;&nbsp;
+                                        <apex:selectList size="1" value="{!objCustomAction.Position_Option__c}" >
+                                        	<apex:selectOptions value="{!LstScreenOption}"></apex:selectOptions>
+                                        </apex:selectList>
+	                    			</td>
+	                    		</tr>
+	                    		<tr>
+	                    			<td valign="top"><b>Custom Header Name</b></td>
+	                    			<td colspan="2"><apex:inputField style="width:300pt" value="{!objCustomAction.Header_Name__c}"/><br/><small>To display section header from custom label, Enter custom label name.<br/><span style="color:red">Please make sure that custom label name defined correctly.</span></small></td>
+	                    		</tr>
+	                    		<tr>
+	                    			<td valign="top" height="30"><b>Profile Access</b></td>
+	                    			<td>
+	                    				<apex:inputCheckbox styleClass="checkBoxStyleProfile1" value="{!allProfileCustSection}" onchange="showHideElement_cs(this.checked,'.chosen-container',this.parentNode)"/>
+	                    			</td>
+	                    			<td>
+	                    				<apex:selectList tabindex="3" style="width:430px;" styleClass="chosen-select" title="{!$Label.ARIA_GENERAL_CONFIG_CHOOSE_PROFILE}" size="1" multiselect="true" value="{!selectProfileCustSection}"> 
+                           			 		<apex:selectOptions value="{!profileOptions}"/>
+                           			 	</apex:selectList> 
+	                    			</td>
+	                    		</tr>
+	                    		<tr>
+	                    			<td valign="top"><b>Button Label</b></td>
+	                    			<td colspan="2"> 
+	                    				<apex:inputField style="width:200pt" value="{!objCustomAction.Button_Label__c}"/>
+	                    				&nbsp;<b>Button URL</b> &nbsp; <apex:inputField style="width:200pt" value="{!objCustomAction.Button_URL__c}"/>
+	                    			</td>
+	                    		</tr>
+	                    		<tr colspan="2">
+	                    			<td valign="top"><b>Show Button</b> 
+	                    			
+	                    			</td>
+	                    			
+	                    			<td valign="top" colspan="2"><apex:inputField value="{!objCustomAction.Show_Custom_Button__c}"/><b>Custom</b> 
+	                    			<apex:inputField value="{!objCustomAction.Show_Preview_Button__c}"/><b>Refresh</b>
+	                    			
+	                    				
+	                    			</td>
+	                    		</tr>
+	                    		
+	                    		<tr><td colspan="3"><center>
+	                    			<apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_SAVE_CHANGES}" reRender="frm" status="status" action="{!saveCustomSection}"/>
+	                    			&nbsp;&nbsp;<apex:commandButton value="Reset" reRender="frm" status="status" action="{!resetCustomSection}"/>
+	                    			</center></td></tr>
+	                    	</table> 
+	                    	<br/>
+	                    	<!-- Page Block table will come -->
+	                    	  <apex:outputPanel rendered="{!if(lstAriaWarpperCustomSection.size>0,true,false)}">
+	                    	<apex:actionFunction name="deleteFunct" action="{!switchToCustomSectionm}" reRender="frm" status="status"/>
+	                    	<apex:pageBlockTable value="{!lstAriaWarpperCustomSection}" var="obj">
+	                    		<apex:column headerValue="Action">
+	                    			<apex:commandLink action="{!editCustomSection}" reRender="frm" status="status">
+	                    				<strong>Edit</strong>
+	                    				<apex:param name="secId" value="{!obj.objCustSection.id}"/> 
+	                    			</apex:commandLink>
+	                    			| 
+		                    		<apex:commandLink onclick="javascript:return DeleteCustomSection()" action="{!deleteCustomSection}">
+										<strong>Delete</strong>
+										<apex:param name="secId" value="{!obj.objCustSection.id}"/>
+									</apex:commandLink>
+													
+	                    		</apex:column>
+	                    		<apex:column headerValue="Name">
+	                    			<apex:outputField value="{!obj.objCustSection.Name}"/>
+	                    		</apex:column>
+	                    		<apex:column headerValue="Position" rendered="{!if((obj.objCustSection.Position_Alignment__c!=null && obj.objCustSection.Position_Option__c!=null),true,false)}">
+	                    			<apex:outputField value="{!obj.objCustSection.Position_Alignment__c}"/>&nbsp;of&nbsp;<apex:outputField value="{!obj.objCustSection.Position_Option__c}"/>
+	                    		</apex:column>
+	                    		<apex:column headerValue="Position" rendered="{!if(obj.objCustSection.Position_Alignment__c==null,true,false)}">
+	                    			&nbsp;
+	                    		</apex:column>
+	                    		<apex:column headerValue="Profile">
+	                    			<apex:outputText value="{!obj.strProfileName}" escape="false"/>
+	                    		</apex:column>
+	                    		<apex:column headerValue="Show Button">
+	                    			<apex:outputField value="{!obj.objCustSection.Show_Custom_Button__c}"/>
+	                    			<b>Cus</b>
+	                    			<apex:outputField value="{!obj.objCustSection.Show_Preview_Button__c}"/>
+	                    			<b>Refresh</b>
+	                    		</apex:column>
+	                    		<apex:column headerValue="Visible">
+	                    			<apex:outputField value="{!obj.objCustSection.Active__c}"/>
+	                    		</apex:column>
+	                    		<apex:column headerValue="Preview">
+	                    			<apex:commandLink onclick="javascript:return previewMe('{!obj.objCustSection.Id}','main');">
+	                    				<strong >Preview</strong>
+	                    			</apex:commandLink>
+	                    		</apex:column>
+	                    		<!-- <apex:column headerValue="Preview Page Content">
+	                    			<apex:commandLink onclick="javascript:return previewMe('{!obj.objCustSection.Id}','page');">
+	                    				<strong >Show</strong>
+	                    			</apex:commandLink>
+	                    		</apex:column> -->
+	                    		<apex:column headerValue="Button URL" >
+	                    		<apex:outputLink value="{!obj.objCustSection.Button_URL__c}" target="_new">{!obj.objCustSection.Button_Label__c}</apex:outputLink>
+	                    		</apex:column>
+	                    	</apex:pageBlockTable>
+	                    	</apex:outputPanel>
+	               			</center>
+	               	
+	               	
+	       			<script>
+                        function hideProfilesInput(){
+                           $.each($('.checkBoxStyleProfile1'),function(i,v){  
+                               if($(v).attr("checked")){ 
+                                    $(v).parent().next("td").children("div").hide();
+                                }
+                           });
+                        }
+                        
+                        function showHideElement_cs(isShow,selector,td){
+                            console.log($(td).next("td").children("div"));
+                            //console.log(td);
+                            if(isShow == true){
+                                $(td).next("td").children("div").hide();
+                            }
+                            else{
+                                $(td).next("td").children("div").show();
+                            }
+                        }
+                        var config = {
+                          '.chosen-select'           : {},
+                          '.chosen-select-deselect'  : {allow_single_deselect:true},
+                          '.chosen-select-no-single' : {disable_search_threshold:10},
+                          '.chosen-select-no-results': {no_results_text:'Oops, nothing found!'},
+                          '.chosen-select-width'     : {width:"95%"}
+                        }
+                        for (var selector in config) {
+                          $(selector).chosen(config[selector]);
+                        }
+                        hideProfilesInput();
+                        </script>
+                        
+                        		
+            </apex:pageBlock>
+            
+             <!-- <apex:actionFunction name="changeTaxTab" rerender="taxBlock" status="status" >
+            <apex:param name="taxTabName" value="" assignTo="{!taxTabName}" />
+            </apex:actionFunction>
+            
+           <apex:pageBlock mode="maindetail" rendered="{!activeTab = 'taxPercentageTab'}" id="taxBlock">
+            	<c:AriaTaxComponent tabName="{!taxTabName}" />
+            </apex:pageBlock> -->
+            
+            <!-- Custom permission starts here -->
+            <apex:pageBlock id="customPermissionTab" rendered="{!IF(activeTab = 'customPermissionTab',true,false)}">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" class="permissiontable">
+                <tr class="planheader">
+                  <td align="center"><b>Permission Description</b></td>
+                  <td align="center"><b>Select Custom Permissions</b></td>
+                </tr>
+                <apex:repeat value="{!customPermissionWrapList}" var="wrap">
+                    <apex:outPutPanel rendered="{!wrap.headerRow}" layout="none">
+                        <tr>
+                            <td colspan="2" style="font-weight:bold;font-size:14px;background:#993;color:#fff">{!wrap.permissionLabel}</td>
+                        </tr>
+                        <apex:repeat value="{!wrap.children}" var="childWrap">
+                            
+                            <tr> 
+                              <td align="left" width="30.7%" style="font-weight:bold;padding-left:30px;">{!childWrap.permissionLabel}</td>
+                              <td align="center" width="30%">
+                                  <apex:selectList value="{!childWrap.selectedCustomPermission}"  styleClass="chosen-select" size="1" multiselect="true" title="Select Custom Permissions" style="width:332px;">
+                                        <apex:selectOptions value="{!customPermissionsSelect}"></apex:selectOptions>
+                                  </apex:selectList>
+                              </td>
+                          </tr>
+                       </apex:repeat>
+                    </apex:outPutPanel>
+                    <apex:outPutPanel rendered="{!!wrap.headerRow}" layout="none">
+                        <tr> 
+                          <td align="left" width="30.7%" style="font-weight:bold;">{!wrap.permissionLabel}</td>
+                          <td align="center" width="30%">
+                          <apex:selectList value="{!wrap.selectedCustomPermission}"  styleClass="chosen-select" size="1" multiselect="true" title="Select Custom Permissions" style="width:332px;">
+                                <apex:selectOptions value="{!customPermissionsSelect}"></apex:selectOptions>
+                          </apex:selectList>
+                          </td>
+                          
+                        </tr>
+                    </apex:outPutPanel>
+                </apex:repeat>
+                <tr>
+                    <td colspan="5" align="center">
+                      <apex:commandButton action="{!saveCustomPermission}" value="{!$Label.ARIA_PLAN_VIEW_SAVE_CHANGES}" style="margin-top: 5px;margin-bottom: 5px;" reRender="customPermissionTab" status="status"/>
+                    </td>
+                </tr>
+            </table>
+            <script>
+                var config = {
+                          '.chosen-select'           : {placeholder_text_multiple:'Select Custom Permissions'},
+                          '.chosen-select-deselect'  : {allow_single_deselect:true},
+                          '.chosen-select-no-single' : {disable_search_threshold:10},
+                          '.chosen-select-no-results': {no_results_text:'Oops, nothing found!'},
+                          '.chosen-select-width'     : {width:"95%"}
+                        }
+                        for (var selector in config) {
+                          $(selector).chosen(config[selector]);
+                        }
+            </script>
+            </apex:pageBlock>
+            <div class="white_content" id="htmlPreviewer"> 
+				<p align="right"><a href = "javascript:void(0)" onclick = "closeMe();"><strong style="color:red">Close</strong></a></p>
+				<div id="">
+			 		<iframe id="previewerBody" style="margin-top:0pt;width:100%;height:260pt;border:0px solid white" scrolling="yes"/>	
+            	</div>
+			</div> 
+			<div id="fade" class="black_overlay"></div>
+            
+            <script>
+            	function previewMe(idVal,prev){
+            		$('#previewerBody').attr('src','/apex/ASF3__AriaCustomSectionPreview?id='+idVal+'&page='+prev);
+            		//$('#previewerBody').html(htmlContent);
+            		$('#fade').show();
+            		$('#htmlPreviewer').show();
+            		
+            		return false;
+            	}
+            	function closeMe(){
+            		$('#previewerBody').html('');
+            		$('#htmlPreviewer').hide();
+            		$('#fade').hide();
+            	}
+            </script>
+            <style> 
+            .black_overlay{ 
+            	display: none; 
+            	position: absolute; 
+            	top: 0%; 
+            	left: 0%; 
+            	width: 100%; 
+            	height: 100%; 
+            	background-color: #D3D3D3; 
+            	z-index:1001; 
+            	-moz-opacity: 0.8; 
+            	opacity:.80; 
+            	filter: alpha(opacity=80); 
+            } 
+            .white_content { 
+            	display: none; 
+            	position: absolute; 
+            	top: 25%; 
+            	left: 25%; 
+            	width: 50%; 
+            	height: 50%; 
+            	padding: 16px; 
+            	border: 2px solid black; 
+            	background-color: white; 
+            	z-index:1002; 
+            	overflow: auto; 
+            } 
+            </style>
+         </div>
+    </div>
+
+    </div>
+    <script>
+    $(document).ready(function(){
+        $('.nvwidth,.nvheight').keypress(function(event){
+           if(event.which != 8 && isNaN(String.fromCharCode(event.which))){
+               event.preventDefault(); //stop character from entering input
+           }
+       });
+    });
+    </script>
+    <script>
+      function validate(){
+          var isError = true;
+          $(".jSF_Required").each(function(i,v){
+              if(!$(v).val()) {
+                    isError = false;
+                     if(!$(v).hasClass("jSF_Error") ){
+                          $(v).addClass("jSF_Error");
+                          $(v).parent().append("<p class='jSF_Msg'>This field is required.</p>");  
+                     }                                         
+              }else{
+                      $(v).removeClass("jSF_Error");
+                      $(v).parent().find(".jSF_Msg").remove();
+             }
+          });
+           $(".navigationStyle").each(function(i,v){
+              if($(v).val() == '--None--') {
+                    isError = false;
+                     if(!$(v).hasClass("jSF_Error") ){
+                          $(v).addClass("jSF_Error");
+                            $(v).parent().append("<p class='jSF_MsgNavigation'>This field is required.</p>");
+                     }                                         
+              }else{
+                      $(v).removeClass("jSF_Error");
+                      $(v).parent().find(".jSF_MsgNavigation").remove();
+             }
+          });
+           $(".positionStyle").each(function(i,v){
+              if($(v).val() == '--None--') {
+                    isError = false;
+                     if(!$(v).hasClass("jSF_Error") ){
+                          $(v).addClass("jSF_Error");
+                          $(v).parent().append("<p class='jSF_MsgPosition'>This field is required.</p>");
+                     }                                         
+              }else{
+                      $(v).removeClass("jSF_Error");
+                      $(v).parent().find(".jSF_MsgPosition").remove();
+             }
+          });
+          return isError;        
+    }
+    
+    
+    function checkallcheckboxes(){
+        if($('.checkAllcheckbox').prop("checked") == false){
+            $.each($('.checkBoxStyle'),function(i,v){
+                 $(v).attr("checked",false);
+                 showHideElement(this.checked,'.chosen-container',this.parentNode);
+            });
+        }
+        if($('.checkAllcheckbox').prop("checked") == true){
+            $.each($('.checkBoxStyle'),function(i,v){ 
+                $(v).attr("checked",true);
+                showHideElement(this.checked,'.chosen-container',this.parentNode);
+            });
+        }       
+    }
+ 
+  </script>
+  
+</apex:form> 
+<script>
+</script>       
+</apex:page>

@@ -1,0 +1,817 @@
+<apex:page docType="html-5.0" sidebar="false" controller="AriaAccountPlanWizardPlanConfigCtrl"  tabStyle="Account" id="thePlanConfigPage" showheader="false">
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'collapse.css')}" /> 
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" /> 
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.js"></script>
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css"/>
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/tooltip.css')}"/>
+
+<script> 
+$j = jQuery.noConflict(); 
+</script> 
+<style>
+                .scrollDiv { 
+                background: #f8f8f8;
+                min-height: 330px; 
+            max-height: 330px; /* you will need to pass height from main page and this height will be less than 40px as pe main page dialog height*/
+            overflow-y: auto;
+            position:relative;
+                }
+                .button:hover {  
+                    text-decoration: none;
+                }
+                .button, .button:focus {
+                    display: inline-block;
+                    zoom: 1;
+                    vertical-align: baseline;
+                    outline: none;
+                    cursor: pointer;
+                    text-align: center;
+                    text-decoration: none;
+                    font: 14px/100% Arial, Helvetica, sans-serif;
+                    padding: .35em .5em .5em;
+                    text-shadow: 0 1px 1px rgba(0,0,0,.3);
+                    -webkit-border-radius: .5em;
+                    -moz-border-radius: .5em;
+                    border-radius: .3em;
+                    -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+                    -moz-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+                    box-shadow: 0 1px 2px rgba(0,0,0,.2);
+                }
+                .blue, .blue:focus{
+                        float:right;
+                    color: #fff;
+                    border: solid 1px #0076a3;
+                    background: #428bca;
+                    background: -webkit-gradient(linear, left top, left bottom, from(#00adee), to(#0078a5));
+                    background: -moz-linear-gradient(top, #00adee, #0078a5);
+                    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#00adee', endColorstr='#0078a5');
+                }
+                .blue:hover {
+                    background: #007ead;
+                    background: -webkit-gradient(linear, left top, left bottom, from(#0095cc), to(#00678e));
+                    background: -moz-linear-gradient(top, #0095cc, #00678e);
+                    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0095cc', endColorstr='#00678e');
+                }
+                .white {
+                    color: #606060;
+                    border: solid 1px #b7b7b7;
+                    background: #fff;
+                    background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#ededed));
+                    background: -moz-linear-gradient(top, #fff, #ededed);
+                    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#ededed');
+                }
+                .white:hover {
+                    background: #ededed;
+                    background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#dcdcdc));
+                    background: -moz-linear-gradient(top, #fff, #dcdcdc);
+                    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#dcdcdc');
+                }
+                table.planConfigTable{
+                        width: 97%;
+                        margin-left:10px;
+                        margin-top:4px;
+                        border-spacing:7px;
+                        
+                }
+                table.planConfigTable tr{
+                        width:20%
+                        
+                }
+                table.planConfigTable td{
+                    font-weight:bold;
+                    font-family:arial;
+                    padding-top:15px;
+                    
+                }
+                .configField { 
+                    width: 43% !important; 
+                    height:81%;
+                }
+                
+                .configselectField{
+                    margin-left:-7% !important;
+                }
+                
+                input[type='text']{
+                    width: 156px;
+                    height: 12px;
+                    border-radius: 3px;
+                    border: 1px solid #CCC;
+                    padding: 7px;
+                    font-weight: 200;
+                    font-size: 13px;
+                    font-family: Verdana;
+                    box-shadow: 1px 1px 5px #CCC;
+                }
+                input[type='text']:hover{
+                box-shadow: 1px 1px 5px #CCC;
+                }
+                select{
+                    //height: 27px;
+                    border-radius: 3px;
+                    border: 1px solid #CCC;
+                    font-weight: 200;
+                    font-size: 13px;
+                    font-family: Verdana;
+                    box-shadow: 1px 1px 5px #CCC;
+                }
+                select: hover{
+                    width: 245px;
+                    height: 24px;
+                    border-radius: 3px;
+                    border: 1px solid #CCC;
+                    font-weight: 200;
+                    font-size: 13px;
+                    font-family: Verdana;
+                    box-shadow: 1px 1px 5px #CCC;
+                }
+                .buttonPanel {
+                   padding-top: 11px;
+                   background: #f8f8f8;
+                   padding-bottom: 2px;
+                }
+                .divborder tr td{
+                    border:0px !important;
+                    vertical-align:top !important;
+                }
+                .bPageBlock{
+                    border-top : 0px !important;
+                    border-right : 0px !important;
+                    border-left : 0px !important;
+                    border-bottom : 0px !important;
+                }
+                .table{
+                    border-color: white !important;
+                }
+                .bPageBlock .detailList tr td {
+                    border-color: #f8f8f8 !important;
+                    border-bottom: 0px !important;
+                }
+                .taxdetails-tooltip.right {
+                    min-width: 300px;
+                    left:120px;;
+                    top: 33%;
+                    margin-top: -33px;
+                    height: 50px;
+                    margin-left: 0px;
+                    opacity: .7;
+                }
+                .taxdetails-tooltip.rightextra {
+                    min-width: 300px;
+                    left:200px;;
+                    top: 33%;
+                    margin-top: -33px;
+                    height: 50px;
+                    margin-left: 0px;
+                    opacity: .7;
+                }
+                .taxdetails-tooltip.right:after {
+                    content: '';
+                    width: 0;
+                    height: 0;
+                    border-left: none;
+                    border-top: 5px solid transparent;
+                    border-bottom: 5px solid transparent;
+                    border-right: 5px solid #000;
+                    position: absolute;
+                    bottom: auto;
+                    left: -5px;
+                    right: 0px;
+                    margin: 0px;
+                    top: 50%;
+                    margin-top: -5px;
+                  
+                }
+                body .bPageBlock .pbBody .dataCol {
+                    padding-top:15px;
+                }
+                fieldset {
+                    display: block;
+                    -webkit-margin-start: 15px;
+                }
+                
+                
+        </style>
+        <script>
+                
+                function hasWhiteSpace(evt, val) {
+         var charCode = (evt.which) ? evt.which : evt.keyCode ;
+         if (charCode == 32) {
+            return false;
+         }
+         
+         if (charCode > 31 && (charCode < 48 || charCode > 57))
+            return false;
+
+         return true;
+                } 
+                
+        function jsOnCompleteSaveDraft(hasError){
+            console.log('hasError ='+hasError);     
+            if(hasError == 'true'){
+                var url = window.location.href;
+                var index = url.indexOf('#scrollUp');
+                if(index > -1){
+                    window.location.href = url;
+                }else{
+                    window.location.href = url+'#scrollUp';
+                }
+                
+            }else{
+                saveData();
+                
+            }
+        } 
+                
+        function showCalender(id){
+                var element = document.getElementById(id);
+                DatePicker.pickDate(true, element, false);
+        }
+        
+        function overRideCal(){
+                $j('.dateFormat a').each(function() {
+                        var href = $( this ).attr("href");
+                        var elementId = href.split(",")[1];
+                        //console.log(elementId+">>>>");
+                        $j( this ).attr("href","javascript:showCalender("+elementId+");");
+                        var span = $(this).parent();
+                        $j(span).html("");
+                    $j( this ).html('<img height="16" src="/img/func_icons/util/datePicker16.gif" width="16" style="padding-left: 8px;" />');
+                    $j(this).css({"vertical-align": "middle"}); 
+                    $j(span).append(this);
+                    $j(span).attr('class','dateFormatCustom');
+                });
+        }
+        function stopPreviousdate(dateFieldID){
+                        
+                var dateValue = new Date (document.getElementById(dateFieldID).value);
+                var dateOnly = Date.parse(document.getElementById(dateFieldID).value); //Date.parse(dateValue.setHours(0,0,0,0));
+
+                var todayDate = Date.parse('{!effectiveDate}'); 
+
+                if(dateOnly < todayDate  ){
+
+                        showGenericDialog('Alert ','Please select today or future date',180,300);
+                        document.getElementById(dateFieldID).value = null;
+                }
+        }
+        
+        function toggleBilling(val,cls){
+           //alert(val+'-'+cls);
+           if(val == 'Anniversary Date'){
+               $(".billOpt"+cls).hide();
+           }else{
+               $(".billOpt"+cls).show();
+           }
+        }
+        
+        function togglePRC(val,cls){
+           //alert(val+'--'+cls);
+           if(val == 'Yes'){
+               $(".PRS"+cls).show();
+           }else{
+               $(".PRS"+cls).hide();
+           }
+        }
+        
+        function isNumberKey(evt, val)
+         {
+            var charCode = (evt.which) ? evt.which : evt.keyCode
+            if (charCode == 46) {
+               // Allow only 1 decimal point ('.')...
+               if((val) && (val.indexOf('.') >= 0))
+                   return false;
+               else
+                   return true;
+            }
+            
+            if (charCode > 31 && (charCode < 48 || charCode > 57))
+               return false;
+        
+            return true;
+         }
+         
+         function checkMinChar(e,minChar){
+            var count =  e.value.indexOf(';');
+            if((count < minChar-1 && count != '-1') || (minChar > 1 && count == '-1')){
+                showGenericDialog('Alert','Please enter minimum '+ minChar +' values seperated with <;>',180,300);  
+                e.value = null;
+            }
+         }
+         
+         function checkMinSelectLength(select,minChar){
+            var count = 0;
+            var options = select && select.options;
+            var opt;
+            for (var i=0, iLen=options.length; i<iLen; i++) {
+                opt = options[i];
+                if (opt.selected) {
+                  count++;
+                }
+            }
+            if((count < minChar)){
+                showGenericDialog('Alert','Please select minimum '+ minChar +'values',180,300);
+                for (var i=0, iLen=options.length; i<iLen; i++) {
+                    options[i].selected = false;
+                } 
+            }
+         }
+         
+        function showProRateInput(val,cls){
+             //alert(val);
+             if(val == 'Offset Days'){
+                 $(".OffDays"+cls).show();
+                 $(".OffDate"+cls).hide();
+             }else{
+                 $(".OffDays"+cls).hide();
+                 $(".OffDate"+cls).show();
+             }
+          }
+          function showGenericDialog(title,htmlBody,height,width){
+             var ht=180;
+             var wt=450;
+             if(typeof(height)!="undefined"){
+                    ht=height;
+             }
+             if(typeof(width)!="undefined"){
+                    wt=width;
+             }
+                $j('#genericDialogBox').dialog({
+                                resizable: false,
+                                height:ht,
+                                width:wt,
+                                modal: true,
+                                open: function(e){
+                                        $j(this).html(htmlBody);
+                                },
+                                buttons: [
+                                        {
+                                                text: "Ok",
+                                                click: function() {
+                                                        $j(this).dialog("close");
+                                                }
+                                        }
+                                ],
+                                title: title
+                        });  
+           }
+           
+           function supplementFieldChanged(){
+                 jQuery('[id$=suppHiddenField]').val(true);
+           }
+           
+           function ValidateConfiguration(payRes1,masterPlan1,billGrp1){
+              var payRes; 
+              var masterPlan; 
+               if(document.getElementById(payRes1)!=null){
+                payRes=document.getElementById(payRes1).value;
+              }
+              if(document.getElementById(masterPlan1)!=null){
+                 masterPlan=document.getElementById(masterPlan1).value;
+              }
+              if((payRes=="Parent Pay"  || payRes=="Parent Usage & Pay") && masterPlan==""){
+                alert('Please select Master Plan');
+                return false;
+              }
+              try
+              {
+	              var billRes = "{!objAccountPlan.Billing_Responsibility__c}";
+	              var bilGrp = document.getElementById(billGrp1).value;
+	              document.getElementById("billErr").style.display='none';
+	              if(payRes=="Standard Self-Pay" && billRes != "Standard Self-Pay" && bilGrp == '-1'){
+		                document.getElementById("billErr").style.display='';
+		                return false;
+	               }
+              }catch(e){
+              	console.log(e);
+              }
+              
+              saveConfigs();
+              //saveData();
+              return false;
+           }
+           function ShowMasterPlanList(payRes1){
+               payRes=document.getElementById(payRes1).value;
+                document.getElementById("mstplanTable").style.display='none';
+               if(payRes=="Parent Pay" || payRes=="Parent Usage & Pay"){
+                document.getElementById("mstplanTable").style.display='';
+               }
+               var billRes = "{!objAccountPlan.Billing_Responsibility__c}";
+               if(payRes=="Standard Self-Pay" && billRes != "Standard Self-Pay"){
+                document.getElementById("billGrpSec").style.display='';
+               }
+            }
+           
+        </script> 
+       <apex:actionstatus id="LoadingStatus">
+                <apex:facet name="start">
+                    <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 15%;opacity:.8;">
+                        <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+                        
+                        <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+                    </div>
+                </apex:facet>
+            </apex:actionstatus> 
+    <apex:form id="myForm">
+<apex:actionFunction name="saveConfigs" action="{!saveConfiguration}" status="LoadingStatus" reRender="errorQuoteMessage" oncomplete="jsOnCompleteSaveDraft('{!hasErrorMessage}');"></apex:actionFunction>    
+    <div class="scrollDiv">
+    
+                <div id="scrollUp"><a href="#"></a></div>
+                <div id="genericDialogBox"></div>
+                <apex:outputLabel > <b><h1>Configure {!planName} </h1></b></apex:outputLabel>
+                <apex:pagemessages id="errorQuoteMessage"></apex:pagemessages>
+                
+                <apex:inputHidden value="{!accPlanObj.Supplement_field_updated__c}" id="suppHiddenField"/>
+            <table id="parentTable" style="width:100%">
+                <tr>
+                    <!-- Plan Configuration -->
+                    <td style="width:38%;vertical-align:top;">
+                        <table class="planConfigTable" >
+                        <tr><td>
+                        <apex:outputLabel value="Subscription ID " rendered="{!!showSubscriptionId}" styleclass="taxTotal" >
+                        <div class="taxdetails-tooltip right" >
+                                   If no value is entered, Aria will populate a value once the opportunity is committed.
+                        </div>
+                        <img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-help-blue.png')}"  width="16" height="16"  style="vertical-align: text-bottom;"/><br/>  
+                        
+                        <apex:inputText maxlength="20" value="{!planConfigurationWrapperObj.accPlanObj.Client_Plan_Instance_Id__c}" onkeypress="return hasWhiteSpace(event,this.value)" style="width:40%" rendered="{!!showSubscriptionId}" />
+                        </apex:outputLabel>
+                    </td>
+                </tr> 
+                <tr style="display:{!if((accPlanObj.RecordType.name = 'Master'),'','none')}">     
+                    <td>
+                        <apex:outputLabel value="Subscription Status" rendered="{!(accPlanObj.RecordType.name = 'Master')}"/><br/>
+                        <apex:selectList size="1" styleClass="configField"  rendered="{!(accPlanObj.RecordType.name = 'Master')}" value="{!planConfigurationWrapperObj.accPlanObj.Subscription_Status__c}" style="width:43%">  
+                            <apex:selectOptions value="{!subscriptionStatusList}"></apex:selectOptions> 
+                        </apex:selectList> 
+                   </td>
+              </tr>
+              <tr style="display:{!if((accPlanObj.RecordType.name = 'Master' && !isAcctHaveAriaId && !showSubscriptionTemporaryStatus),'','none')}">     
+                   <td>
+                        <apex:outputLabel value="Subscription Temporary Status" rendered="{!accPlanObj.RecordType.name = 'Master'}" >
+                        <!--<img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-help-blue.png')}"  width="16" height="16"  style="vertical-align: text-bottom;"/><br/>
+                        <div class="taxdetails-tooltip right" style="margin-left:85px">
+                                   Any change to this field will not be updated in Aria.
+                        </div>-->
+                        </apex:outputLabel><br/>
+                        <apex:selectList size="1" styleClass="configField" rendered="{!accPlanObj.RecordType.name = 'Master'}" value="{!planConfigurationWrapperObj.accPlanObj.Subscription_Temporary_Status__c}" disabled="{!(planConfigurationWrapperObj.accPlanObj.Plan_Instance_No__c != null)}">
+                            <apex:selectOptions value="{!subscriptionTempStatusList}"></apex:selectOptions>
+                        </apex:selectList> 
+                   </td>
+              </tr>
+              <tr>     
+                   <td>
+                       <apex:outputLabel value="Subscription Description" rendered="{!!showSubscriptionDescription}"/><br/>
+                       <apex:inputText value="{!planConfigurationWrapperObj.accPlanObj.Subscription_DescriptionMax__c}" style="width:39%" rendered="{!!showSubscriptionDescription}"/>
+                   </td>
+              </tr>
+               <tr style="display:{!if((accPlanObj.RecordType.name = 'Master'  && !showAlternateBillDay && !isAcctHaveAriaId),'','none')}">     
+                    <td>
+                        <apex:outputLabel value="Alternate Bill Day" rendered="{!(accPlanObj.RecordType.name = 'Master' )}"/><br/>
+                        <apex:selectList size="1" styleClass="configField" rendered="{!(accPlanObj.RecordType.name = 'Master')}" value="{!planConfigurationWrapperObj.accPlanObj.Alternate_Bill_Day__c}" disabled="{!planConfigurationWrapperObj.accPlanObj.Plan_Instance_No__c != null}">
+                            <apex:selectOptions value="{!alternateBillDayList}"></apex:selectOptions>
+                        </apex:selectList>
+                    </td>
+               </tr>
+               <tr style="display:{!if((accPlanObj.RecordType.name = 'Master' && !showAlternateBillingStartDate && !isAcctHaveAriaId),'','none')}">     
+                    <td> 
+                        <apex:outputLabel value="Alternate Billing Start Date" rendered="{!(accPlanObj.RecordType.name = 'Master')}"/><br/>
+                        <apex:outputPanel rendered="{!(planConfigurationWrapperObj.accPlanObj.Plan_Instance_No__c == null)}" >
+                            <apex:inputField id="alt_bill_start_date" value="{!planConfigurationWrapperObj.accPlanObj.Alternate_Billing_Start_Date__c}" styleClass="configField"/>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!(planConfigurationWrapperObj.accPlanObj.Plan_Instance_No__c != null)&& (planConfigurationWrapperObj.accPlanObj.Alternate_Billing_Start_Date__c !=null)}" styleClass="configField">
+                            <apex:outputText value="{!planConfigurationWrapperObj.accPlanObj.Alternate_Billing_Start_Date__c}" />
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!(planConfigurationWrapperObj.accPlanObj.Plan_Instance_No__c != null)&&(planConfigurationWrapperObj.accPlanObj.Alternate_Billing_Start_Date__c ==null)}" styleClass="configField">
+                             <input type="text" value=""  disabled="true" />
+                        </apex:outputPanel>
+                    </td>
+               </tr>
+               <tr style="display:{!if((accPlanObj.RecordType.name = 'Master' && !showStatusUntilStart),'','none')}">     
+                    <td> 
+                        <apex:outputLabel value="Status Until Alt Start Date" rendered="{!(accPlanObj.RecordType.name = 'Master')}"/><br/>
+                        <apex:outputPanel rendered="{!(planConfigurationWrapperObj.accPlanObj.Plan_Instance_No__c == null)}" >
+                            <apex:inputField id="until_Alt_Start_Date" value="{!planConfigurationWrapperObj.accPlanObj.Aria_Status_Until_Alt_Start__c}" styleClass="configField"/>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!(planConfigurationWrapperObj.accPlanObj.Plan_Instance_No__c != null)&& (planConfigurationWrapperObj.accPlanObj.Aria_Status_Until_Alt_Start__c!=null)}" styleClass="configField">
+                            <apex:outputText value="{!planConfigurationWrapperObj.accPlanObj.Aria_Status_Until_Alt_Start__c}" />
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!(planConfigurationWrapperObj.accPlanObj.Plan_Instance_No__c != null)&&(planConfigurationWrapperObj.accPlanObj.Aria_Status_Until_Alt_Start__c ==null)}" styleClass="configField">
+                             <input type="text" value=""  disabled="true" />
+                        </apex:outputPanel>
+                    </td>
+               </tr>
+               <tr style="display:{!if((isAcctHaveAriaId && !showEffectiveDate),'','none')}">     
+                    <td>
+                         <apex:outputLabel value="Effective Date" rendered="{!isAcctHaveAriaId}" /><br/>
+                         <apex:inputField id="effectiveDateId" value="{!planConfigurationWrapperObj.accPlanObj.Effective_Date__c}" style="width:13.4%" rendered="{!isAcctHaveAriaId}" onChange="stopPreviousdate('{!$Component.effectiveDateId}');" styleClass="configField"/> 
+                    </td>
+               </tr>
+                <tr style="display:{!if((accPlanObj.RecordType.name = 'Master' && !showRetroactiveBillingStartDate && !isAcctHaveAriaId),'','none')}">     
+                     <td>
+                        <apex:outputLabel value="Retroactive Billing Start Date" rendered="{!(accPlanObj.RecordType.name = 'Master' )}"/><br/>
+                    <apex:outputPanel >
+                        <apex:outputPanel rendered="{!(planConfigurationWrapperObj.accPlanObj.Plan_Instance_No__c == null)}">
+                            <apex:inputField styleClass="configField" id="rect_bill_start_date" value="{!planConfigurationWrapperObj.accPlanObj.Retroactive_Billing_Start_Date__c}" />
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!(planConfigurationWrapperObj.accPlanObj.Plan_Instance_No__c != null)&&(planConfigurationWrapperObj.accPlanObj.Retroactive_Billing_Start_Date__c !=null)}">
+                            <apex:outputText value="{!planConfigurationWrapperObj.accPlanObj.Retroactive_Billing_Start_Date__c}" styleClass="configField" />
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!(planConfigurationWrapperObj.accPlanObj.Plan_Instance_No__c != null)&&(planConfigurationWrapperObj.accPlanObj.Retroactive_Billing_Start_Date__c ==null)}">
+                             <input type="text" value="" styleClass="configField" disabled="true"/>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                     </td>
+                </tr>
+                <tr style="display:{!if((accPlanObj.RecordType.name = 'Master' && isAcctHaveAriaId && !showDunningGroup),'','none')}">     
+                 <apex:outputPanel rendered="{!(isAcctHaveAriaId && accPlanObj.RecordType.name = 'Master')}"> 
+                     <td>
+                     
+                        <apex:outputLabel value="Dunning Group"/><br/>
+                        <apex:selectList size="1"  styleClass="configField" value="{!selectedDunningGroup}" >
+                            <apex:selectOptions value="{!ariaDunningGroupList}"></apex:selectOptions> 
+                        </apex:selectList>
+                     </td>
+                 </apex:outputPanel>
+                </tr>
+          </table>
+            </td>
+                    <!-- Product Fields -->
+                    <td style="width:62%" >
+                    <apex:pageBlock >
+                    <div>
+                        <apex:pageBlockSection columns="2" showHeader="false" >
+                            <apex:repeat value="{!planConfigurationWrapperObj.productFields}" var="field">
+                                    <apex:outputPanel rendered="{!field.dType == 'text' && field.displayType != 'date' && !field.disable}" >
+                                        <apex:outputLabel value="{!field.fieldName}"/><br/>                                        
+                                        <apex:input id="TextId" type="text" value="{!field.fieldValue}"  style="width: 13.4%;" rendered="{!if(field.displayType == 'string',true,false)}" disabled="{!!field.canOverRide }" onblur="checkMinChar(this,'{!field.min_no_sel}');" styleClass="configField" onchange="supplementFieldChanged();"/>
+                                        <apex:input id="NumberId" type="text" value="{!field.fieldValue}"  style="width: 13.4%;" rendered="{!if(field.displayType == 'number',true,false)}" onkeypress="return isNumberKey(event)" disabled="{!!field.canOverRide || field.disable}" onblur="checkMinChar(this,'{!field.min_no_sel}');" styleClass="configField" onchange="supplementFieldChanged();"/>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!field.dType == 'text' && field.displayType == 'date' && !field.disable}">
+                                        <apex:outputLabel value="{!field.fieldName}"/><br/>
+                                        <apex:inputText id="temp123" value="{!field.fieldValue}" onchange="supplementFieldChanged();" onfocus="showCalender(this.id);" disabled="{!!field.canOverRide || field.disable}" styleClass="configField"/>
+                                        <apex:outputPanel rendered="{!(field.canOverRide && !field.disable)}">
+                                        <a style="vertical-align:middle;" href="javascript:showCalender('{!$Component.temp123}');">
+                                            <img height="16" src="/img/func_icons/util/datePicker16.gif" width="16" style="padding-left: 8px;" />
+                                        </a>
+                                        </apex:outputPanel>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!if( (field.dType == 'checkbox'  && !field.disable),true,false)}" >
+                                         <apex:outputLabel value="{!field.fieldName}"/><br/>
+                                         <apex:selectCheckboxes onchange="supplementFieldChanged();" value="{!field.selectedMultiValues}" disabled="{!!field.canOverRide || field.disable}" styleclass="configselectField" layout="pageDirection" >
+                                                <apex:selectOptions value="{!field.multiValue}"/>
+                                         </apex:selectCheckboxes>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!if((field.dType == 'radio' && !field.disable),true,false)}" >
+                                         <apex:outputLabel value="{!field.fieldName}"/><br/>
+                                         <apex:selectRadio onchange="supplementFieldChanged();" value="{!field.selectedRadioValues}"  disabled="{!!field.canOverRide || field.disable}" styleclass="configselectField" layout="pageDirection"> 
+                                                <apex:selectOptions value="{!field.multiValue}"/>
+                                         </apex:selectRadio>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!if((field.dType == 'select'&& !field.disable),true,false)}">
+                                         <apex:outputLabel value="{!field.fieldName}"/><br/>
+                                         <apex:selectList onchange="supplementFieldChanged();checkMinSelectLength(this,'{!field.min_no_sel}');" value="{!field.selectedMultiValues}"  multiselect="true" style="width:48%;" rendered = "{!if(field.max_no_sel > 1, true,false)}" disabled = "{!!field.canOverRide || field.disable}" >
+                                                <apex:selectOptions value="{!field.multiValue}"/>
+                                         </apex:selectList>
+                                         <apex:selectList onchange="supplementFieldChanged();checkMinSelectLength(this,'{!field.min_no_sel}');" value="{!field.selectedSingleValue}"   multiselect="false" style="width:48%;" rendered="{!if(field.max_no_sel <= 1, true,false)}" disabled="{!!field.canOverRide || field.disable}" >
+                                                <apex:selectOptions value="{!field.multiValue}"/>
+                                         </apex:selectList>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!if((field.dType == 'textarea' && !field.disable),true,false)}">
+                                        <apex:outputLabel value="{!field.fieldName}"/><br/>
+                                        <apex:inputtextarea rows="3" value="{!field.fieldValue}" style="width: 45.6%;" disabled="{!!field.canOverRide || field.disable}" onblur="checkMinChar(this,'{!field.min_no_sel}');"/>
+                                    </apex:outputPanel>
+                            </apex:repeat>
+                        </apex:pageBlockSection>
+                        </div>
+                    </apex:pageBlock>
+                    </td>
+                </tr>
+            </table>
+            <!-- End of Parent Table -->    
+            <apex:outputPanel rendered="{!!hide_bill_optn_sec}" style="width:97%"> 
+            <apex:variable var="cnt" value="{!0}" />
+            <apex:repeat value="{!accPlanObj}" var="theAcctPlan" id="theAcctPlan">
+            <!--  As per SFDCDEV-198, this will not be displayed on plan config screen -->
+                     <apex:outputPanel layout="block" style="width:97%" rendered="false"><!-- {!isAcctHaveAriaId} -->
+                        <table border="0" class="list " width="97%" cellspacing="0" cellpadding="0" style="margin-left:21px;">      
+                                <tr>
+                                    <td>
+                                        <table border="0" width="97%" cellspacing="0" class="divborder" cellpadding="0" id="tblBillingOptions" >
+                                            <tr id="trBeginWhen" >
+                                                <td width="20%" valign="top" style="border: 0px; "> <b>Begin when?</b> <br/>
+                                                    <apex:selectRadio layout="pageDirection" value="{!theAcctPlan.Begin_When__c}" id="rdBeginWhen" onChange="javascript:toggleBilling(this.value,'{!cnt}');"  style="border: none;margin-left: -23px;">
+                                                         <apex:selectOption itemValue="Anniversary Date" itemLabel=" On Anniversary Date" itemdisabled="{!readOnlyAnniversaryDate}"/>
+                                                         <apex:selectOption itemValue="Begin Immediately" itemLabel="Immediately" itemdisabled="{!readOnlyImmediate}"/>
+                                                    </apex:selectRadio>
+                                                </td>
+                                                <td style="border: 0px; border-top:solid 1px #ccc;" valign="top" id="trProrateCharges" class="billOpt{!cnt}" > 
+                                                <apex:outputLabel id="lblProRateCharge" value="Pro-Rate Charges?" style="font-weight: bold;" /> <br/>    
+                                                <apex:outputPanel id="thePanelPRC" >
+                                                        <apex:panelGrid columns="5" styleClass="divborder" width="110%">
+                                                            <apex:selectRadio rendered="{!IF(theAcctPlan.recordType.Name = 'Master',true,false)}" styleClass="divborder" layout="pageDirection" value="{!theAcctPlan.Pro_Rate_Charges_Value__c}" disabled="{!readOnlyImmediate}" id="rdRateCharge" onChange="javascript:togglePRC(this.value,'{!cnt}'); "  style="border: none;margin-left: -30px;"> <!--thePage:theForm:theBillingOption:theAcctPlan:0:rdRateCharge:0 resetProRateStarts(); -->
+                                                                 <apex:selectOption itemValue="Yes" itemLabel="Yes"/>
+                                                                 <apex:selectOption itemValue="No"  itemLabel="No"/>
+                                                                 <apex:selectOption itemValue="Full Pro-ration"  itemLabel="Full" />
+                                                                 <apex:selectOption itemValue="Charge Pro-ration Only"  itemLabel="Charge Only"/>
+                                                                 <apex:selectOption itemValue="Credit Pro-ration Only"  itemLabel="Credit Only"/>
+                                                            </apex:selectRadio>
+                                                            <!-- rendered="{! !theAcctPlan.isMasterPlan}" -->
+                                                            <apex:selectRadio rendered="{!IF(theAcctPlan.recordType.Name = 'Master',false,true)}" layout="pageDirection" value="{!theAcctPlan.Pro_Rate_Charges_Value__c}" id="rdRateCharge1" disabled="{!readOnlyImmediate}" onChange="javascript:togglePRC(this.value,'{!cnt}'); "> <!-- resetProRateStarts(); -->
+                                                                 <apex:selectOption itemValue="Yes" itemLabel="Yes"/>
+                                                                 <apex:selectOption itemValue="No"  itemLabel="No"/>
+                                                            </apex:selectRadio>
+                                                            <apex:outputPanel styleClass="PRS{!cnt}" id="thePanel" style="display:{! IF( theAcctPlan.Pro_Rate_Charges__c != null , '', 'none' )};">
+                                                            <apex:outputLabel styleClass="PRS{!cnt}" id="hideLabel" style="display:{! IF( theAcctPlan.Pro_Rate_Charges__c != null , '', 'none' )};font-weight:bold"><br/>Pro-Rate Starts?</apex:outputLabel>
+                                                            <apex:selectRadio styleClass="divborder" layout="pageDirection" id="rdRateStarts" value="{!theAcctPlan.Pro_Rate_Starts__c}" disabled="{!readOnlyImmediate}" onClick="javascript:showProRateInput(this.value,'{!cnt}');" style="margin-left:-23px" >
+                                                                 <apex:selectOption itemValue="Offset Days" itemLabel="Offset Months"/>
+                                                                 <apex:selectOption itemValue="Alternate Date" itemLabel="Alternate Pro-ration Start Date"/>
+                                                            </apex:selectRadio>
+                                                            <apex:outputPanel styleClass="PRS{!cnt}" layout="block" >
+                                                                <apex:inputText id="txtOffDays" value="{!theAcctPlan.Offset_Days__c}"  styleClass="OffDays{!cnt}" maxlength="6" size="5" onKeypress="if (event.keyCode < 44 || event.keyCode > 57 || event.keyCode==45 || event.keyCode==47) event.returnValue = false;" style="width:100px;" disabled="{!readOnlyImmediate}"/>
+                                                                <apex:outputPanel styleClass="OffDate{!cnt}" id="txtDate">
+                                                                    <apex:inputField value="{!theAcctPlan.Paid_Thru_Date__c}" rendered="{!!readOnlyImmediate}" onkeypress="return false;" onfocus="DatePicker.pickDate(false, '{!$Component.txtDate}', false);"   style="width:100px;"  /> 
+                                                                    <apex:inputText value="{!theAcctPlan.Paid_Thru_Date__c}" style="width:100px;" rendered="{!readOnlyImmediate}" disabled="true"></apex:inputText>
+                                                                </apex:outputPanel>      
+                                                            </apex:outputPanel>
+                                                            </apex:outputPanel>
+                                                            
+                                                        </apex:panelGrid>
+                                                        <apex:actionStatus startText="loading..." id="myStatus"></apex:actionStatus>
+                                                    </apex:outputPanel>
+                                                </td>
+                                            </tr>
+                                            </table>
+                                    </td></tr>
+                                    </table>
+                     </apex:outputPanel>
+                      <script type="text/javascript">
+                        toggleBilling('{!theAcctPlan.Begin_When__c}','{!cnt}');
+                        togglePRC('{!theAcctPlan.Pro_Rate_Charges_Value__c}','{!cnt}');
+                        showProRateInput('{!theAcctPlan.Pro_Rate_Starts__c}','{!cnt}')
+                       </script>
+                     <apex:variable var="cnt" value="{!cnt+1}" />
+                     
+             </apex:repeat>           
+            </apex:outputPanel>
+          
+                
+             <apex:outputPanel rendered="{!planConfigurationWrapperObj.accPlanObj.recordType.name == 'Master' && !showPromotion}">
+                     <table id="thePromoTable" style="width:100%;padding-left:10px;margin-top:5px;">
+                     
+                     <tr>
+                         <td>
+                         <c:AriaPromotionComponent userContext="{!$CurrentPage.parameters.context}" userContextId="{!$CurrentPage.parameters.contextId}" 
+                                                         clientPlanInstanceNumber="{!$CurrentPage.parameters.clientPlanInstanceNumber}" jsToInvoke="$j('#close-dialog').click();"/> 
+                         </td>
+                     </tr>
+                     </table>
+             </apex:outputPanel>
+               <apex:outputPanel id="planHierarchy" rendered="{!planConfigurationWrapperObj.accPlanObj.recordType.name == 'Master' && !isPersonAccount}">
+                 <script type="text/javascript"> 
+                      function openLookup(baseURL, width, modified, searchParam){
+                        var originalbaseURL = baseURL;
+                        var originalwidth = width;
+                        var originalmodified = modified;
+                        var originalsearchParam = searchParam;
+                    
+                        var lookupType = baseURL.substr(baseURL.length-3, 3);
+                        if (modified == '1') baseURL = baseURL + searchParam;
+                    
+                        var isCustomLookup = false;
+                    
+                        // Following "001" is the lookup type for Account object so change this as per your standard or custom object
+                        if(lookupType == "001"){
+                    
+                          var urlArr = baseURL.split("&");
+                          var txtId = '';
+                          if(urlArr.length > 2) {
+                            urlArr = urlArr[1].split('=');
+                            txtId = urlArr[1];
+                          }
+                    
+                          // Following is the url of Custom Lookup page. You need to change that accordingly
+                          baseURL = "/apex/CustomAccountLookup?txt=" + txtId + "&actId={!acctId}";
+                    
+                          // Following is the id of apex:form control "myForm". You need to change that accordingly
+                          baseURL = baseURL + "&frm=" + escapeUTF("{!$Component.myForm}");
+                          if (modified == '1') {
+                            baseURL = baseURL + "&lksearch=" + searchParam;
+                          }
+                    
+                          // Following is the ID of inputField that is the lookup to be customized as custom lookup
+                          if(txtId.indexOf('Account') > -1 ){
+                            isCustomLookup = true;
+                          }
+                        }
+                    
+                    
+                        if(isCustomLookup == true){
+                          openPopup(baseURL, "lookup", 350, 480, "width="+width+",height=480,toolbar=no,status=no,directories=no,menubar=no,resizable=yes,scrollable=no", true);
+                        }
+                        else {
+                          if (modified == '1') originalbaseURL = originalbaseURL + originalsearchParam;
+                          openPopup(originalbaseURL, "lookup", 350, 480, "width="+originalwidth+",height=480,toolbar=no,status=no,directories=no,menubar=no,resizable=yes,scrollable=no", true);
+                        } 
+                      }
+                    </script>
+                <apex:actionFunction name="getPlans" action="{!RetriveMasterAccountPlan}" 
+                                        oncomplete="javascript:return ShowMasterPlanList('{!$Component.paymentRes}');"  
+                                        rerender="planHierarchy" status="planstatus"/>
+                
+                <table border="0" style="width:100%;padding-left:25px;margin-top:5px;">
+                    <tr><th><b style="font-size:11pt">Parent Plan Relationship</b></th></tr> 
+                        <tr><td><b> Parent Account </b></td></tr>
+                        <tr>
+                            <td> 
+                                <apex:outputPanel rendered="{!!isAcctHaveAriaIdParentActId}">
+                                    <apex:inputField id="Account" style="width:143pt" value="{!contactLookUp.AccountId}" onchange="getPlans();"/>
+                                    &nbsp;&nbsp;
+                                    <!-- 
+                                    <apex:commandButton action="{!RetriveMasterAccountPlan}" 
+                                        oncomplete="javascript:return ShowMasterPlanList('{!$Component.paymentRes}');" value="Get Plans" 
+                                        rerender="planHierarchy" status="planstatus"/> -->
+                                  <apex:actionstatus id="planstatus">
+                                        <apex:facet name="start"> 
+                                            <img src="../img/loading.gif" style="padding-left:10px;"/>
+                                        </apex:facet> 
+                                    </apex:actionstatus> <br/>
+                                    <!-- <apex:outputPanel style="color:red" rendered="{!!showMasterDetail}">Please select account</apex:outputPanel> -->
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!isAcctHaveAriaIdParentActId}">
+                                    {!parentAccountName}
+                                </apex:outputPanel>
+                            </td>
+                        </tr>
+                </table>
+                <apex:outputPanel rendered="{!showMasterDetail}">
+                    <table border="0" style="width:100%;padding-left:25px;">
+                         <tr><td><b>Billing Responsibility </b></td></tr>
+                         <tr>
+                            <td>
+                                <apex:selectList id="paymentRes" style="width:143pt" size="1" onchange="javascript:return ShowMasterPlanList('{!$Component.paymentRes}');" value="{!objAccountPlan.Billing_Responsibility__c}"  styleClass="Credit_Note_Template" >
+                                      <apex:selectOptions value="{!PaymentResponsibilityList}"></apex:selectOptions>
+                                </apex:selectList>
+                            </td>
+                         </tr>
+                    </table>
+                    <table id="mstplanTable" border="0" style="width:100%;padding-left:25px;" >
+                        <tr><td><b>Plan Name</b></td></tr>
+                        <tr>
+                            <td> 
+                                <apex:selectList id="selectListMasterPlan" size="1" value="{!selectedMasterPlan}" styleClass="Credit_Note_Template" >
+                                      <apex:selectOptions value="{!selectMasterPlanList}"></apex:selectOptions>
+                                </apex:selectList>
+                            </td>
+                        </tr>
+                    </table>
+                    
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!isAcctHaveAriaId}">
+	                <table id="billGrpSec" border="0" style="width:100%;padding-left:25px;" >
+                        <tr><td><b>Billing Group</b></td></tr>
+                        <tr>
+                            <td> 
+                               <apex:selectList id="selectedBillGrp" value="{!bgSFId}" size="1" style="width: 240px;margin-top: 3px;border-radius: 4px;">
+			                       <apex:selectOptions value="{!ariaBillingGroupList}"></apex:selectOptions>
+			                   </apex:selectList>
+			                   <span id="billErr" style="display:none;color:red">Please select a billing group to proceed.</span>
+                            </td>
+                        </tr>
+                        
+                    </table>
+                </apex:outputPanel>
+            </apex:outputPanel> 
+                  
+                  
+        </div> 
+        <div>
+                <div class="buttonPanel">
+           <input type="button" name="Submit" value="Cancel" class="button white" />
+           <input type="submit" name="Submit" value="Done" class="button blue" onclick="return ValidateConfiguration('{!$Component.paymentRes}','{!$Component.selectListMasterPlan}','{!$Component.selectedBillGrp}');" />
+                   <input type="button" id="close-dialog" value="Save"  style="display:none"/>
+                </div> 
+        </div> 
+        </apex:form>
+        <script>
+                overRideCal();
+                
+                var bresp='{!objAccountPlan.Billing_Responsibility__c}';
+                try{
+                  document.getElementById("mstplanTable").style.display='none';
+                  if(bresp=="Parent Pay" || bresp=="Parent Usage & Pay"){
+                     document.getElementById("mstplanTable").style.display='';
+                  }
+                }catch(e){
+                    console.log(e);
+                }
+                try{
+                	document.getElementById("billGrpSec").style.display='none';
+                }catch(e){
+                	console.log(e);
+                }
+                
+        </script>
+</apex:page>

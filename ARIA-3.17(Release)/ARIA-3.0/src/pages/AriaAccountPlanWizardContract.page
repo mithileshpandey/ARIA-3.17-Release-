@@ -1,0 +1,332 @@
+<apex:page sidebar="false" controller="AriaAccountPlanWizardContractCtrl" tabStyle="Account">
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css"/>
+<style>
+.scrollDiv {
+	padding: 0px 15px 0px 15px;
+}  
+.buttonPanel { 
+    padding-top: 11px;
+    //background: #f8f8f8;
+    //padding-bottom: 2px;
+}
+.button:hover {
+    text-decoration: none;
+}
+.button, .button:focus {
+    display: inline-block;
+    zoom: 1;
+    vertical-align: baseline;
+    outline: none;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    font: 14px/100% Arial, Helvetica, sans-serif; 
+    padding: .35em .5em .5em;
+    text-shadow: 0 1px 1px rgba(0,0,0,.3);
+    -webkit-border-radius: .5em;
+    -moz-border-radius: .5em;
+    border-radius: .3em;
+    -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    -moz-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    box-shadow: 0 1px 2px rgba(0,0,0,.2);
+}
+.blue, .blue:focus{
+	float:right;
+    color: #fff;
+    border: solid 1px #0076a3;
+    background: #428bca;
+    background: -webkit-gradient(linear, left top, left bottom, from(#00adee), to(#0078a5));
+    background: -moz-linear-gradient(top, #00adee, #0078a5);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#00adee', endColorstr='#0078a5');
+}
+.blue:hover {
+    background: #007ead;
+    background: -webkit-gradient(linear, left top, left bottom, from(#0095cc), to(#00678e));
+    background: -moz-linear-gradient(top, #0095cc, #00678e);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0095cc', endColorstr='#00678e');
+}
+.white {
+    color: #606060;
+    border: solid 1px #b7b7b7;
+    background: #fff;
+    background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#ededed));
+    background: -moz-linear-gradient(top, #fff, #ededed);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#ededed');
+}
+.white:hover {
+    background: #ededed;
+    background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#dcdcdc));
+    background: -moz-linear-gradient(top, #fff, #dcdcdc);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#dcdcdc');
+}
+input[type="radio"] {
+   margin: 0px 3px 0px -14px;
+   float: left;
+}
+body {
+    font-family: Arial,Helvetica,sans-serif;
+    color: #222;
+}
+select{
+   
+    height: 27px;
+    border-radius: 3px;
+    border: 1px solid #CCC;
+    font-weight: 200;
+    font-size: 13px;
+    font-family: Verdana;
+    box-shadow: 1px 1px 5px #CCC;
+}
+select: hover{
+    width: 245px;
+    height: 24px;
+    border-radius: 3px;
+    border: 1px solid #CCC;
+    font-weight: 200;
+    font-size: 13px;
+    font-family: Verdana;
+    box-shadow: 1px 1px 5px #CCC;
+}
+
+input[type='text']{
+    width: 56px;
+    height: 10px;
+    border-radius: 3px;
+    border: 1px solid #CCC;
+    padding: 7px;
+    font-weight: 200;
+    font-size: 13px;
+    font-family: Verdana;
+    box-shadow: 1px 1px 5px #CCC;
+}
+input[type='text']:hover{
+    box-shadow: 1px 1px 5px #CCC;
+}
+input[type="radio"] + label {
+    display:inline-block;
+    height:19px;
+    vertical-align:middle;
+    cursor:pointer;
+}
+input[type="checkbox"] + label {
+    display:inline-block;
+    height:21px;
+    vertical-align:middle;
+    cursor:pointer;
+}
+fieldset {
+	padding-bottom: 0px;
+} 
+.message {
+	margin: 0px 0px; 
+}
+.overrideFmt{
+   margin: 0px 3px 0px 5px !important; 
+}
+
+</style>
+<apex:form >
+<div class="scrollDiv">
+<c:AriaPriceIndicatorComponent recid="{!$CurrentPage.parameters.id}" context="{!$CurrentPage.parameters.context}" selectedCurrency="{!$CurrentPage.parameters.accountCurrency}" accountName="{!accountName}" billingInterval="{!$CurrentPage.parameters.billingInterval}" />
+<br/>
+</div> 
+
+<apex:actionstatus id="LoadingStatus">
+    <apex:facet name="start">
+        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 15%;opacity:.8;">
+            <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+            
+            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+        </div>
+    </apex:facet>
+</apex:actionstatus> 
+<div class="scrollDiv">
+	<apex:pagemessages id="errorQuoteMessage"></apex:pagemessages>
+	<!-- Put your Code here -->
+	<div id="StartDateSection">
+		<div style="margin-top: 0px;margin-bottom: 5px;font-weight: bold;font-size:15px;">Termed Agreements</div>
+		<div style="margin-top: 5px;margin-bottom: 5px;">Define contract related options.</div>
+	</div>
+	<div id="CompletionSection">
+		<div style="margin-top: 15px;margin-bottom: 5px;font-weight: bold;">Contract Completion Type</div>
+		<div style="margin-top: -5px;">
+			<apex:selectRadio value="{!objContract.Contract_Completion__c}" onchange="showContract(this.value);" layout="pageDirection" styleClass="contract_comp">
+	             <apex:selectOptions value="{!ContractCompletion}" />
+            </apex:selectRadio>
+		</div>	
+		<div style="margin-top: 5px;font-weight: bold;">Start Date</div>
+		<div style="margin-top: 5px;">
+	        <apex:outputpanel styleClass="ContractStartDate" layout="block">
+	        	<apex:inputField id="contractStartDatetxt1" value="{!objContract.Start_Date__c}" style="width: 100px;" styleclass="contractStartDateCls" onChange="checkContractStartdate(this);" />
+	     	</apex:outputPanel>
+	        <apex:outputpanel styleClass="oppCloseDate">
+	        	<apex:inputText disabled="true" size="8" style="width: 100px;" styleClass="disableBox" />
+	     	</apex:outputPanel>
+      	</div>
+		<div style="margin-top: 2px; margin-left: -2px;">
+			<apex:inputCheckbox styleClass="theCheckBox" id="theCheckbox" value="{!isOppCloseDate}" onchange="startDateShowHideOnChange();"/>
+			<apex:outputLabel style="margin-top: 2px;" value="Same as Opportunity Close Date" for="theCheckbox"/>
+		</div>
+		<apex:outputPanel styleClass="ContractEnd">	
+		<div style="margin-top: 10px;font-weight: bold;">End Date</div>
+		<div style="margin-top: 5px;">
+			<apex:outputPanel layout="block">
+        		<apex:inputField value="{!objContract.Contract_End_Date__c}" style="width: 100px;" styleclass="contractEndDateCls" onChange="checkContractStartdate(this);"/>&nbsp;&nbsp; 
+      		</apex:outputPanel>
+      	</div>
+    	</apex:outputPanel>
+    	<apex:outputPanel styleClass="ContractLen">
+		<div style="margin-top: 5px;font-weight: bold;">Length</div>
+		<div style="margin-top: 5px;">
+			<apex:outputPanel layout="block">
+              <apex:inputField value="{!objContract.Contract_Length__c}" style="width: 200px;" />&nbsp;&nbsp;
+            </apex:outputPanel>
+		</div>
+    	</apex:outputPanel>  
+	</div>
+	<div id="EndActionSection">
+		<div style="margin-top: 20px;font-weight: bold;">End Action</div>
+		<div style="margin-top: 10px;">Any open contracts on this account for the same service plan will be discarded.</div>
+		<div style="margin-top: 5px;">
+			<apex:selectRadio value="{!actionSelected}" layout="pageDirection">
+		       <apex:selectOptions value="{!ContractActions}"/>
+		   </apex:selectRadio>
+      	</div>
+	</div>
+</div>
+<apex:actionFunction name="saveContract" action="{!saveContract}" status="LoadingStatus" reRender="errorQuoteMessage" oncomplete="if('{!hasErrorMessage}' == 'false'){$j('#close-dialog').click();}" ></apex:actionFunction>
+<apex:actionFunction name="cancelContract" action="{!actionRedirect}" status="LoadingStatus" ></apex:actionFunction>
+<div class="scrollDiv buttonPanel">
+   	<input type="button" name="Submit" value="Cancel" class="button white" onClick="cancelContract();" />
+	<apex:actionstatus id="status">
+    	<apex:facet name="start">
+        	<img src="../img/loading.gif" style="float:right;text-align: center;padding: .35em .5em .5em;"/>
+        </apex:facet> 
+    </apex:actionstatus>
+   	<input type="submit" name="Submit" value="Save" class="button blue" onClick="saveContract(); return false;"/>
+   	<input type="button" id="close-dialog" value="Save"  style="display:none"/>
+</div>
+<script>
+$j = jQuery.noConflict(); 
+
+function setFocusOnLoad() {}
+function startDateShowHideOnChange(){
+	if($j('.theCheckBox').is(':checked')) {
+		$j(".ContractStartDate").hide(); 
+        $j(".oppCloseDate").show();
+	}else{
+		$j(".ContractStartDate").show();
+        $j(".oppCloseDate").hide();
+	}
+}
+function startDateShow(str){
+    if(str=='true'){
+		$j('.theCheckBox').attr('checked', false);
+        $j(".ContractStartDate").show(); 
+        $j(".oppCloseDate").hide();
+    }else{
+        $j('.theCheckBox').attr('checked', true);
+        $j(".ContractStartDate").hide();
+        $j(".oppCloseDate").show();
+    }
+}
+
+function showGenericDialog(title,htmlBody,height,width){ 
+	var ht=180;
+ 	var wt=450;
+	if(typeof(height)!="undefined"){
+    	ht=height;
+ 	}
+ 	if(typeof(width)!="undefined"){
+        wt=width;
+ 	}
+     
+ 	$j('#genericDialogBox').dialog({
+		resizable: false,
+		height:ht,
+		width:wt,
+		modal: true,
+		open: function(e){
+	        $j(this).html(htmlBody);
+		},
+		buttons: [
+	        {
+                text: "Ok",
+                click: function() {
+                        $j(this).dialog("close");
+                }
+	        }
+		],
+		title: title
+	});  
+} 
+
+function showCalender(id){
+	var element = document.getElementById(id);
+	DatePicker.pickDate(true, element, false);
+}
+
+function showContract(str){
+    if(str=='Select Duration'){
+        $j(".ContractLen").show();
+        $j(".ContractEnd").hide();
+    }else{
+        $j(".ContractLen").hide();
+        $j(".ContractEnd").show();
+    }
+}
+
+function stopPreviousdate(dateFieldID){
+	var dateValue = new Date (document.getElementById(dateFieldID).value);
+    var dateOnly = Date.parse(document.getElementById(dateFieldID).value); //Date.parse(dateValue.setHours(0,0,0,0));
+    var todayDate = Date.parse('{!effectiveDate}'); 
+    if(dateOnly < todayDate  ){
+    	showGenericDialog('Alert ','Please select today or future date',180,300);
+    	document.getElementById(dateFieldID).value = null;
+	}
+}
+function checkContractStartdate(ctr){
+	stopPreviousdate(ctr.id);
+    var startDate = Date.parse(document.getElementsByClassName('contractStartDateCls')[0].value);
+    var endDate = Date.parse(document.getElementsByClassName('contractEndDateCls')[0].value);
+    
+    if(startDate =='' || endDate ==''){
+        return ;
+    }
+    var range = $j('.contract_comp input:radio');
+    //console.log(range[0].checked);
+    var chkbox = document.getElementsByClassName('theCheckBox')[0].checked;
+    if(chkbox){
+    	startDate = Date.parse('{!oppCloseDate}'); 
+    }
+    if(endDate < startDate && range[0].checked ){ //!= 'Select Duration'){
+        //alert('Please select today or future date');
+        showGenericDialog('Alert ','Contract end date is less than contract start date',180,300);
+        document.getElementsByClassName('contractEndDateCls')[0].value = null;
+        //document.getElementsByClassName('contractStartDateCls')[0].value = null;
+    }
+}
+function overRideCal(){
+	$j('.dateFormat a').each(function() {
+		var href = $j( this ).attr("href");
+		var elementId = href.split(",")[1];
+		//console.log(elementId+">>>>");
+		$j( this ).attr("href","javascript:showCalender("+elementId+");");
+		var span = $j(this).parent();
+		$j(span).html("");
+     	$j( this ).html('<img height="16" src="/img/func_icons/util/datePicker16.gif" width="16"	style="padding-left: 8px;" />');
+     	$j(this).css({"vertical-align": "middle"}); 
+     	$j(span).append(this);
+     	$j(span).attr('class','dateFormatCustom');
+ 	});
+}
+//alert('{!objContract.isCustomStartDate__c}');
+showContract('{!objContract.Contract_Completion__c}'); 
+startDateShow('{!objContract.isCustomStartDate__c}') ;
+overRideCal();
+</script>
+</apex:form>
+<div id="genericDialogBox"></div>
+</apex:page>

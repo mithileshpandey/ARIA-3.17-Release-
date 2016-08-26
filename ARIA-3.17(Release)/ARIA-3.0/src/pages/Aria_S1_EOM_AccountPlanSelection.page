@@ -1,0 +1,288 @@
+<apex:page sidebar="false" showHeader="false" standardController="Opportunity" extensions="Aria_S1_EOM_AccountPlanSelectionCtr" id="thePage">
+<apex:stylesheet value="{!URLFOR($Resource.sf_resources,'styles/main.css')}"/>
+<apex:includeScript value="{!URLFOR($Resource.sf_resources,'scripts/jquery.js')}"/>
+<style>
+.s-icon {
+    float: right;
+    text-align: center;
+    cursor: pointer;
+    width: 20px;
+    margin-right: 10px;
+    z-index: 2;
+    position: relative;
+}
+.fm-container {
+  display: table;
+  width: 100%;
+}
+.go-container {
+      text-align: center;
+    width: 90px;
+    display: table-cell;
+    padding-left: 10px;
+    
+}
+
+.in-search {
+  width: 100%;
+  box-sizing:border-box;
+  display: table-cell;
+  border:0px!important;
+}
+.btn-go {
+  background: gray;
+  line-height: 40px;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.search-icon {
+    width: 42px;
+    height: 40px;
+    background-color: #F00;
+    float: right;
+    margin-top: -36px;
+    margin-right: 6px;
+    position: absolute;
+    right: 0;
+    background: url(../images/icons/new/icon-search.png) no-repeat;
+  }
+.search-container {
+  display: none;
+  padding: 10px;
+  padding-top: 20px;
+}
+html,  body{
+    overflow:visible !important;
+    height:100%;
+}
+</style>
+
+<script>
+    $(window).scroll(function() {
+           if(hasMoreRecords == 'true' && $(window).scrollTop() + window.innerHeight == $(document).height()) {
+                goNext();  
+           }else if(hasMoreRecords == 'false'){
+                document.getElementById("scrollResult").style.display= "block";
+                document.getElementById("loadMoreDiv").style.display= "none";
+           }
+        });
+        function loadMore(){
+            if(hasMoreRecords == 'true'){
+                 goNext();
+            }else{
+                document.getElementById("scrollResult").style.display= "block";
+                document.getElementById("loadMoreDiv").style.display= "none";
+            }
+        }
+</script>
+<apex:outputPanel id="rerenderMeForScroll">
+    <script>
+        var hasMoreRecords = '{!hasMoreRecords}';
+    </script>
+</apex:outputPanel>
+<div id="myCurtain" class="requiredLoaderBG" style="display:none;">
+</div>
+<apex:form id="plansMainPage">
+    <script>
+        $(document).ready(function() {
+            $('.s-icon').click(function(e) {
+                  e.preventDefault();
+                  if($(this).parent().find('.search-container').is(':visible')) {
+                    // $(this).parent().removeClass('expand-li-height');
+                    $(this).parent().find('.search-container').hide();
+            
+            
+                  }
+                  else {
+                    // $(this).parent().addClass('expand-li-height');
+                    $(this).parent().find('.search-container').show();
+            
+            
+                  }
+            
+                });
+               
+            });
+    </script>
+    <div class="blue-header">
+        <div class="left-button" onclick="$('#myCurtain').show(); goHome();">Cancel</div>
+    </div>
+    <div class="page-header context-account">
+        <h1>{!pageHeaderTop}</h1>
+        <p class="title truncate">for {!pageSubHeader}</p>
+    </div> 
+    <div class="view_plan"> 
+        <ul class="list">
+            <li style="display:{!IF(currentSelectedPlanList != null && currentSelectedPlanList.size > 0, 'block', 'none')}">
+                <input type="checkbox" class="" onclick="checkBoxObj = this; toggleItem();"></input>
+                <i></i>
+                <h6>Selected {!pageHeader} ({!currentSelectedPlanList.size})</h6>
+                <div class="sublist_container"> 
+                    <ul class="sub_list">
+                        <apex:repeat value="{!currentSelectedPlanList}" var="savedPlan">
+                                <li>
+                                    <input type="checkbox" onclick="checkBoxObj = this; fetchSelPlanDetail('{!savedPlan.clientPlan.Id}','{!savedPlan.clientPlanInstanceNumber}');" class="checkedInput checkBoxToToggle"/>
+                                    <h6 class="sublist_title">{!savedPlan.clientPlan.name}</h6>
+                                    <apex:outputPanel styleclass="sublist_description" layout="block" id="selectedPlanDetail">
+                                        <div class="sublist_description">
+                                            <apex:commandLink action="{!openClientPlanDetail}" onclick="$('#myCurtain').show();">
+                                                <img class="edit-icon" src="{!URLFOR($Resource.sf_resources,'images/icons/new/edit-icon.png')}"/>
+                                            </apex:commandLink>
+                                            <div onclick="$('#confirmBoxMine').show();">
+                                                <img class="delete-icon" src="{!URLFOR($Resource.sf_resources,'images/icons/new/delete-icon.png')}"/>
+                                            </div>
+                                            <div class="price">
+                                                    {!currencySymbol}{!savedPlan.listPrice}
+                                                    <span>{!savedPlan.defaultBillingPlan}</span></div>
+                                            <apex:outputPanel layout="none" rendered="{!If(savedPlan.childPlans != null && savedPlan.childPlans.size>0,true,false)}">
+                                                <div class="description">Selected child plans</div>
+                                                <apex:repeat id="cPlans" value="{!savedPlan.childPlans}" var="cp">
+                                                    <div class="text-description title truncate">{!cp.clientPlan.name}</div>
+                                                </apex:repeat>
+                                            </apex:outputPanel>
+                                        </div>
+                                    </apex:outputPanel>
+                                    
+                                </li>
+                          </apex:repeat>
+                     </ul>
+                 </div>
+             </li>
+             
+             
+            <li>
+                <img class="s-icon" src="{!URLFOR($Resource.sf_resources,'/images/icons/new/icon-search.png')}" style="padding-left: 25px;padding-bottom: 10px;"/>
+                <input type="checkbox" class="" onclick="checkBoxObj = this; toggleItem();" style="width:95% !important;"></input>
+                <i></i>
+                <apex:outPutPanel id="headingPanel" style="overflow: hidden; white-space: nowrap;text-overflow: ellipsis;">
+                    <h6>Available {!pageHeader}  ({!totalAvailableRecords})</h6>
+                    
+                </apex:outPutPanel>
+                <div class="row search-container">
+                    <div class="input-holder span_12_of_12">
+                        <div class="form-control fm-container">
+                            <apex:inputText value="{!searchStringForPlans}" styleclass="in-search margin-top0 text-input input-search"/>
+                            <div class="go-container">
+                              <div class="btn-go" onclick="searchPlans();">GO</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <apex:outputPanel styleclass="sublist_container infinitescroll" layout="block" id="avlPlanList">
+                    <ul class="sub_list">
+                        <apex:repeat id="mPlans" value="{!currentplanList}" var="currentPlan">
+                                <li>
+                                    <input type="checkbox" onclick="checkBoxObj = this; fetchAvlPlanDetail('{!currentPlan.clientPlan.Id}','{!currentPlan.clientPlanInstanceNumber}');" class="checkedInput checkBoxToToggle"/>
+                                    <h6 class="sublist_title">{!currentPlan.clientPlan.name}</h6>
+                                    <apex:outputPanel styleclass="sublist_description" layout="block" id="avlPlanDetail">
+                                        <div class="sublist_description">
+                                            <apex:commandLink action="{!openClientPlanDetail}" onclick="$('#myCurtain').show();">
+                                                <img class="add-icon" src="{!URLFOR($Resource.sf_resources,'images/icons/new/add-icon.png')}"/>
+                                            </apex:commandLink>
+                                            <div class="price">
+                                                {!currencySymbol}{!currentPlan.listPrice} 
+                                                <span>{!currentPlan.defaultBillingPlan}</span></div>
+                                            <apex:outputPanel layout="none" rendered="{!If(currentPlan.childPlans.size>0,true,false)}">
+                                                <div class="description">Available child plans</div>
+                                                <apex:repeat id="cPlans" value="{!currentPlan.childPlans}" var="cp">
+                                                    <div class="text-description title truncate">{!cp.clientPlan.name}</div>
+                                                </apex:repeat>
+                                            </apex:outputPanel>
+                                        </div>
+                                    </apex:outputPanel>
+                                    
+                                </li>
+                          </apex:repeat>
+                     </ul>
+                 </apex:outputPanel>
+             </li>
+         </ul> 
+    </div>
+    <div style="color:blue; margin-left:29px; margin-top:18px; font-size:13px;" id="loadMoreDiv"><span onclick="loadMore();">Load More...</span></div>
+    <div style="color:blue; margin-left:29px; margin-top:18px; font-size:13px;" id="scrollResult"><apex:outputText value="{!errorMessage}" id="errorMessage"/></div>   
+    
+    <div class="alert" id="confirmBoxMine" style="display:none;">
+         <div class="row">
+             <div class="col alert-box span_12_of_12">
+                 <div class="close-icon" id="closeIcon" onclick="$('#confirmBoxMine').hide();"></div>
+                 <div class="title" id="alertBoxdescription">Are you sure you want delete?</div>
+                 <div class="btn-full alert-btn" id="myYesButton" onclick="deleteClientPlan();">Yes</div>
+                 <span class="btn-full alert-btn" id="myNoButton" onclick="$('#confirmBoxMine').hide();">No</span>
+             </div>
+         </div>
+     </div>
+ <apex:actionFunction action="{!fetchPlanDetails}" name="fetchPlanDetails" rerender="avlPlanDetail" status="busyStatus" oncomplete="toggleItem();">
+    <apex:param name="Id" assignTo="{!mPlanId}" value=""/>
+    <apex:param name="planInstanceNumber" assignTo="{!currentPlanInstanceNumber}" value=""/>
+</apex:actionFunction> 
+<apex:actionFunction action="{!fetchSelectedPlanDetails}" name="fetchSelectedPlanDetails" rerender="selectedPlanDetail" status="busyStatus" oncomplete="toggleItem();">
+    <apex:param name="Id" assignTo="{!mPlanId}" value=""/>
+    <apex:param name="planInstanceNumber" assignTo="{!currentPlanInstanceNumber}" value=""/>
+</apex:actionFunction> 
+<apex:actionFunction action="{!goHome}" name="goHome" status="busyStatus">
+</apex:actionFunction>
+<apex:actionFunction action="{!searchPlans}" name="searchPlans" status="busyStatus" rerender="headingPanel,avlPlanList,errorMessage,rerenderMeForScroll"/>
+<apex:actionFunction action="{!deleteClientPlan}" name="deleteClientPlan" rerender="plansMainPage" status="busyStatus">
+</apex:actionFunction>
+<apex:actionFunction action="{!goNext}" name="goNext" status="busyStatus" rerender="headingPanel,avlPlanList,rerenderMeForScroll,errorMessage"/>
+<apex:actionStatus id="busyStatus" startstyleClass="requiredLoaderBG" stopstyleclass="hide"/>
+
+<script>
+    var checkBoxObj = null;
+    function toggleItem(){
+      if($(checkBoxObj).hasClass( 'checkedInput')) {
+        $(checkBoxObj).removeClass('checkedInput'); // this will expand 
+        resetOtherCheckBoxes();
+      }
+      else {
+        $(checkBoxObj).addClass('checkedInput');    // this will shrink
+      }
+    }
+    function resetOtherCheckBoxes(){
+        $('.checkBoxToToggle').each(function(i, obj) {
+            if(obj != checkBoxObj){
+                if($(checkBoxObj).hasClass( 'checkedInput') == false) {
+                    $(obj).addClass('checkedInput');
+                }
+            }
+        });
+    }
+    function fetchAvlPlanDetail(mplanId,currentPlanInstanceNumber){
+        if($(checkBoxObj).hasClass( 'checkedInput')) {
+            fetchPlanDetails(mplanId,currentPlanInstanceNumber);
+        }else{
+            toggleItem();
+        }
+    }
+    function fetchSelPlanDetail(planId,currentPlanInstanceNumber){
+        if($(checkBoxObj).hasClass( 'checkedInput')) {
+            fetchSelectedPlanDetails(planId,currentPlanInstanceNumber);
+        }else{
+            toggleItem();
+        }
+    }
+</script>  
+<style>
+    .requiredLoaderBG{
+        background-color: rgb(71,71,71);
+        opacity:0.7;
+        filter:alpha(opacity=70);
+        background-image:url("{!URLFOR($Resource.sf_resources,'/images/icons/ajax-loader.gif')}");
+        background-position: center center;
+        background-repeat: no-repeat;
+        height: 100%;
+        left: 0;
+        position: fixed;
+        text-align: center;
+        top: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+    #datePicker{
+        display:none;
+    }
+</style>
+</apex:form>
+
+</apex:page>

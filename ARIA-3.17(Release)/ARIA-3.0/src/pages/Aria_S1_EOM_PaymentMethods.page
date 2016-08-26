@@ -1,0 +1,476 @@
+<apex:page sidebar="false" showHeader="false"  standardController="Opportunity" extensions="Aria_S1_EOM_AccountPlanSelectionCtr" id="payment">
+<apex:stylesheet value="{!URLFOR($Resource.sf_resources,'styles/main.css')}"/>
+<apex:includeScript value="{!URLFOR($Resource.sf_resources,'scripts/jquery.js')}"/>
+<div id="myCurtain" class="requiredLoaderBG" style="display:none;">
+    <div id="curtainText" style="display:none;"></div>
+</div>
+<apex:form id="paymentType">
+<apex:actionFunction name="resetPaymentDetails" action="{!resetPaymentDetails}" />
+<apex:actionFunction name="restPaymentTypeAsCC" action="{!restPaymentTypeAsCC}" reRender="payMethod"/>
+<apex:actionFunction name="restPaymentTypeAsBA" action="{!restPaymentTypeAsBA}" reRender="payMethod"/>
+<apex:actionFunction action="{!goHome}" name="navigateToHome"/>
+<style>
+    .errorText{
+        border: 2px solid #9E5645 !important;
+        background-color: #EBCABE !important;
+    }
+    .increaseErrorDivWidth{
+        line-height: 24px;
+    }
+    #datePicker{
+        display:none;
+    }
+</style>
+    <div class="blue-header" style="display:block;" id="paymentHome">
+        <div class="left-button" onclick="navigateToHome();">Cancel</div>
+    </div>
+    <div class="blue-header" style="display:none;" id="cancelPaySelection">
+         <div class="left-button" onclick="cancelPaySelection();">Cancel</div>
+    </div>
+    <div class="blue-header" style="display:none;" id="savePayment">
+         <div class="left-button" style="display:block;" id="cancelNewAccount" onclick="cancel();">Cancel</div>
+         <div class="left-button" style="display:none;" id="cancelExistingAccount" onclick="cancelExisting();">Cancel</div>
+         <div class="right-button" onclick="doneBankAccount();">Done</div>
+    </div>
+    <div class="blue-header" style="display:none;" id="saveCCPayment">
+         <div class="left-button" style="display:block;" id="cancelNewCC"  onclick="cancel();">Cancel</div>
+         <div class="left-button" style="display:none;" id="cancelExistingCC" onclick="cancelExisting();">Cancel</div>
+         <div class="right-button" onclick="doneCCPayment();">Done</div>
+    </div>
+    <div class="page-header context-account">
+        <h1>Payment Method</h1>
+        <p class="title truncate">for {!opportunityObj.Name}</p>
+    </div>
+    <div class="error-message" style="display:none;" id="errorMessageBlock">
+        <div class="row group error">
+            <div class="col col-button span_4_of_4">
+                <div class="error-body">
+                    <div class="error-title" id="errorMessage"></div>
+                    <div class="close-button" onclick="closeMsg();"></div>
+                </div>
+            </div>
+        </div>
+    </div>        
+    <div class="payment-method" style="display:block;" id="payMethod">
+        <div class="row group">
+            <div class="col col-button span_4_of_4">
+                <span class="title-payment">Choose a Method*</span>
+            </div>
+        </div>
+        <div class="row group">
+            <div class="col col-button span_4_of_4"  onclick="selectNewPayment();">
+                <span class="btn-full">New Payment Method</span>
+            </div>
+        </div>
+        <div class="row group" style="display:{!if(paymentObj.Payment_Method__c==null,'none','block')};">
+            <div class="col col-button span_4_of_4"  onclick="clickBtn('{!existingPaymentType}');">
+                <span class="btn-full">Edit {!if(paymentObj.Payment_Method__c == 'Electronic Check (ACH)','Bank account' + paymentSuffix ,paymentObj.Payment_Method__c + paymentSuffix)}</span>
+            </div>
+        </div>
+    </div>
+    <apex:outputPanel id="paymentPanel">
+    <div class="payment-method" style="display:none;" id="paySelection">
+        <div class="row group">
+            <div class="col col-button span_4_of_4" id="creditCard" onclick="selectCreditCardDetails('New');">
+                <span class="btn-full">Credit Card</span>
+            </div>
+        </div>
+        <div class="row group">
+            <div class="col col-button span_4_of_4" id="bankAccount" onclick="selectBankAccountDetails('New');">
+                <span class="btn-full">Bank Account</span>
+            </div>
+        </div>
+    </div>
+    <div class="new-contact" id="bankAccountDetail" style="display:none;">
+        <div class="row">
+            <div class="col col-custom span_12_of_12">
+                <span class="title-combo" id="account-number">Bank Account Number</span>
+                <div class="form-control">
+                    <apex:inputText value="{!paymentAccountNo}" maxlength="20" id="accNumber" onchange="checkAccNumber();" styleClass="text-input" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col col-custom span_12_of_12">
+                <span class="title-combo" id="rout-number">Bank Routing Number</span>
+                <div class="form-control">
+                     <apex:inputText value="{!paymentRoutingNumber}" maxlength="40" onchange="checkRoutNumber();" id="routNumber" styleClass="text-input" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="new-contact" id="creditCardDetail" style="display:none;">
+        <div class="row">
+            <div class="col col-custom span_12_of_12">
+                <span class="title-combo" id="card-number">Card Number</span>
+                <div class="form-control">
+                    <apex:inputText value="{!paymentCreditCardNo}" maxlength="16"  onchange="checkCCNumber();" id="cardNumber" styleClass="text-input" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col col-custom span_6_of_12">
+                <span class="title-combo" id="monthLabel">Expiration Month</span>
+                <div class="styled-select">
+                    <apex:selectList size="1" id="selectedMonth" value="{!paymentObj.cc_expire_mm__c}">
+                      <apex:selectOptions value="{!monthList}"></apex:selectOptions>
+                    </apex:selectList>
+                </div>
+            </div>
+            <div class="col col-custom span_6_of_12">
+                <span class="title-combo" id="yearLabel">Year</span>
+                <div class="styled-select">
+                    <apex:selectList size="1"  id="selectedYear"  value="{!paymentObj.cc_Expire_yyyy__c}">
+                      <apex:selectOptions value="{!yearList}"></apex:selectOptions>
+                    </apex:selectList>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col col-custom span_12_of_12">
+                <span class="title-combo" id="cvv-number">CVV</span>
+                <div class="form-control">
+                    <apex:inputText id="cvvNumber" onchange="checkCvvNumber();" maxlength="4" value="{!paymentCvvNo}" styleClass="text-input" />
+                </div>
+            </div>
+        </div>
+    </div>
+    </apex:outputPanel>
+    <script>
+        function cancelPaySelection(){
+            $('#errorMessage').removeClass('increaseErrorDivWidth');
+            $('#errorMessageBlock').hide();
+            document.getElementById('payMethod').style.display = 'block';
+            document.getElementById('paymentHome').style.display = 'block';
+            document.getElementById('paySelection').style.display = 'none';
+            document.getElementById('cancelPaySelection').style.display = 'none';   
+        }
+        
+        function selectNewPayment(){
+            $('#errorMessage').removeClass('increaseErrorDivWidth');
+            $('#errorMessageBlock').hide();
+            document.getElementById('payMethod').style.display = 'none';
+            document.getElementById('paymentHome').style.display = 'none';
+            document.getElementById('paySelection').style.display = 'block';
+            document.getElementById('cancelPaySelection').style.display = 'block';  
+        }
+        function selectBankAccountDetails(objType){
+            document.getElementById('payMethod').style.display = 'none';
+            document.getElementById('paySelection').style.display = 'none';
+            document.getElementById('cancelPaySelection').style.display = 'none';
+            document.getElementById('bankAccountDetail').style.display = 'block';
+            document.getElementById('savePayment').style.display = 'block';
+            document.getElementById('paymentHome').style.display = 'none';
+            document.getElementById('saveCCPayment').style.display = 'none';
+            if(objType == 'Existing'){
+                document.getElementById('cancelExistingAccount').style.display = 'block';
+                document.getElementById('cancelNewAccount').style.display = 'none';
+            }else{
+                document.getElementById('cancelExistingAccount').style.display = 'none';
+                document.getElementById('cancelNewAccount').style.display = 'block';
+            }   
+            restPaymentTypeAsBA();
+        }
+        function selectCreditCardDetails(objType){
+            document.getElementById('payMethod').style.display = 'none';
+            document.getElementById('paySelection').style.display = 'none';
+            document.getElementById('cancelPaySelection').style.display = 'none';
+            document.getElementById('creditCardDetail').style.display = 'block';
+            document.getElementById('savePayment').style.display = 'none';
+            document.getElementById('paymentHome').style.display = 'none';
+            document.getElementById('saveCCPayment').style.display = 'block';   
+            if(objType == 'Existing'){
+                document.getElementById('cancelExistingCC').style.display = 'block';
+                document.getElementById('cancelNewCC').style.display = 'none';
+            }else{
+                document.getElementById('cancelExistingCC').style.display = 'none';
+                document.getElementById('cancelNewCC').style.display = 'block';
+            }   
+            restPaymentTypeAsCC();
+        }
+        function clearBankAccError(){
+            $(document.getElementById('payment:paymentType:accNumber')).removeClass('errorText');
+            $('#account-number').removeClass('error-label');
+            $(document.getElementById('payment:paymentType:routNumber')).removeClass('errorText');
+            $('#rout-number').removeClass('error-label');
+            $('#errorMessageBlock').hide();
+        }
+        function checkAccNumber(){
+            clearBankAccError();
+            var accountObj = document.getElementById('payment:paymentType:accNumber');
+            var flag = true;
+            if(accountObj.value == null || accountObj.value.trim() =="" ){
+                console.log('value is invalid');
+                $(document.getElementById('payment:paymentType:accNumber')).addClass('errorText');
+                $('#errorMessage').text("Please enter Account number.");
+                $('#account-number').addClass('error-label');
+                $('#errorMessageBlock').show();
+                flag = false;
+            }else if(isPositiveInteger(accountObj.value.trim()) == false){
+                console.log('value is invalid');
+                $(document.getElementById('payment:paymentType:accNumber')).addClass('errorText');
+                $('#errorMessage').text("Please enter numeric values");
+                $('#account-number').addClass('error-label');
+                $('#errorMessageBlock').show();
+                flag = false;
+            }else if(accountObj.value != null && accountObj.value.trim().length > 20 ){
+                console.log('value is invalid'+accountObj.value.trim().length);
+                $(document.getElementById('payment:paymentType:accNumber')).addClass('errorText');
+                $('#errorMessage').text("Please enter maximum 20 digit");
+                $('#account-number').addClass('error-label');
+                $('#errorMessageBlock').show();
+                flag = false;
+            }
+            else{
+                console.log('value is valid');
+                $(document.getElementById('payment:paymentType:accNumber')).removeClass('errorText');
+                $('#account-number').removeClass('error-label');
+                $('#errorMessageBlock').hide();
+            }
+            return flag;
+        }
+        function checkRoutNumber(){
+            clearBankAccError();
+            var routObj = document.getElementById('payment:paymentType:routNumber');
+            var flag = true;
+                if(routObj.value == null || routObj.value.trim() =="" || routObj.value == 0){
+                    console.log('value is invalid');
+                    $(document.getElementById('payment:paymentType:routNumber')).addClass('errorText');
+                    $('#errorMessage').text("Please enter routing number.");
+                    $('#rout-number').addClass('error-label');
+                    $('#errorMessageBlock').show();
+                    flag = false;
+                }else if(checkAlphanumeric(routObj.value)){
+                    console.log('value is invalid');
+                    $(document.getElementById('payment:paymentType:routNumber')).addClass('errorText');
+                    $('#errorMessage').text("Please enter alphanumeric character.");
+                    $('#rout-number').addClass('error-label');
+                    $('#errorMessageBlock').show();
+                    flag = false;
+                }else if(routObj.value.trim().length > 40 ){
+                    console.log('value is invalid');
+                    $(document.getElementById('payment:paymentType:routNumber')).addClass('errorText');
+                    $('#errorMessage').text("Maximum limit 40 character.");
+                    $('#rout-number').addClass('error-label');
+                    $('#errorMessageBlock').show();
+                    flag = false;
+                }else{
+                    console.log('value is valid');
+                    $(document.getElementById('payment:paymentType:routNumber')).removeClass('errorText');
+                    $('#rout-number').removeClass('error-label');
+                    $('#errorMessageBlock').hide();
+                }
+            return flag;
+        }
+        function doneBankAccount(){
+            var flag = true;
+            flag = checkAccNumber();
+            if(flag){
+                flag = checkRoutNumber();
+            }
+            if(flag){
+                //resetPaymentDetails('Electronic Check (ACH)');
+                document.getElementById('payment:paymentType:cardNumber').value='';
+                document.getElementById('payment:paymentType:cvvNumber').value='';
+                document.getElementById('payment:paymentType:selectedMonth').value='--None--';
+                document.getElementById('payment:paymentType:selectedYear').value='--None--';
+                $('#myCurtain').show();
+                resetPaymentDetails();
+            }
+        }
+        function isPositiveInteger(val) {
+            //return val == "0" || ((val | 0) > 0 && val % 1 == 0);
+            return !!val.match(/^[0-9]+$/);
+        }
+        function closeMsg(){
+            $(document.getElementById('payment:paymentType:accNumber')).removeClass('errorText');
+            $('#account-number').removeClass('error-label');
+            $(document.getElementById('payment:paymentType:routNumber')).removeClass('errorText');
+            $('#rout-number').removeClass('error-label');
+            $(document.getElementById('payment:paymentType:cardNumber')).removeClass('errorText');
+            $('#card-number').removeClass('error-label');
+            $(document.getElementById('payment:paymentType:selectedMonth')).removeClass('errorText');
+            $('#monthLabel').removeClass('error-label');
+            $(document.getElementById('payment:paymentType:selectedYear')).removeClass('errorText');
+            $('#yearLabel').removeClass('error-label');
+            $(document.getElementById('payment:paymentType:cvvNumber')).removeClass('errorText');
+            $('#cvv-number').removeClass('error-label');
+            $('#errorMessageBlock').hide(); 
+        }
+        function cancel(){
+            document.getElementById('payMethod').style.display = 'none';
+            document.getElementById('paySelection').style.display = 'block';
+            document.getElementById('cancelPaySelection').style.display = 'block';
+            document.getElementById('bankAccountDetail').style.display = 'none';
+            document.getElementById('savePayment').style.display = 'none';
+            document.getElementById('paymentHome').style.display = 'none';
+            document.getElementById('saveCCPayment').style.display = 'none';
+            document.getElementById('creditCardDetail').style.display = 'none';
+            
+            closeMsg();
+        }
+        function cancelExisting(){
+            document.getElementById('payMethod').style.display = 'block';
+            document.getElementById('paySelection').style.display = 'none';
+            document.getElementById('cancelPaySelection').style.display = 'none';
+            document.getElementById('bankAccountDetail').style.display = 'none';
+            document.getElementById('savePayment').style.display = 'none';
+            document.getElementById('paymentHome').style.display = 'block';
+            document.getElementById('saveCCPayment').style.display = 'none';
+            document.getElementById('creditCardDetail').style.display = 'none';
+            
+            closeMsg();
+        }
+        function checkCCNumber(){
+            var flag = true;
+            clearCCError();
+            var ccNumber = document.getElementById('payment:paymentType:cardNumber');
+            if(ccNumber.value == null || ccNumber.value.trim() =="" ){
+                console.log('value is invalid');
+                $(document.getElementById('payment:paymentType:cardNumber')).addClass('errorText');
+                $('#errorMessage').text("Please enter card number.");
+                $('#card-number').addClass('error-label');
+                $('#errorMessageBlock').show();
+                flag = false;
+            }else if(isPositiveInteger(ccNumber.value.trim()) == false){
+                console.log('value is invalid');
+                $(document.getElementById('payment:paymentType:cardNumber')).addClass('errorText');
+                $('#errorMessage').text("Please enter numeric values");
+                $('#card-number').addClass('error-label');
+                $('#errorMessageBlock').show();
+                flag = false;
+            }else if(ccNumber.value != null && ccNumber.value.trim().length <10 ){
+                console.log('value is invalid'+ccNumber.value.trim().length);
+                $(document.getElementById('payment:paymentType:cardNumber')).addClass('errorText');
+                $('#errorMessage').text("Please enter at least 10 digit");
+                $('#card-number').addClass('error-label');
+                $('#errorMessageBlock').show();
+                flag = false;
+            }
+            return flag;
+        }
+        function checkCvvNumber(){
+            var flag = true;
+            clearCCError();
+            var cvv = document.getElementById('payment:paymentType:cvvNumber');
+            if(cvv.value == null || cvv.value.trim() ==""){
+                flag = false;
+                $(document.getElementById('payment:paymentType:cvvNumber')).addClass('errorText');
+                $('#errorMessage').text("Please enter CVV number.");
+                $('#cvv-number').addClass('error-label');
+                $('#errorMessageBlock').show();
+            }else if(isPositiveInteger(cvv.value.trim()) == false){
+                flag = false;
+                $(document.getElementById('payment:paymentType:cvvNumber')).addClass('errorText');
+                $('#errorMessage').text("Please enter numeric values");
+                $('#cvv-number').addClass('error-label');
+                $('#errorMessageBlock').show();
+            }else if(cvv.value.trim().length < 3){
+                flag = false;
+                $(document.getElementById('payment:paymentType:cvvNumber')).addClass('errorText');
+                $('#errorMessage').text("Please enter at least 3 digit");
+                $('#cvv-number').addClass('error-label');
+                $('#errorMessageBlock').show();
+            }
+            return flag;
+        }
+        function clearCCError(){
+            $(document.getElementById('payment:paymentType:cardNumber')).removeClass('errorText');
+            $('#card-number').removeClass('error-label');
+            $(document.getElementById('payment:paymentType:selectedMonth')).removeClass('errorText');
+            $('#monthLabel').removeClass('error-label');
+            $(document.getElementById('payment:paymentType:selectedYear')).removeClass('errorText');
+            $('#yearLabel').removeClass('error-label');
+            $(document.getElementById('payment:paymentType:cvvNumber')).removeClass('errorText');
+            $('#cvv-number').removeClass('error-label');
+            $('#errorMessageBlock').hide();
+        }
+        function doneCCPayment(){
+            var flag = true;
+            clearCCError();
+            flag = checkCCNumber();
+            if(flag){
+                var month = document.getElementById('payment:paymentType:selectedMonth').value;
+                if(month == '--None--'){
+                    flag = false;
+                    $(document.getElementById('payment:paymentType:selectedMonth')).addClass('errorText');
+                    $('#errorMessage').text("Please select month");
+                    $('#monthLabel').addClass('error-label');
+                    $('#errorMessageBlock').show();
+                }
+            }
+            if(flag){
+                var year = document.getElementById('payment:paymentType:selectedYear').value;
+                if(year == '--None--'){
+                    flag = false;
+                    $(document.getElementById('payment:paymentType:selectedYear')).addClass('errorText');
+                    $('#errorMessage').text("Please select year.");
+                    $('#yearLabel').addClass('error-label');
+                    $('#errorMessageBlock').show();
+                }
+            }
+            if(flag){
+                flag = checkCvvNumber();
+            }
+            if(flag){
+                //resetPaymentDetails('Credit card');
+                $('#myCurtain').show();
+                document.getElementById('payment:paymentType:accNumber').value='';
+                document.getElementById('payment:paymentType:routNumber').value='';
+                resetPaymentDetails();
+            }
+            
+        }
+        
+        function clickBtn(objType){
+        console.log('333-->'+objType);
+            if(objType=='Credit card'){
+                $('#errorMessageBlock').hide();
+                selectCreditCardDetails('Existing');
+            }else if(objType=='Electronic Check (ACH)'){
+                $('#errorMessageBlock').hide();
+                selectBankAccountDetails('Existing');
+            }else{
+                $('#errorMessage').addClass('increaseErrorDivWidth');
+                $('#errorMessage').html("Payment method does not support.<br/> Please select new payment method.");
+                $('#errorMessageBlock').show();
+            }
+            
+        }
+        function checkAlphanumeric(str){
+            if(/^[a-zA-Z0-9 ]*$/.test(str) == false) {
+                return true;
+                console.log('----1------');
+            }else{
+                return false;
+                console.log('----2------');
+            }
+        }
+    </script>
+    
+    <style>
+        .requiredLoaderBG{
+            background-color: rgb(71,71,71);
+            opacity:0.7;
+            filter:alpha(opacity=70);
+            //background-image:url('/img/loading.gif');
+            background-image:url("{!URLFOR($Resource.sf_resources,'/images/icons/ajax-loader.gif')}");
+            background-position: center center;
+            background-repeat: no-repeat;
+            height: 100%;
+            left: 0;
+            position: fixed;
+            text-align: center;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        #curtainText{
+            position: relative;
+            top: 54%;
+            color: white;
+    }
+    </style>
+
+ </apex:form>
+</apex:page>

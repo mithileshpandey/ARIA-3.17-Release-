@@ -1,0 +1,93 @@
+<apex:page sidebar="false" showHeader="false">
+<apex:stylesheet value="{!URLFOR($Resource.sf_resources,'styles/main.css')}"/>
+<apex:includeScript value="{!URLFOR($Resource.sf_resources,'scripts/jquery.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.sf_resources,'scripts/main.js')}"/>
+    <script>
+
+        $(function() {
+            $('.alert').hide();
+            
+            $( ".right-button" ).click(function() {
+              $('.alert').show();
+              //popupCenter('http://google.com', 'Pop Up',screen.width-200,screen.height-200);
+            });
+            
+            
+        });
+        
+        function popupCenter(url, title, w, h) {
+          var left = (screen.width/2)-(w/2);
+          var top = (screen.height/2)-(h/2);
+          return window.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width='+w+', height='+h+', top='+top+', left='+left);
+        } 
+        
+    </script>
+    <div class="blue-header">
+        <div class="left-button">Cancel</div>
+        <div class="right-button">Done</div>
+    </div>
+    <div class="page-header context-account">
+        <h1>Master Plan Details</h1>
+        <p class="">for New Biz Opportunity</p>
+    </div>
+    <div class="addplan-detail">
+        <div class="row">
+            <div class="col col-custom span_8_of_12">
+                <span class="title-combo">Billing Interval*</span>
+                <div class="styled-select">
+                    <select>
+                        <option>Monthly</option>
+                        <option>Yearly</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col col-custom span_4_of_12">
+                <span class="title-combo">Units*</span>
+                <input class="unit-input" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col col-custom span_12_of_12">
+                <span class="title-combo">Rate Shedule*</span>
+                <div class="styled-select">
+                    <select>
+                        <option>Select</option>
+                        <option>Yearly</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col col-custom span_2_of_12">
+                <span class="title-combo">Discount (%)</span>
+                <input class="unit-input" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col col-custom span_2_of_12">
+                <span class="list-price">List Price</span>
+                <br/>
+                <span class="list-price-value">$12,0000</span>
+            </div>
+            <div class="col col-custom span_2_of_12">
+                <span class="net-price">Net Price</span>
+                <br/>
+                <span class="net-price-value">$10,000</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col col-custom span_12_of_12">
+                <div class="add-child">Add Child Plans</div>
+            </div>
+        </div>
+        <div class="alert">
+            <div class="row">
+                <div class="col alert-box span_12_of_12">
+                    <div class="close-icon"></div>
+                    <iframe height="600px" id="theIframe" name="theIframe" src="https://www.yahoo.com" width="100%"></iframe>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</apex:page>

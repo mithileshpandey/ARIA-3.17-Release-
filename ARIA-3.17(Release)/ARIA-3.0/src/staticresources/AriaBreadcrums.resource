@@ -1,0 +1,91 @@
+
+            #breadcrumbs-two{
+                overflow: hidden;
+                width: 100%;
+            }
+
+            #breadcrumbs-two li{
+                float: left;
+                margin: 0 .5em 0 1em;
+                list-style:none;
+            }
+
+            #breadcrumbs-two a{
+                background: #ddd;
+                padding: .7em 1em;
+                float: left;
+                text-decoration: none;
+                color: #444;
+                text-shadow: 0 1px 0 rgba(255,255,255,.5);
+                 position: relative;
+           
+            }
+
+            #breadcrumbs-two a:hover{
+                background: #99db76;
+            }
+
+            #breadcrumbs-two a::before{
+                content: "";
+                position: absolute;
+                top: 50%;
+                 margin-top: -1.5em;  
+                 border-width: 1.5em 0 1.5em 1em;
+                border-style: solid;
+                border-color: #ddd #ddd #ddd transparent;
+                left: -1em;
+            }
+
+            #breadcrumbs-two a:hover::before{
+                border-color: #99db76 #99db76 #99db76 transparent;
+            }
+
+            #breadcrumbs-two a::after{
+                content: "";
+                position: absolute;
+                top: 50%;
+                margin-top: -1.5em;  
+                border-top: 1.5em solid transparent;
+                border-bottom: 1.5em solid transparent;
+                border-left: 1em solid #ddd;
+                right: -1em;
+            }
+
+            #breadcrumbs-two a:hover::after{
+                border-left-color: #99db76;
+            }
+
+            #breadcrumbs-two .current{
+                background: #F88017;
+                font-weight:bold;
+                           
+            }
+            #breadcrumbs-two .current:hover{
+                font-weight: bold;
+                background: #F88017;
+            }
+			#breadcrumbs-two .current:hover::before{
+                border-color: #F88017 #F88017 #F88017 transparent;
+            }
+			#breadcrumbs-two .current:hover::after{
+                border-left-color: #F88017;
+            }
+           
+            #breadcrumbs-two .current::after{
+                content: "";
+                position: absolute;
+                top: 50%;
+                 margin-top: -1.5em;  
+                 border-top: 1.5em solid transparent;
+                border-bottom: 1.5em solid transparent;
+                border-left: 1em solid #ddd;
+                right: -1em;
+                border-left-color: #F88017;
+           
+            }
+            #breadcrumbs-two .current::before{
+                border-color: #F88017 #F88017 #F88017 transparent;
+            
+             
+            }
+   

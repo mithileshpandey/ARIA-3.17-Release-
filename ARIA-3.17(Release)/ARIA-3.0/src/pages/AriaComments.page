@@ -1,0 +1,63 @@
+<apex:page sidebar="false" showHeader="false" title="Display Aria Comments" StandardController="Account" extensions="AriaGetComments">
+ <STYLE type="text/css">
+              th {text-align: center;border-bottom: thin solid black;}
+              td {text-align: left}
+              #drow {text-align: right;}
+              #crow {text-align: center;}
+              #lrow {padding-left: 25px;}
+              .drow {text-align: right;}
+              .crow {text-align: center;}
+              .fright{text-align: right;}
+              .fleft{text-align: left;}
+             </STYLE>
+    <apex:form >
+        
+        <apex:pageBlock mode="detail" title="{!$Label.ARIA_COMMENTS_HISTORY_FOR_THE_PAST_YEAR}">
+             <apex:outputText value="{!errMessage}" style="color:red;font-weight:bold"/>
+        <!-- 
+            <table width="100%">
+            <tr>
+              <th width="15%">Date</th>
+              <th width="15%">Author</th>
+              <th width="70%">Comment</th>
+            </tr>
+            </table>
+                <div style="overflow:auto;" >
+                <table width="100%">
+                <script></script>
+                {!Req}
+            </table>
+            </div>
+             -->
+            
+            <apex:pageBlockTable value="{!Comments}" var="t" rendered ="{!NOT(ISNULL(Comments)) &&Comments.Size > 0}">
+             <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_DATE}" width="15%" headerClass="headerlbl" styleClass="fleft">
+                <apex:outputLabel >{!t.dateStr} </apex:outputLabel>
+             </apex:column>
+              <apex:column headerValue="{!$Label.ARIA_COMMENTS_AUTHOR}" width="20%" headerClass="headerlbl" styleClass="fleft">
+                <apex:outputLabel >{!t.authorStr} </apex:outputLabel>   
+             </apex:column>
+              <apex:column headerValue="{!$Label.ARIA_COMMENTS_COMMENT}" width="65%" headerClass="headerlbl" styleClass="fleft">
+                <apex:outputLabel >{!t.commentStr} </apex:outputLabel>
+             </apex:column>
+             
+          </apex:pageBlockTable>
+          
+          <apex:pageBlockTable value="{!Comments}" var="t" rendered="{!NOT(ISNULL(Comments)) && Comments.Size = 0}">
+            <apex:column headerValue="{!$Label.ARIA_PAYMENT_CREDIT_DATE}" width="15%" headerClass="headerlbl" styleClass="fleft">
+                <apex:outputLabel >{!t.dateStr} </apex:outputLabel>
+             </apex:column>
+              <apex:column headerValue="{!$Label.ARIA_COMMENTS_AUTHOR}" width="20%" headerClass="headerlbl" styleClass="fleft">
+                <apex:outputLabel >{!t.authorStr} </apex:outputLabel>   
+             </apex:column>
+              <apex:column headerValue="{!$Label.ARIA_COMMENTS_COMMENT}" width="65%" headerClass="headerlbl"  styleClass="fleft">
+                <apex:outputLabel >{!t.commentStr} </apex:outputLabel>
+             </apex:column>
+             <apex:facet name="footer">{!$Label.ARIA_COMMENTS_AUTHOR_NO_COMMENT_HISTORY}</apex:facet>
+          </apex:pageBlockTable>
+         
+            
+        </apex:pageBlock>
+    </apex:form>
+    
+</apex:page>

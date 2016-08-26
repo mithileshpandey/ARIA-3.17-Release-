@@ -1,0 +1,103 @@
+<apex:page sidebar="false" showHeader="false" standardController="Opportunity" extensions="Aria_S1_EOM_AccountPlanSelectionCtr" id="billingContacts">
+<apex:stylesheet value="{!URLFOR($Resource.sf_resources,'styles/main.css')}"/>
+<apex:includeScript value="{!URLFOR($Resource.sf_resources,'scripts/jquery.js')}"/>
+<div id="myCurtain" class="requiredLoaderBG" style="display:none;"></div>
+<apex:form id="contactList">
+<apex:actionFunction action="{!goHome}" name="navigateToHome"/>
+<div class="blue-header" style="display:block;" id="paymentHome">
+    <div class="left-button" onclick="$('#myCurtain').show(); navigateToHome();">Cancel</div>
+</div>
+<div class="page-header context-account">
+        <h1>Billing Contacts</h1>
+        <p class="title truncate">for {!opportunityObj.Name}</p>
+  
+</div>
+<div class="error-message" style="display:{!if(msg != '','block','none')}" id="successMsg">
+        <div class="row group error">
+            <div class="col col-button span_4_of_4">
+                <div class="success-body">
+                    <div class="title truncate">{!msg}</div>
+                    <div class="close-button" onclick="closeSuccessMsg();"></div>
+                </div>
+            </div>
+        </div>
+</div>
+<apex:outputPanel id="billingContact">
+<div class="b-contacts">
+            <apex:outputPanel layout="block" style="text-align:center;" styleClass="commit-quote" rendered="{!If(displayControl['New Contact']==false && displayControl['Existing Contact']==false,true,false)}">
+                <h1 class="title" style="color:#c1192b">You don't have permission to create/edit billing contact.</h1><br/>
+                <h1 style="color:#c1192b;">Please contact your system administrator</h1>
+            </apex:outputPanel>
+            <apex:outputPanel layout="block" styleclass="row" rendered="{!displayControl['New Contact']}">
+                  <div class="col col-custom span_12_of_12" onclick="$('#myCurtain').show(); addContact();">
+                        <div class="btn-full btn-white">New Billing Contact</div>
+                  </div>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!displayControl['Existing Contact']}">
+                <div class="row">
+                    <div class="col input-holder span_12_of_12">
+                        <div class="form-control paddingR55">
+                            <input type="text" class="margin-top0 text-input input-search" id="searchString"/>
+                            <div class="search-icon" style="cursor:pointer;" onClick="$('#myCurtain').show();  Search(document.getElementById('searchString').value);"></div>
+                        </div>
+                    </div>
+                </div>
+    
+                <apex:repeat id="cPlans" value="{!contactList}" var="contact" >
+                    <div class="row">
+                        <div class="col contact-item span_12_of_12" onClick="$('#myCurtain').show(); selectValue('{!contact.id}');" style="cursor:pointer;" >
+                            <img class="user" src="{!URLFOR($Resource.sf_resources,'images/icons/new/person.png')}" />
+                            <span class="username title truncate" style="color:{!if(billingContact!=null && contact.id==billingContact.id,'green;','black;')}">{!contact.Name}</span>
+                        </div>
+                    </div>
+                </apex:repeat>    
+                <div id="noContactFoundMsg">
+                    {!noContactFoundMsg}
+                </div> 
+            </apex:outputPanel> 
+</div>
+</apex:outputPanel> 
+<apex:actionFunction name="addContact" action="{!addContact}" >
+</apex:actionFunction>
+
+<apex:actionFunction name="select" action="{!selectValueFromList}" >
+</apex:actionFunction>
+
+<apex:actionFunction name="Search" action="{!searchContact}" oncomplete="$('#myCurtain').hide();" reRender="billingContact">
+      <apex:param name="secondParam" value=""  assignTo="{!searchString}" />
+</apex:actionFunction>
+<apex:inputHidden value="{!selectedContactId}" id="theHiddenInput"/>
+<script>
+    function selectValue(value){
+        document.getElementById('billingContacts:contactList:theHiddenInput').value = value;
+        select();
+    }
+    function closeSuccessMsg(){
+        document.getElementById('successMsg').style.display = 'none';
+    }
+</script>
+<style>
+    .requiredLoaderBG{
+        background-color: rgb(71,71,71);
+        opacity:0.7;
+        filter:alpha(opacity=70);
+        //background-image:url('/img/loading.gif');
+        background-image:url("{!URLFOR($Resource.sf_resources,'/images/icons/ajax-loader.gif')}");
+        background-position: center center;
+        background-repeat: no-repeat;
+        height: 100%;
+        left: 0;
+        position: fixed;
+        text-align: center;
+        top: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+    #curtainText{
+        position: relative;
+        top: 54%;
+        color: white;
+    }
+</style>
+</apex:form>
+</apex:page>

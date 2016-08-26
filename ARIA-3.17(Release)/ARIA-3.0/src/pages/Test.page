@@ -1,0 +1,325 @@
+<apex:page showHeader="false" standardStylesheets="false" renderAs="pdf">
+
+<head>
+<style>
+body{
+    margin:0px;
+    padding:0px;    
+}
+*{
+    box-sizing:border-box;  
+}
+.container-wex{
+    width:1000px;
+    margin:0px auto;
+    font:13px normal Arial, Helvetica, sans-serif;
+    color:#000;
+    overflow:hidden;
+    padding:50px 0px;
+    line-height:20px;   
+}
+.container-wex .row{
+    width:100%;
+    float:left; 
+}
+.container-wex .logo{
+    float:left;
+    width:30%;
+}
+.container-wex .logo img{
+    float:left; 
+}
+.container-wex .logo .text{
+    float:left;
+    clear:both;
+    margin:10px 0px 0px;    
+}
+.container-wex .col-50{
+    float:left;
+    width:50%;
+}
+.container-wex .form-control{
+    padding-bottom:10px;    
+}
+.container-wex .form-control label{
+    float:left;
+    width:35%;
+    text-align:right;
+    padding:5px 10px 0px 0px;
+    font-weight:bold;
+}
+.container-wex .form-control .input-box{
+    width:65%;
+    float:left; 
+}
+.container-wex .form-control .input-box input[type="text"], .container-wex .form-control .input-box textarea{
+    width:100%;
+    line-height:20px;
+    padding:2px 5px;
+    font-size:13px;
+    font-family:Arial, Helvetica, sans-serif;
+}
+.container-wex .w-100{
+    width:100% !important;  
+}
+.container-wex .w-50{
+    width:50% !important;   
+}
+.container-wex .w-10{
+    width:13% !important;
+    margin:0px 1%;  
+}
+.container-wex .w-40{
+    width:35% !important;   
+}
+.container-wex .w-55{
+    width:54% !important;
+    margin-right:1%;    
+}
+.container-wex .w-45{
+    width:45% !important;   
+}
+.container-wex .col-25{
+    width:25%;
+    float:left; 
+}
+.container-wex .col-20{
+    width:20%;
+    float:left; 
+}
+.container-wex .pad-left-20{
+    padding-left:20px !important;   
+}
+.container-wex .text-center{
+    text-align:center !important;
+}
+.container-wex .text-left{
+    text-align:left !important; 
+}
+.container-wex .text-right{
+    text-align:right !important;    
+}
+.container-wex .mar-top-50{
+    margin-top:50px;    
+}
+.container-wex .mar-top-5{
+    margin-top:5px !important;  
+}
+.container-wex .pad-top-0{
+    padding-top:0px !important; 
+}
+.container-wex .wex-table{
+    margin-top:20px;
+    margin-bottom:10px; 
+}
+.container-wex .wex-table th, .container-wex .wex-table td{
+    padding:5px;
+}
+.container-wex .wex-table th{
+    border-bottom:1px solid #ccc;   
+}
+.container-wex .wex-table tr th:last-child{
+    border-bottom:none; 
+}
+.container-wex .wex-table td{
+    border-left:1px solid #ccc;
+    border-bottom:1px solid #ccc;   
+}
+.container-wex .wex-table td:last-child{
+    border-bottom:none; 
+}
+.container-wex .bottom-cal{
+    padding-right:30px; 
+}
+.container-wex .bottom-cal .w-70{
+    width:70% !important;   
+}
+.container-wex .bottom-cal .w-30{
+    width:30% !important;   
+}
+</style>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>WEX TELEMATICS</title>
+<!--<link href="css/style11.css" rel="stylesheet" type="text/css" />-->
+</head>
+
+<body>
+    <div class="container-wex">
+        <div class="row">
+            <div class="logo">
+                <img src="images/wex-logo.png" width="280" />
+                <div class="text">
+                    97 Darling Avenue<br />
+                    South Portland, ME 04106<br /><br />
+                    <strong>Sales Representative:</strong><br />
+                    &nbsp;&nbsp;Bob Brown<br />
+                    &nbsp;&nbsp;Bob.Brown@wexinc.com
+                </div>
+            </div>
+            <div class="col-50">
+                <div class="row form-control">
+                    <label>Customer Name:</label>
+                    <div class="input-box"><input type="text" /></div>
+                </div>
+                <div class="row form-control">
+                    <label>Billing Account Number:</label>
+                    <div class="input-box"><input type="text" /></div>
+                </div>
+                <div class="row form-control">
+                    <label>Billing Street Address:</label>
+                    <div class="input-box"><textarea></textarea></div>
+                </div>
+                <div class="row form-control">
+                    <label>City/State/Zip:</label>
+                    <div class="input-box"><input type="text" class="w-50" /><input type="text" class="w-10" /><input type="text" class="w-40" /></div>
+                </div>
+                <div class="row form-control">
+                    <label>Contact/Phone:</label>
+                    <div class="input-box"><input type="text" class="w-55" /><input type="text" class="w-45" /></div>
+                </div>
+                <div class="row form-control">
+                    <label>Email:</label>
+                    <div class="input-box"><input type="text" /></div>
+                </div>
+            </div>
+            <div class="col-20 pad-left-20">
+                <div class="row form-control">
+                    <strong>Quote Name:</strong>
+                    <div class="input-box w-100"><input type="text" class="text-center" /></div>
+                </div>
+                <div class="row form-control">
+                    <strong>Preparation Date:</strong>
+                    <div class="input-box w-100"><input type="text" class="text-center" /></div>
+                </div>
+                <div class="row form-control">
+                    <strong>Quote Valid Through:</strong>
+                    <div class="input-box w-100"><input type="text" class="text-center" /></div>
+                </div>
+                <div class="row form-control">
+                    <strong>Service Contract Term:</strong>
+                    <div class="input-box w-100"><input type="text" class="text-center" /></div>
+                </div>
+            </div>
+        </div>
+        <div class="row text-center mar-top-50">
+            Your quote details, arranged by shipping address follow:
+        </div>
+         <div class="row text-right">
+            New Telematics Customer: <input name="" type="checkbox" value="" />
+        </div>
+        <div class="row">
+            <div class="col-50">
+                <div class="row form-control">
+                    <label>Shipping Address:</label>
+                    <div class="input-box"><textarea></textarea></div>
+                </div>
+                <div class="row form-control">
+                    <label>City/State/Zip:</label>
+                    <div class="input-box"><input type="text" class="w-50" /><input type="text" class="w-10" /><input type="text" class="w-40" /></div>
+                </div>
+                <div class="row form-control">
+                    <label>Contact/Phone:</label>
+                    <div class="input-box"><input type="text" class="w-55" /><input type="text" class="w-45" /></div>
+                </div>
+            </div>
+            <div class="col-50">
+                <div class="row form-control">
+                    <label>Shipping Carrier:</label>
+                    <div class="input-box"><input type="text" class="w-45" /></div>
+                </div>
+                <div class="row form-control">
+                    <label>Shipping Service:</label>
+                    <div class="input-box"><input type="text" class="w-45" /></div>
+                </div>
+                <div class="row form-control">
+                    <label>WEX Finance Term:</label>
+                    <div class="input-box"><input type="text" class="w-45" /></div>
+                </div>
+                <div class="row form-control">
+                    <label>Tax Exempt</label>
+                    <div class="input-box"><input name="" type="checkbox" value="" />&nbsp;&nbsp;&nbsp;APR:&nbsp;&nbsp;<input type="text" style="width:75px;" /></div>
+                </div>               
+            </div>
+        </div>
+        <div class="row">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" class="wex-table">
+              <tr>
+                <th align="left">Product/Service Name</th>
+                <th align="left">Option (If applicable)</th>
+                <th align="center">Qty:</th>
+                <th align="center">Unit Cost</th>
+                <th align="center">Discount</th>
+                <th align="center">Adjusted Unit Cost</th>
+                <th align="center">Monthly Payment Es.</th>
+                <th align="center">Monthly Payment</th>
+                <th align="right">Total Cost</th>
+                <th>&nbsp;</th>
+              </tr>
+              <tr>
+                <td align="left">5200 - GPS-Only Vehicle Unit</td>
+                <td align="left">&nbsp;</td>
+                <td align="center">4</td>
+                <td align="center">&nbsp;</td>
+                <td align="center">&nbsp;</td>
+                <td align="center">&nbsp;</td>
+                <td align="center">$6.45</td>
+                <td align="center">$25.80</td>
+                <td align="right">$928.80</td>
+                <td><input name="" type="checkbox" value="" /></td>
+              </tr>
+              <tr>
+                <td align="left">Telematics Standard Monthly Srvc</td>
+                <td align="left">5200 - (GPS-Only Vehicle)</td>
+                <td align="center">4</td>
+                <td align="center">$26.50</td>
+                <td align="center">$0.00</td>
+                <td align="center">$26.50</td>
+                <td align="center">$26.50</td>
+                <td align="center">$106.00</td>
+                <td align="right">N/A</td>
+                <td><input name="" type="checkbox" value="" /></td>
+              </tr>
+              <tr>
+                <td align="left">LD Hamess OBD II adapter Kit</td>
+                <td align="left">5000 Series</td>
+                <td align="center">4</td>
+                <td align="center">&nbsp;</td>
+                <td align="center">&nbsp;</td>
+                <td align="center">&nbsp;</td>
+                <td align="center">$1.05</td>
+                <td align="center">$4.18</td>
+                <td align="right">$150.48</td>
+                <td><input name="" type="checkbox" value="" /></td>
+              </tr>
+            </table>
+        </div>
+        <div class="row">
+            <div class="col-50">
+                *Applicable taxes will be applied in addition to this quote at the time of your order.<br /><br />
+                *Installations costs may vary based on number, location and complexity. <br /><br /><br />
+                <strong>THIS IS NOT AN INVOICE</strong>
+            </div>
+            <div class="col-50 bottom-cal">
+                <div class="row form-control">
+                    <label class="w-70">Shipping and Handling:</label>
+                    <div class="input-box w-30"><input type="text" class="text-right" value="$26.00" /></div>
+                </div>
+                <div class="row form-control">
+                    <label class="w-70">Applicable One-Time Expense:</label>
+                    <div class="input-box w-30"><input type="text" class="text-right" value="$0.00" /></div>
+                </div>
+                <div class="row form-control">
+                    <label class="w-70">Recurring Monthly Expense:</label>
+                    <div class="input-box w-30"><input type="text" class="text-right" value="$135.98" /></div>
+                </div>
+                <div class="row form-control text-right">
+                    Billed upon shipment following acceptance of this agreement 
+                </div>      
+            </div>
+        </div>
+
+    </div>
+</body>
+
+</apex:page>

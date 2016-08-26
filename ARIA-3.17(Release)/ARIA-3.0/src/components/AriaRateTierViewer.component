@@ -1,0 +1,142 @@
+<apex:component access="global" controller="AriaRateTierViewerController">
+	<apex:attribute name="opportunityId" description="This value defines the opportunity for which the rate tiers has to be listed" type="String" assignTo="{!opportunityId}"/>
+	<apex:attribute name="quoteId" description="This value defines the quote for which the rate tiers has to be listed" type="String" assignTo="{!quoteId}"/>
+	<apex:attribute name="planId" description="This value defines the plan for which the rate tiers has to be listed. Pass '*' to list all plans" type="String" assignTo="{!planId}"/>
+	<apex:attribute name="contextInfo" description="This value defines context wether opportunity or quote" type="String" required="false" assignTo="{!context}" />
+	<apex:attribute name="selectionContext" description="This value defines the context in which the component is used. Possible values are SelectMasterPlan, ReplaceMasterPlan, MaintainSuplementalPlan" type="String" required="false" assignTo="{!selectionContext}" />
+ 
+	<style>
+	.tableList tr  td{
+	    padding:0px !important;
+	}
+	.apexp .bPageBlock.apexDefaultPageBlock .pbBody .pbSubheader{
+		color:#e53c37;
+	}
+	.Custom99Tab .tertiaryPalette, .individualPalette .Custom99Block .tertiaryPalette, .layoutEdit .individualPalette .Custom99Block .tertiaryPalette {
+	background-color: #686260;
+	}
+	</style>
+
+	 <apex:pageBlock >  
+	<div style="width:100%;height:auto">
+	
+		<apex:pageBlockSection title="Hidden pageblocksection to work other pageblocksection collapsable under reapet" collapsible="true" rendered="false" /> 
+		<apex:repeat value="{!AllPlans}" var="theAcctPlan" id="theAccPlans">
+			<!-- 
+			<apex:pageBlockSection columns="2" >
+				<apex:outputLabel style="font-weight: bold;" escape="false" value="{!theAcctPlan.summaryDynamicText} {!theAcctPlan.planName}" />
+			    <apex:outputPanel >
+			    	<div align="right">
+	   					<apex:commandButton action="{!changeRateSelection}" value="Change Rate Selection" id="btnChangeRateSelection"/>
+	   				</div>
+	        	</apex:outputPanel>
+			</apex:pageBlockSection>
+			 -->
+			<apex:pageBlockSection columns="1" collapsible="true" title="{!theAcctPlan.planName}">
+			
+			<apex:outputPanel >
+			
+			<table width="98%" align="left" cellspacing="0" cellpadding="0" style="border:0px" >
+				<tr>
+					<td width="20%" valign="top">{!theAcctPlan.planName}&nbsp;&nbsp;<apex:outputText value="{!theAcctPlan.units} units" /></td>
+					<td valign="top">&nbsp;&nbsp;
+						<apex:outputText value="Billing : {!theAcctPlan.beginWhen}" />&nbsp;&nbsp;&nbsp;&nbsp;
+						<!-- 
+				        <apex:outputText rendered="{!IF( (theAcctPlan.proRateCharges && theAcctPlan.proRateStarts == 'Paid Thru Date' && theAcctPlan.paidThruDate != null) ,true,false)}" value="Pro-Rate Charges to {!theAcctPlan.paidThruDate}" />
+				        <apex:outputText rendered="{!IF( (theAcctPlan.proRateCharges && theAcctPlan.proRateStarts == 'Alternate Date' && theAcctPlan.alternateDate != null) ,true,false)}" value="Pro-Rate Charges to {!theAcctPlan.alternateDate}" />
+				        <apex:outputText rendered="{!IF(theAcctPlan.proRateCharges == false && theAcctPlan.proRateChargesValue != 'Yes' && theAcctPlan.proRateChargesValue != 'No', true,false)}" value="Pro-Rate Charges to {!theAcctPlan.proRateChargesValue}" />
+				        -->
+<!-- 				        
+				        <apex:outputText rendered="{!IF(theAcctPlan.proRateChargesValue != 'No' && theAcctPlan.proRateStarts != 'Offset Days', true,false)}" value="Pro-Rate Charges to {! IF ( theAcctPlan.proRateStarts == 'Paid Thru Date' && theAcctPlan.paidThruDate != null, theAcctPlan.paidThruDate, IF(theAcctPlan.proRateStarts == 'Alternate Date' && theAcctPlan.alternateDate != null,theAcctPlan.alternateDate , IF(theAcctPlan.proRateChargesValue != 'Yes', theAcctPlan.proRateChargesValue, '')))}" />
+
+				        <apex:outputText rendered="{!IF ( theAcctPlan.proRateStarts == 'Paid Thru Date' && theAcctPlan.paidThruDate != null, true, IF(theAcctPlan.proRateStarts == 'Alternate Date' && theAcctPlan.alternateDate != null, true, IF(theAcctPlan.proRateChargesValue != 'Yes' && theAcctPlan.proRateChargesValue != 'No', true, false)))}" 
+				        	value="Pro-Rate Charges to {! IF ( theAcctPlan.proRateStarts == 'Paid Thru Date' && theAcctPlan.paidThruDate != null, 'Paid Thru Date ' + theAcctPlan.paidThruDate, IF(theAcctPlan.proRateStarts == 'Alternate Date' && theAcctPlan.alternateDate != null, 'Alternate Date ' + theAcctPlan.alternateDate , IF(theAcctPlan.proRateChargesValue != 'Yes', theAcctPlan.proRateChargesValue, '')))}" />
+				        
+				        <apex:outputText rendered="{!IF ( theAcctPlan.proRateStarts == 'Paid Thru Date' && theAcctPlan.paidThruDate != null, true, IF(theAcctPlan.proRateStarts == 'Alternate Date' && theAcctPlan.alternateDate != null, true, IF( theAcctPlan.proRateStarts == 'Offset Days' , true, IF(theAcctPlan.proRateChargesValue != 'No', true, false))))}" 
+				        	value="Pro-Rate Charges {! IF ( theAcctPlan.proRateStarts == 'Paid Thru Date' && theAcctPlan.paidThruDate != null, 'to Paid Thru Date ' + theAcctPlan.paidThruDate, IF(theAcctPlan.proRateStarts == 'Alternate Date' && theAcctPlan.alternateDate != null, 'to Alternate Date ' + theAcctPlan.alternateDate , IF( theAcctPlan.proRateStarts == 'Offset Days' , 'to Offset Days ' + Text(theAcctPlan.offsetDays), IF(theAcctPlan.proRateChargesValue != 'Yes', 'to ' + theAcctPlan.proRateChargesValue, IF( theAcctPlan.proRateChargesValue == 'Yes', '', '')))))}" />
+				        <apex:outputText rendered="{!IF(theAcctPlan.proRateCharges == false && theAcctPlan.proRateChargesValue == 'No', true,false)}" value="Do not Pro-Rate charges" />
+-->
+				        <apex:outputText rendered="{!IF ( theAcctPlan.proRateStarts == 'Alternate Date' && theAcctPlan.alternateDate != null, true, IF( theAcctPlan.proRateStarts == 'Offset Days' , true, IF(theAcctPlan.proRateChargesValue != 'No', true, false)))}" 
+				        	value="Pro-Rate Charges {! IF ( theAcctPlan.proRateStarts == 'Alternate Date' && theAcctPlan.alternateDate != null, 'to Alternate Pro-ration Start Date ' + theAcctPlan.alternateDate , IF( theAcctPlan.proRateStarts == 'Offset Days' , 'to Offset Months ' + Text(theAcctPlan.offsetDays), IF(theAcctPlan.proRateChargesValue != 'Yes', 'to ' + theAcctPlan.proRateChargesValue, IF( theAcctPlan.proRateChargesValue == 'Yes', '', ''))))}" />
+				        <apex:outputText rendered="{!IF(theAcctPlan.proRateCharges == false && theAcctPlan.proRateChargesValue == 'No', true,false)}" value="Do not Pro-Rate charges" />
+				        <br/>
+					</td>
+				</tr>
+			</table>
+			<br/><br/>
+			<table width="98%" align="center" class="list" cellspacing="0" cellpadding="0" style="border:0px" > <!-- style="border:1px solid black;" -->
+				<tr class="headerRow ">
+					<td width="15%">Service</td>
+			    	<td width="20%" valign="top" >Service Type</td>
+			    	<td width="20%" valign="top" >Tiered Pricing Rule</td>
+			        <td valign="top" colspan="2" ></td>
+			    </tr>
+			    <apex:repeat value="{!listAccountPlanWrappers}" var="thePlanWrapper" id="theAccPlans2">
+			    	<apex:repeat value="{!thePlanWrapper.listAccountServiceWrapper}" var="theServiceWrapper" id="theServices2" rendered="{! IF (theAcctPlan.planName == thePlanWrapper.accountPlan.name, true, false)}">
+			    		
+				        <tr onMouseOver="this.bgColor='#f9feff'" onMouseOut="this.bgColor='#ffffff'">
+					    	<td>{!theServiceWrapper.serviceName} </td>
+					    	<td>{!theServiceWrapper.serviceType} </td>
+					    	<td>{!theServiceWrapper.usageType} </td>
+					    	<td colspan="2">
+					    	<table width="100%" class="tableList" cellspacing="0" cellpadding="0" style="border: 0px;">
+				    				
+								    		<apex:outputPanel rendered="{!theServiceWrapper.hasMoreTiers}">
+								    		<tr>
+						    					<td style="border:0px;">
+						    					<div style="width:220px; float:right;">
+									
+										    					<div style="width:56px;height:19px; background:url('/img/alohaSkin/grid_headerbg.gif') repeat-x scroll 0 bottom #FFFFFF; float:left; margin-left:0px; border:solid 1px #ccc; text-align:right;padding:2px">From </div>
+									    						<div style="width:24px;height:19px; background:url('/img/alohaSkin/grid_headerbg.gif') repeat-x scroll 0 bottom #FFFFFF; float:left; margin-left:0px; border:solid 1px #ccc; text-align:center;padding:2px">&nbsp; </div>
+									    						<div style="width:56px;height:19px; background:url('/img/alohaSkin/grid_headerbg.gif') repeat-x scroll 0 bottom #FFFFFF; float:left; margin-left:0px; border:solid 1px #ccc; text-align:left;padding:2px">To </div>
+									    						<div style="width:56px;height:19px; background:url('/img/alohaSkin/grid_headerbg.gif') repeat-x scroll 0 bottom #FFFFFF; float:left; margin-left:0px; border:solid 1px #ccc; text-align:right;padding:2px">Price</div>
+					    				
+					    						</div>
+							    				</td>
+							    			</tr>
+							    				
+								    		</apex:outputPanel>
+							    <!-- 		
+					    		<apex:repeat value="{!thePlanWrapper.listAccountRateTiers}" var="theRateTierWrapper" id="theRateTierWrappers3" >
+				    			 -->
+				    		
+				    			<apex:repeat value="{!theServiceWrapper.listAccountRateTiersByServiceName}" var="theRateTierWrapper" id="theRateTierWrappers3">
+					    			<apex:outputPanel rendered="{! IF ( theServiceWrapper.serviceName == theRateTierWrapper.Client_Plan_Service__r.Service__r.Name && theRateTierWrapper.Account_Plan__c == thePlanWrapper.accountPlan.Id,true, false)}">
+				    					<tr>
+					    					<td style="border:0px;">
+					    					<div style="width:220px; float:right;">
+														
+												<apex:outputPanel rendered="{! theServiceWrapper.hasMoreTiers}">
+							    					<div style="width:56px;height:19px; float:left; margin-left:0px; border:solid 1px #ccc; text-align:right;padding:2px"><apex:outputText value="{!theRateTierWrapper.FromUnit__c}" ></apex:outputText> </div>
+						    						<div style="width:24px;height:19px; float:left; margin-left:0px; border:solid 1px #ccc; text-align:center;padding:2px"><apex:outputLabel value=" - " ></apex:outputLabel> </div>
+						    						<div style="width:56px;height:19px; float:left; margin-left:0px; border:solid 1px #ccc; text-align:left;padding:2px"><div style="height:15px;" ><apex:outputText rendered="{!IF( isnull(theRateTierWrapper.ToUnit__c), true, false)}" style="font-size:14pt;" value="{!'&infin;'}" escape="false" ></apex:outputText> <apex:outputText rendered="{!IF(isnull(theRateTierWrapper.ToUnit__c) == false, true, false)}" value="{!theRateTierWrapper.ToUnit__c}" ></apex:outputText></div></div>
+					    						</apex:outputPanel>					    						
+					    						<div style="width:56px;height:19px; float:{! IF( theServiceWrapper.hasMoreTiers, 'left', 'right')}; margin-left:0px; margin-right:3px; border:solid 1px #ccc; text-align:right;padding:2px"><apex:outputText value="{!theRateTierWrapper.Rate_per_Unit__c}"></apex:outputText></div>
+					    						
+				    						</div>
+				    						</td>
+				    					</tr>
+				    				</apex:outputPanel>
+					    		</apex:repeat>
+					    		</table>
+									
+							</td>
+					    </tr>
+					    
+					</apex:repeat>
+		    	</apex:repeat>
+		    </table>
+		    	<br/> 
+		    	<div align="right">  
+   					<apex:commandButton action="{!changeRateSelection}" value="Change Rate Schedule" id="btnChangeRateSchedule" rerender="hiddenBlock">
+   						<apex:param value="{!theAcctPlan.planId}" name="currentPlanId" assignTo="{!currentPlanId}" />
+   					</apex:commandButton>
+   				</div> 
+   				<apex:pageBlock id="hiddenBlock" rendered="false"></apex:pageBlock>
+   				
+		    </apex:outputPanel>
+		    </apex:pageBlockSection>
+		</apex:repeat>
+	</div>
+	 </apex:pageBlock>  
+</apex:component>

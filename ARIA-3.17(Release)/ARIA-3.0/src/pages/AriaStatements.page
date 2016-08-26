@@ -1,0 +1,165 @@
+<apex:page sidebar="false" showHeader="false" standardStylesheets="true" title="{!$Label.ARIA_STATEMENT_DISPLAY_MESSAGE}" standardController="Account" extensions="AriaStatementsController">
+    
+    <style type="text/css">
+              th {text-align: center;border-bottom: thin solid black;}
+              /*th {text-align: left;border-bottom: thin solid black;}*/
+              td {text-align: left}
+              #drow {text-align: right;}
+              #crow {text-align: center;}
+              #lrow {padding-left: 25px;}
+              .drow {text-align: right;}
+              .crow {text-align: center;}
+              .fright{text-align: right;}
+              .fleft{text-align: left;}
+              body .pbBody table.list tr.headerRow td, body .pbBody table.list tr.headerRow th {
+                color: #000000;
+                font-size: 1em;
+               font-weight: bold;
+}
+    </style>
+    
+    <apex:form id="frm">
+         <apex:actionFunction id="passStatement" name="retriveStatement" action="{!get_statement_detail}" reRender="pb" status="status" />
+         <!-- apex action functions for paginations -->
+          <apex:actionFunction id="aFunction2" name="firstPage" action="{!firstBtnClick}" reRender="pb" status="status" />
+          <apex:actionFunction id="aFunction3" name="prePage" action="{!previousBtnClick}" reRender="pb" status="status" />
+          <apex:actionFunction id="aFunction4" name="nextPage" action="{!nextBtnClick}" reRender="pb" status="status" />
+          <apex:actionFunction id="aFunction5" name="lastPage" action="{!lastBtnClick}" reRender="pb" status="status" />
+          <apex:actionFunction id="aFunction6" name="setPageSize" reRender="pb" status="status" >
+            <apex:param name="pSize" value="" assignTo="{!PageSize}"/>
+          </apex:actionFunction>
+          <!-- apex action functions for paginations ends--> 
+         <apex:actionStatus id="status">
+              <apex:facet name="start">
+                  <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 95%;width:100%;padding-top: 10%;opacity:.8;"> 
+                        <img  src="{!URLFOR($Resource.LodingGif)}" title="{!$Label.ARIA_GENERAL_CONFIG_LOADING}" /><br/><br/>
+                        <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+                   </div>
+              </apex:facet>
+          </apex:actionStatus>
+          <br/><br/>
+         
+         <apex:pageBlock title="{!$Label.ARIA_STATEMENT_HISTORY}" id="pb">
+         
+         <apex:outputText value="{!errMessage}" style="color:red;font-weight:bold"/>
+         <div class="paginator">
+      <span class="left">
+         <span onmouseout="ListPaginator.unhoverSelector(this)" onmouseover="ListPaginator.hoverSelector(this)" onmousedown="ListPaginator.showSelector('item_paginator_rpp_target')" id="item_paginator_rpp_target" class="selectorTarget">
+            {!start}-{!ends} of {!totalRecords}
+            <table cellspacing="0" cellpadding="0" id="item_paginator_rpp" class="selector rpp">
+                <tbody>
+                <tr onmousedown="setPageSize(10);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=10,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">10</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                <tr onmousedown="setPageSize(25);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=25,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">25</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                <tr onmousedown="setPageSize(50);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=50,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td><td class="rppOpt">50</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                <tr onmousedown="setPageSize(100);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=100,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">100</td> <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                
+            </tbody>
+          </table>
+        <img src="/s.gif" class="selectArrow" />
+       </span>
+       </span>
+      <span class="prevNextLinks">
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!previousButtonDisabled}">
+            <a href="javascript:firstPage();">
+                <img class="first" alt="{!$Label.ARIA_ACCT_HISTORY_FIRST_PAGE}" title="{!$Label.ARIA_ACCT_HISTORY_FIRST_PAGE}" src="/s.gif"/>
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!previousButtonDisabled}">
+            <img class="firstoff" src="/s.gif"/>
+            </apex:outputPanel>
+        </span>
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!previousButtonDisabled}">
+            <a href="javascript:prePage();">
+                <img class="prev" alt="{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}" title="{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}" src="/s.gif"/>{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!previousButtonDisabled}">
+            <img class="prevoff" src="/s.gif"/>{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}
+            </apex:outputPanel>
+        </span>
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!nextButtonDisabled}">
+            <a href="javascript:nextPage();">
+                {!$Label.ARIA_PAYMENT_CREDIT_NEXT}<img class="next" alt="{!$Label.ARIA_PAYMENT_CREDIT_NEXT}" title="{!$Label.ARIA_PAYMENT_CREDIT_NEXT}" src="/s.gif"/>
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!nextButtonDisabled}">
+                {!$Label.ARIA_PAYMENT_CREDIT_NEXT}<img class="nextoff" src="/s.gif"/>
+            </apex:outputPanel>
+        </span>
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!nextButtonDisabled}">
+            <a href="javascript:lastPage();">
+                <img class="last" alt="{!$Label.ARIA_REFUND_LAST_PAGE}" title="{!$Label.ARIA_REFUND_LAST_PAGE}" src="/s.gif"/>
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!nextButtonDisabled}">
+            <img class="lastoff" src="/s.gif"/>
+            </apex:outputPanel>
+        </span>
+     </span>
+     <span class="right">{!$Label.ARIA_PAYMENT_REFUND_PAGE}&nbsp;{!PageNumber}&nbsp;{!$Label.ARIA_PAYMENT_CREDIT_OF}&nbsp;{!totalPageNumber}
+     <!--<input type="text" value="{!PageNumber}" onchange="jump(this.value);" maxlength="4" class="pageInput"/> of {!totalPageNumber}-->
+     </span>
+     </div><br/>
+     <div style="float:right">
+            <apex:outputLabel value="{!$Label.ARIA_PLAN_QUOTE_SUBSCRIPTIONS}" />&nbsp;&nbsp;&nbsp;&nbsp;
+            <apex:selectList size="1" value="{!subscriptionTransId}"  onchange="retriveStatement();">
+                <apex:selectOptions value="{!subscriptionList}"/>
+            </apex:selectList>
+     </div> 
+     <!-- Added for pagination end-->
+              <apex:pageBlockTable columnClasses="crow" value="{!stmts}" var="s" rendered ="{!stmts.Size > 0}">
+                 <apex:column headerValue="{!$Label.ARIA_COMMENTS_STATEMENT_NO}" headerClass="headerlbl" >
+                     <apex:outputLink value="{!s.detail_link}" target="_Blank">{!s.statement_no}</apex:outputLink>
+                 </apex:column>
+                  <apex:column headerValue="{!$Label.ARIA_COMMENTS_STATEMENT_DATE}" value="{!s.create_date}"  headerClass="headerlbl" />
+                  <apex:column headerClass="headerlbl" >
+                    <apex:facet name="header"><div style="float:right;">{!$Label.ARIA_COMMENTS_BALANCE_FORWARD}</div></apex:facet>
+                      <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                      <apex:param value="{!s.balance_forward_amount}" />
+                    </apex:outputText></apex:column>
+                  <apex:column headerClass="headerlbl" >
+                  <apex:facet name="header"><div style="float:right;">{!$Label.ARIA_COMMENTS_TOTAL_CHARGES}</div></apex:facet>
+                      <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                      <apex:param value="{!s.new_charges_amount}" />
+                    </apex:outputText></apex:column>
+                  <apex:column headerClass="headerlbl" >
+                  <apex:facet name="header"><div style="float:right;">{!$Label.ARIA_COMMENTS_TOTAL_CREDITS}</div></apex:facet>
+                      <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                      <apex:param value="{!s.new_payments_amount}" />
+                    </apex:outputText></apex:column>
+                  <apex:column headerClass="headerlbl" >
+                  <apex:facet name="header"><div style="float:right;">{!$Label.ARIA_COMMENTS_CLOSING_BALANCE}</div></apex:facet>
+                      <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                      <apex:param value="{!s.total_amount}" />
+                    </apex:outputText></apex:column>
+              </apex:pageBlockTable>
+              
+              <apex:pageBlockTable value="{!stmts}" var="s" rendered="{!stmts.Size = 0}">
+                 <apex:column headerValue="{!$Label.ARIA_COMMENTS_STATEMENT_NO}" headerClass="headerlbl" styleClass="drow" width="12%"/>
+                 <apex:column headerValue="{!$Label.ARIA_COMMENTS_STATEMENT_DATE}" width="11%" headerClass="headerlbl" styleClass="crow" />
+                 <apex:column headerValue="{!$Label.ARIA_COMMENTS_BALANCE_FORWARD}"  width="25%" headerClass="headerlbl" styleClass="crow" />
+                 <apex:column headerValue="{!$Label.ARIA_COMMENTS_TOTAL_CHARGES}" width="12%" headerClass="headerlbl"  styleClass="drow" />
+                 <apex:column headerValue="{!$Label.ARIA_COMMENTS_TOTAL_CREDITS}"  width="20%" headerClass="headerlbl"  styleClass="lrow" />
+                 <apex:column headerValue="{!$Label.ARIA_COMMENTS_CLOSING_BALANCE}" width="20%" headerClass="headerlbl"  styleClass="lrow" />
+                 <apex:facet name="footer">{!$Label.ARIA_COMMENTS_NO_STATEMENT_HISTORY}</apex:facet>
+              </apex:pageBlockTable>
+          
+         </apex:pageBlock>
+               
+    </apex:form>
+<script> 
+addEvent(document.body,"mousedown",function(a){ListPaginator.hideSelector('item_paginator_rpp_target')},!0); 
+</script>
+</apex:page>

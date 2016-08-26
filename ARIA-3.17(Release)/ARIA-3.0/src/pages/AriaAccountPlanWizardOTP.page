@@ -1,0 +1,144 @@
+<apex:page controller="AriaAccountPlanWizardOTPCtrl" sidebar="false" tabStyle="Account">
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/AriaAccountPlanWizardOTP.css')}"/>
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css"/>
+<style>
+.errorM3{
+	margin-left:0px !important;
+}
+.btn-Cancel{
+	background: #999999;
+	padding: 6px 15px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    border: 1px solid #999999;
+    float: left;
+    font: 13px Arial, Helvetica, sans-serif;
+    font-family: arial;
+    cursor: pointer;
+}
+.btn-Save{
+	background: #428bca;
+	padding: 6px 15px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    margin: 7px 0px 7px 20px;
+    border: 1px solid #428bca;
+    float: right;
+    font: 13px Arial, Helvetica, sans-serif;
+    font-family: arial;
+    cursor: pointer;
+}
+</style>
+<script> 
+	function searchStart(e){
+       if (e.keyCode == 13)  {
+       $('.btnGo').click(); 
+       }
+    }
+    function highlightOTP(obj){
+           if(obj.checked){
+               obj.parentNode.parentNode.style.backgroundColor = "#1797c0"; 
+           }else{
+               obj.parentNode.parentNode.style.backgroundColor = "";
+      }
+       
+   }
+   
+   function highlightOTPcall(){
+   var tableOTP = document.getElementsByClassName("itemchBox");
+   for(i=0;i<tableOTP.length;i++){
+       if(tableOTP[i].checked == true){
+           console.log('======tableOTP[i]===='+tableOTP[i]);
+           highlightOTP(tableOTP[i]);
+       }
+   } 
+  }
+  
+  function noenter(ev)  {
+   	if (window.event && window.event.keyCode == 13 || ev.which == 13) {
+   		searchItems();
+       	return false;
+     } else {
+          return true;
+     }
+ }
+</script>
+<apex:outputPanel id="pgsecorder" >
+
+
+<apex:form >
+<c:AriaPriceIndicatorComponent recid="{!$CurrentPage.parameters.id}" context="{!$CurrentPage.parameters.context}" selectedCurrency="{!$CurrentPage.parameters.accountCurrency}" accountName="{!accountName}" billingInterval="{!$CurrentPage.parameters.billingInterval}" />
+	
+		<apex:actionstatus id="LoadingStatus">
+			    <apex:facet name="start">
+			        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 15%;opacity:.8;">
+			            <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+			            
+			            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+			        </div>
+			    </apex:facet>
+			</apex:actionstatus>
+   		<apex:actionFunction name="nextPlans" action="{!nextPlans}" rerender="pgsecorder" status="LoadingStatus"/>
+		<apex:actionFunction name="previousPlans" action="{!previousPlans}" rerender="pgsecorder" status="LoadingStatus"/>
+		<apex:actionFunction name="firstPlans" action="{!firstPlans}" rerender="pgsecorder" status="LoadingStatus"/>
+		<apex:actionFunction name="lastPlans" action="{!lastPlans}" rerender="pgsecorder" status="LoadingStatus"/>
+		<div style="margin-top:40px;">
+			
+			<apex:pageMessages id="msg"/>	
+				<Span style="font-family:Arial;font-size:18px;">Add One Time Products</Span>
+				<br></br>
+				Choose one or more one time products to add to this agreement.
+		</div>
+		<table style="width:100%; margin-top:5px;" class="planTable">
+			<tr>
+				<td style="width:45%">
+					<apex:inputText size="80" id="searchData" value="{!searchText}" onkeydown="searchStart(event);" styleClass="serchText" style="width:240px;height:13px;" onkeypress="return noenter(event);"/>&nbsp;
+                    <apex:actionFunction name="searchItems" action="{!SearchItems}" rerender="pgsecorder" status="LoadingStatus" oncomplete="highlightOTPcall();"/>
+                    <apex:commandButton value="search" styleClass="btnGo" action="{!SearchItems}" reRender="pgsecorder" status="LoadingStatus" oncomplete="highlightOTPcall();" style="height:28px;width:80px;background:white;"/>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<apex:commandLink rendered="{!searchText != ''}" value="clear search" action="{!clearSearch}" reRender="pgsecorder" style="color:blue;"/>
+				</td>
+                <!--  <td><a href="if(setcon.hasprevious,'#','')" onclick="firstPlans()"><img id="firstPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/first_0.png')}" class="paggingIconExt" title="First"/></a>
+                &nbsp;<a href="#" onclick="previousPlans()"><img id="prevPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/previous_0.png')}" class="paggingIconExt" title="Previous"/></a>
+                &nbsp;<span class="paggingText"> Showing {!recordCountFrom}-{!recordCountTo} of {!totalNoOfProducts} Products </span>&nbsp;<a href="#" onclick="nextPlans()"><img id="nextPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/next_0.png')}"  class="paggingIconExt" title="Next"/></a>
+                &nbsp;<a href="#" onclick="lastPlans()"><img id="lastPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/last_0.png')}" class="paggingIconExt" title="Last"/></a>
+                </td>-->
+                <td>
+                	<apex:outputLink disabled="{!!hasPrevious}" onclick="firstPlans();return false;" value=""> <img id="firstPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/first_0.png')}" class="paggingIconExt" title="First"/> </apex:outputLink>
+                &nbsp;<apex:outputLink disabled="{!!hasPrevious}" onclick="previousPlans();return false;" > <img id="prevPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/previous_0.png')}" class="paggingIconExt" title="Previous"/> </apex:outputLink>
+                &nbsp;<span class="paggingText"> Showing {!recordCountFrom}-{!recordCountTo} of {!totalNoOfProducts} Products </span>&nbsp;<apex:outputLink disabled="{!!hasNext}" onclick="nextPlans();return false;" value=""> <img id="nextPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/next_0.png')}"  class="paggingIconExt" title="Next"/> </apex:outputLink>
+                &nbsp;<apex:outputLink disabled="{!!hasNext}" onclick="lastPlans();return false;" > <img id="lastPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/last_0.png')}" class="paggingIconExt" title="Last"/> </apex:outputLink>
+                </td>
+	        </tr>
+	        </table>
+	        <table class="altrowstable myTable" style="width:100%;">
+    		<tr> 
+    			
+	    		<th class="gradiantHeader" width="4%">Select</th>
+	    		<th class="gradiantHeader" width="26%">SKU</th>
+	    		<th class="gradiantHeader" width="60%">Description</th>
+	    		<th class="gradiantHeader" width="10%" style="text-align:right;padding-right:5px !important;">Price</th>
+    		</tr>
+    		<apex:repeat value="{!itemWrapList}" var="ai">
+	    		<tr>
+	    				<td class ="gradiantHeaderOTP" style="text-align:center;"><apex:inputCheckbox value="{!ai.isSelected}"/></td>
+	    				<td class ="gradiantHeaderOTP">{!ai.SKU}</td>
+	    				<td class ="gradiantHeaderOTP">{!ai.Description}</td>
+	    				<td class ="gradiantHeaderOTP" style="text-align:right;padding-right:5px !important;">{!ai.Price}</td>
+	    				
+	    		</tr>
+    	</apex:repeat> 
+    	</table>
+    	 
+    	 <div style="padding-top:100px;"> 
+    	 <apex:actionFunction name="saveOrder" status="LoadingStatus"  action="{!saveAriaOrder}" />
+    	 <apex:actionFunction name="redirectToOverview" status="LoadingStatus"  action="{!redirectToOverview}"/>
+           <input type="button" name="Cancel" value="Cancel" class="btn-Cancel" onclick="redirectToOverview();" />
+           <input type="submit" name="Submit" value="Add" class="btn-Save" onclick="return saveOrder();"/>
+        </div>
+    	</apex:form>
+</apex:outputPanel>
+</apex:page>

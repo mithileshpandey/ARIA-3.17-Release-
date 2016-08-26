@@ -1,0 +1,73 @@
+<apex:page standardController="Client_Plan__c" extensions="AriaClientPlanParentChildListController" >
+
+<apex:tabPanel switchType="client" selectedTab="childPlans" id="theTabPanel">
+    <apex:tab label="Parent Plans" name="parentPlans" id="parentPlans" rendered="{!if(Client_Plan__c.RecordType.DeveloperName=='Master', 'false', 'true')}">
+         <apex:pageBlock >
+                <apex:pageBlockTable value="{!parentPlans}" var="theParentPlan" >
+                    <apex:column >
+                      <apex:facet name="header">Plan Name</apex:facet>
+                      <apex:outputLink value="/{!theParentPlan.Id}" id="theLink" target="_blank">{!theParentPlan.Name}</apex:outputLink>
+                      
+                    </apex:column>
+                    <apex:column >
+                      <apex:facet name="header">Plan Description</apex:facet>
+                      <apex:outputlabel value="{!HTMLENCODE(theParentPlan.Description__c)}" escape="false"/>
+                    </apex:column>                      
+                    <apex:column >
+                      <apex:facet name="header">Plan Status</apex:facet>
+                      <apex:outputlabel value="{!HTMLENCODE(theParentPlan.Status__c)}" escape="false"/>
+                    </apex:column>
+                    <apex:column >
+                      <apex:facet name="header">Recurring Billing Interval</apex:facet>
+                      <apex:outputlabel value="{!HTMLENCODE(theParentPlan.Recurring_Billing_Interval__c)}" escape="false"/>
+                    </apex:column>
+                    
+                    <apex:column >
+                      <apex:facet name="header">Rollover Months</apex:facet>
+                      <apex:outputlabel value="{!HTMLENCODE(theParentPlan.Rollover_Months__c)}" escape="false"/>
+                    </apex:column>
+                    <apex:column >
+                      <apex:facet name="header">Rollover Plan Name</apex:facet>
+                      <apex:outputlabel value="--" escape="false"/>
+                    </apex:column>
+                </apex:pageBlockTable>
+        </apex:pageBlock>
+    </apex:tab>
+    <apex:tab label="Child Plans" name="childPlans" id="childPlans">
+         <apex:pageBlock >
+                <apex:pageBlockTable value="{!childPlans}" var="thechildPlan" >
+                    <apex:column >
+                      <apex:facet name="header">Plan Name</apex:facet>
+                      <apex:outputLink value="/{!thechildPlan.Id}" id="theLink" target="_blank">{!thechildPlan.Name}</apex:outputLink>
+                      
+                    </apex:column>
+                    <apex:column >
+                      <apex:facet name="header">Plan Description</apex:facet>
+                      <apex:outputlabel value="{!HTMLENCODE(thechildPlan.Description__c)}" escape="false"/>
+                    </apex:column>                      
+                    <apex:column >
+                      <apex:facet name="header">Plan Status</apex:facet>
+                      <apex:outputlabel value="{!HTMLENCODE(thechildPlan.Status__c)}" escape="false"/>
+                    </apex:column>
+                    <apex:column >
+                      <apex:facet name="header">Recurring Billing Interval</apex:facet>
+                      <apex:outputlabel value="{!HTMLENCODE(thechildPlan.Recurring_Billing_Interval__c)}" escape="false"/>
+                    </apex:column>
+                    <apex:column >
+                      <apex:facet name="header">Usage Billing Interval</apex:facet>
+                      <apex:outputlabel value="{!HTMLENCODE(thechildPlan.Usage_Billing_Interval__c)}" escape="false"/>
+                    </apex:column>
+                    <apex:column >
+                      <apex:facet name="header">Rollover Months</apex:facet>
+                      <apex:outputlabel value="{!HTMLENCODE(thechildPlan.Rollover_Months__c)}" escape="false"/>
+                    </apex:column>
+                    <apex:column >
+                      <apex:facet name="header">Rollover Plan Name</apex:facet>
+                      <apex:outputlabel value="--" escape="false"/>
+                    </apex:column>
+                </apex:pageBlockTable>
+        </apex:pageBlock>
+    </apex:tab>
+</apex:tabPanel>
+
+</apex:page>

@@ -1,0 +1,342 @@
+<apex:page controller="AriaAccountBGInlineEditCtrl" tabstyle="Account" showheader="false" sidebar="false">
+ 
+ <style>
+    .labelDataClass{
+    padding-top: 1px !important;
+    padding-bottom: 1px !important;
+    vertical-align: middle !important;
+    border-bottom: none !important;
+    font-size: 11px !important;
+}
+    select {
+   height: 25px;
+   border-radius: 3px;
+   border: 1px solid #CCC;
+   font-weight: 200;
+   font-size: 13px; 
+   font-family: Verdana;
+   width: 168px;
+   box-shadow: 1px 1px 5px #CCC;
+}
+input[type='text'] {
+   width: 150px;
+   height: 9px;
+   border-radius: 3px;
+   border: 1px solid #CCC;
+   padding: 7px;
+   font-weight: 200;
+   font-size: 13px;
+   font-family: Verdana;
+   box-shadow: 1px 1px 5px #CCC;
+}
+          .requiredLoaderBG_notinuse{
+                background-color: rgb(71,71,71);
+                opacity:0.7;
+                filter:alpha(opacity=70);
+                background-image:url('/img/loading.gif');
+                background-position: center center;
+                background-repeat: no-repeat;
+                height: 100%;
+                left: 0;
+                position: fixed;
+                text-align: center;
+                top: 0;
+                width: 100%;
+                z-index: 1000;
+            }
+            .errormsg{
+                list-style-type: none;
+                color:red;
+                font-size: 10pt;
+                font-weight:bold;
+            }
+            .accountName{
+                text-decoration: underline;
+            }
+            .gradiantHeader{
+                font-size:12px !important;
+                border-width: 1px !important;
+                padding: 2px 6px 1px 8px!important;
+                border-style: solid !important;
+                border-color: #fff !important;
+                background-color:#D4D4D4 !important;
+                height:22px !important;
+                background: #eeeeee !important; /* Old browsers */
+                background: -moz-linear-gradient(top,  #eeeeee 0%, #cccccc 100%) !important; /* FF3.6+ */
+                background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#eeeeee), color-stop(100%,#cccccc)) !important; /* Chrome,Safari4+ */
+                background: -webkit-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* Chrome10+,Safari5.1+ */
+                background: -o-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* Opera 11.10+ */
+                background: -ms-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* IE10+ */
+                background: linear-gradient(to bottom,  #eeeeee 0%,#cccccc 100%) !important; /* W3C */
+                filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#eeeeee', endColorstr='#cccccc',GradientType=0 ) !important; /* IE6-9 */
+            }
+            .myTable{
+                border-width: 0px !important;
+                border-style: solid !important;
+                border-color: #fff !important;
+                font-size: 12px !important;
+                
+            }
+            .myTable thead tr th div{
+                background-color:red !important;
+            }
+            .myTable tbody tr:nth-child(even) {
+                background-color:#eeeeee !important;
+            }
+            .myTable tbody tr td {
+                border-width: 1px !important;
+                border-style: solid !important;
+                border-color: #fff !important;
+                padding-left: 8px;
+            }
+            .myTable1{
+                border-width: 0px !important;
+                border-style: solid !important;
+                border-color: #fff !important;
+                font-size: 12px !important;
+            }
+            .myTable1 tbody tr:nth-child(odd) {
+                background-color:#eeeeee !important;
+            }
+            .myTable1 tbody tr td {
+                border-width: 1px !important;
+                border-style: solid !important;
+                border-color: #fff !important;
+                height : 20px !important;
+                padding-left: 8px;
+            }
+            
+            h2 .myLink{
+                font-size: 1.0em !important;
+                color:blue;
+                color: blue;
+                text-decoration: underline;
+            }
+            .pbBody .myChangePayMethod{
+                font-size: 12px !important;
+                margin-left: 20px;
+                color: blue;
+                text-decoration: underline;
+                font-weight: bold;
+            }
+            .firstChild{
+                padding-left:20px !important;
+                font-weight:normal !important;
+                background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 2px 2px !important;
+            }
+            .secondChild {
+                padding-left:40px !important;
+                font-weight:normal !important;
+                background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 20px 2px !important;
+            }
+            .thirdChild {
+                padding-left:60px !important;
+                font-weight:normal !important;
+                background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 40px 2px !important;
+            }
+            .fourthChild {
+                padding-left:80px !important;
+                font-weight:normal !important;
+                background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 60px 2px !important;
+            }
+</style>
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'collapse.css')}" /> 
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<body style="background:#f8f8f8">
+<apex:outputPanel id="overlayBlock">
+
+<script>
+
+    function onCompleteSave(){
+        if ('{!hasError}'== 'true') {
+           return false;
+        }
+        SaveBillPopupToAria();
+    }
+    
+    function onWinClose(){
+        parent.closeMe();
+    }
+</script>
+    <apex:form >
+         <apex:actionFunction status="loadingStatus1" action="{!saveBillPopupToAria}" name="SaveBillPopupToAria" oncomplete="onWinClose();" rerender="overlayBlock" ></apex:actionFunction>
+        <apex:actionFunction status="loadingStatus1" action="{!showPaymentType_Dropdown}" name="showPaymentType" rerender="overlayBlock"></apex:actionFunction>
+        
+        <apex:pageBlock title="Edit Billing Group Attributes">
+            <apex:actionstatus id="loadingStatus1">
+            <apex:facet name="start">
+                <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 20%;opacity:.8;">
+                    <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+                    
+                    <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+                </div>
+            </apex:facet>
+        </apex:actionstatus>
+        <apex:messages styleclass="errormsg"/>
+             <apex:pageBlockButtons location="Top">
+                <apex:commandButton value="Save" action="{!SaveBillPopup}"  status="loadingStatus1" oncomplete="onCompleteSave();" rerender="overlayBlock"/>  
+                <input type="button" class="btn" value="Cancel" onclick="parent.closeMe();"/>
+             </apex:pageBlockButtons>
+             <apex:pageBlockSection >
+  
+    <apex:pageBlockSectionItem labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="Client Defined Identifier" style="font-size: 11px;"/>
+        <apex:inputText value="{!billingGroupHeader.Aria_Client_Def_Billing_Group_Id__c}"  styleClass="cdID"/>
+    </apex:pageBlockSectionItem>
+    <apex:pageBlockSectionItem rendered="{!isPersonaAccount}"> </apex:pageBlockSectionItem>
+    <apex:pageBlockSectionItem rendered="{!!isPersonaAccount}" labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="Billing Contact" rendered="{!if(paymentMethodHeader.Payment_Method__c!=null,true,false)}" style="font-size: 11px;"/>
+        <apex:outputPanel rendered="{!if(paymentMethodHeader.Payment_Method__c!=null,true,false)}" >
+            <apex:inputhidden id="BillContactId" value="{!BCnt}" /> 
+            <apex:inputText id="BillContactName" value="{!billContactHeader}" style="width:150px;" html-placeholder="Enter Contact Name" />          
+            <c:AutoCompleteComponent autoAccountId="{!accountId}" autoContactId="{!$Component.BillContactId}" autoContactName="{!$Component.BillContactName}"/>
+        </apex:outputPanel>
+    </apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="Notification Method"  style="font-size: 11px;"/>
+        <apex:inputfield value="{!billingGroupHeader.Notify_Method__c}"  styleClass="Notification_Method" />
+    </apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem rendered="{!isPersonaAccount}"> </apex:pageBlockSectionItem>
+    <apex:pageBlockSectionItem rendered="{!!isPersonaAccount}" labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="Statement Contact" style="font-size: 11px;"/>
+        <apex:outputPanel >
+            <apex:inputhidden id="StmtContactId" value="{!SCnt}" />       
+            <apex:inputText id="StmtContactName" value="{!statmentContactHeader}" style="width:150px;" html-placeholder="Enter Contact Name" />           
+            <c:AutoCompleteComponent autoAccountId="{!accountId}" autoContactId="{!$Component.StmtContactId}" autoContactName="{!$Component.StmtContactName}"/>
+        </apex:outputPanel>
+    </apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="Notification Template Group" style="font-size: 11px;"/>
+        <apex:selectList size="1" value="{!SelectedariaNotificationTemplate}"  styleClass="Notification_Template_Group"> 
+            <apex:selectOptions value="{!ariaNotificationTemplateList}"></apex:selectOptions>
+        </apex:selectList>
+    </apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="Statement Template" style="font-size: 11px;"/>
+        <apex:selectList size="1"  value="{!selectedAriaStatementTemplate}"  styleClass="stTemplate"> 
+            <apex:selectOptions value="{!ariaStatementTemplateList}"></apex:selectOptions>
+        </apex:selectList>
+    </apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="Credit Note Template" style="font-size: 11px;"/>
+        <apex:selectList size="1" value="{!selectedAriaCCNoteTemplate}" styleClass="Credit_Note_Template" >
+              <apex:selectOptions value="{!ariaCCNoteTemplateList}"></apex:selectOptions>
+        </apex:selectList>
+    </apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="Primary Payment Method" style="font-size: 11px;"/>
+        <apex:outputPanel >
+            <apex:outputField id="PayModeRep1" rendered="{!isPaymentMethod}" value="{!paymentMethodHeader.Payment_Method__c}" styleClass="PayModeRep" />
+            <apex:inputField id="PayModeRep" rendered="{!!isPaymentMethod}" value="{!paymentMethodHeader.Payment_Method__c}" styleClass="PayModeRep" onchange="showPaymentType()" />
+            &nbsp;<apex:commandLink rendered="{!isPaymentMethod}" action="{!changePayMethod}" value="Change" status="loadingStatus1" rerender="overlayBlock" styleClass="myChangePayMethod" />
+            <apex:outputPanel rendered="{!AND(oldpaymentMethodHeader!=null,oldpaymentMethodHeader.Id!=null)}">
+                <apex:commandLink rendered="{!!isPaymentMethod}" action="{!UndoPayMethod}" style="margin-left:5px" value="Undo" status="loadingStatus1" rerender="overlayBlock" styleClass="myChangePayMethod" />
+            </apex:outputPanel>
+        </apex:outputPanel> 
+    </apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem id="CCInfo" rendered="{!isCC}" labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="Credit Card Number" style="font-size: 11px;"/>
+        <apex:outputPanel >
+        <apex:inputText maxlength="16" value="{!ccNumber}" rendered="{!!isCCReadOnly}" styleClass="iCC"   />
+        <apex:outputText value="{!ccNumber}" rendered="{!isCCReadOnly}" styleClass="oCC"  />
+        </apex:outputPanel>
+    </apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem rendered="{!isCC}" id="eCCInfo"></apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem id="cvv_CCInfo" rendered="{!isCC}" labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="CVV" style="font-size: 11px;"/>
+        <apex:outputPanel >
+        <apex:inputText maxlength="4" value="{!cvv}" rendered="{!!isCCReadOnly}"  styleClass="iCC" style="width:60px"/>
+        <apex:outputText value="{!cvv}" rendered="{!isCCReadOnly}" styleClass="oCC" />
+        </apex:outputPanel>
+    </apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem rendered="{!isCC}" id="cvv_eCCInfo"></apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem rendered="{!isCC}" id="ed_CCInfo" labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="Expiration Date (Month/Year)" id="edl_CCInfo" style="font-size: 11px;" />
+        <apex:outputPanel >
+        <apex:inputField id="ExpCCMonth" rendered="{!!isCCReadOnly}" value="{!paymentMethodHeader.cc_expire_mm__c}" style="width:125px;"  styleClass="iCC"/> 
+        <apex:inputField rendered="{!!isCCReadOnly}" value="{!paymentMethodHeader.cc_Expire_yyyy__c}" style="width:125px;margin-left: 15px;" styleClass="iCC"/>
+        <apex:outputText value="{!month}"  rendered="{!isCCReadOnly}" styleClass="oCC"/>
+         </apex:outputPanel>                                      
+    </apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem rendered="{!isCC}" id="ed_eCCInfo"></apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem rendered="{!isCC}" id="tcc_CCInfo" labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="Tokenized Credit Card" style="font-size: 11px;"/>
+        <apex:outputPanel >
+        <apex:inputCheckbox rendered="{!!isCCReadOnly}" value="{!paymentMethodHeader.isTokenized__c}" id="chkbxToken"  styleClass="iCC"/>
+        <apex:inputCheckbox rendered="{!isCCReadOnly}" value="{!paymentMethodHeader.isTokenized__c}" id="chkbxToken1"  disabled="true" styleClass="oCC"/>
+        </apex:outputPanel>
+    </apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem rendered="{!isCC}" id="tcc_eCCInfo"></apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem rendered="{!isEC}" id="rn_ECInfo" labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="Routing number" style="font-size: 11px;"/>
+        <apex:outputPanel >
+        <apex:inputText value="{!Bank_Routing_Number}" rendered="{!!isECReadOnly}" styleClass="iECC"  />
+        <apex:outputText value="{!Bank_Routing_Number}" rendered="{!isECReadOnly}" styleClass="oECC"  />
+        </apex:outputPanel>
+    </apex:pageBlockSectionItem>
+    <apex:pageBlockSectionItem rendered="{!isEC}" id="rn_eECInfo1"></apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem rendered="{!isEC}" id="ac_ECInfo" labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="Account number" style="font-size: 11px;"/>
+        <apex:outputPanel >
+        <apex:inputText value="{!accountNumber}" rendered="{!!isECReadOnly}" styleClass="iECC"  />
+        <apex:outputText value="{!accountNumber}" rendered="{!isECReadOnly}" styleClass="oECC" />
+        </apex:outputPanel>
+    </apex:pageBlockSectionItem>
+    <apex:pageBlockSectionItem rendered="{!isEC}" id="rn_eECInfo"></apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem rendered="{!isNetTerms}" id="NTInfo"  labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="Payment Terms" style="font-size: 11px;"/>
+        <apex:outputPanel > 
+            <apex:selectRadio value="{!paymentMethodHeader.Net_Terms__c}" rendered="{!!isNTReadOnly}" styleClass="iNT" > 
+                <apex:selectOptions value="{!NetTermsVal2}"></apex:selectOptions>
+            </apex:selectRadio>
+            <apex:selectRadio value="{!paymentMethodHeader.Net_Terms__c}" rendered="{!isNTReadOnly}" styleClass="oNT" disabled="true">  
+                <apex:selectOptions value="{!NetTermsVal2}"></apex:selectOptions>
+            </apex:selectRadio>
+            </apex:outputPanel>
+    </apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem rendered="{!isNetTerms}" id="eNTInfo"></apex:pageBlockSectionItem>
+ 
+ 	<apex:pageBlockSectionItem rendered="{!isTokenAgId}" id="tokenAgId"  labelStyleClass="labelDataClass" >
+        <apex:outputLabel value="Token/Agreement ID" style="font-size: 11px;"/>
+        <apex:outputPanel > 
+            <apex:inputField value="{!paymentMethodHeader.Agreement_Id__c}"  rendered="{!!isTokenAgReadOnly}"  styleClass="iCC"/>
+            <apex:outputField value="{!paymentMethodHeader.Agreement_Id__c}"  rendered="{!isTokenAgReadOnly}" />
+        </apex:outputPanel>
+    </apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem rendered="{!isTokenAgId}" id="TokenInfo"></apex:pageBlockSectionItem>
+ </apex:pageBlockSection>
+             
+             
+        </apex:pageBlock>
+    </apex:form>
+
+</apex:outputPanel>
+</body>
+</apex:page>

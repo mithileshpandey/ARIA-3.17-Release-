@@ -1,0 +1,552 @@
+<apex:page standardController="Account" id="pg" showheader="false" extensions="AriaUsageHistoryController">
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'collapse.css')}" />
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+
+<script>
+     function show_data(entity,id,typeNum){
+                
+                var tr = document.getElementById(id);
+                if(entity.className == "expanded"){
+                    entity.className ="collapsed";
+                    tr.style.display="none";
+                }
+                else if(entity.className == "collapsed"){
+                    entity.className ="expanded";
+                    tr.style.display="";
+                }
+                
+        }   
+     function isNumberKey(evt, val)
+      {
+         var charCode = (evt.which) ? evt.which : event.keyCode
+         if (charCode == 46) {
+            // Allow only 1 decimal point ('.')...
+            if((val) && (val.indexOf('.') >= 0))
+                return false;
+            else
+                return true;
+         }
+         
+         if (charCode > 31 && (charCode < 48 || charCode > 57))
+            return false;
+
+         return true;
+      }
+      function exportUsage(inStartDateString,inEndDateString,inAcctNo,inUsageType,userId){
+        window.open('/apex/AriaUsageExport?inStartDateString='+inStartDateString+'&inEndDateString='+inEndDateString+'&inUsageType='+inUsageType+'&inAcctNo='+inAcctNo+'&uid='+userId,'',"width=400,height=400");
+      }
+      
+      function twoDecimalPlaces(obj){
+        var decimalVal = obj.value.split('.');
+         if(decimalVal.length > 1 && decimalVal[1].length > 2){
+            obj.value = obj.value.substring(0,obj.value.length -1);
+         }
+      }
+
+    function closeWin(){
+         var aid = window.parent.location.href.split('id=')[1];
+         aid = aid.split('&')[0];
+         //alert(window.opener.location.href);
+         window.opener.parent.location.href = 'https://'+document.domain+'/'+aid.trim();
+         //window.parent.opener.location.reload(true);
+         self.close();
+         //window.opener.location = self;
+        //opener.location.reload();
+        //window.close();
+    }
+    
+    //-------------------------------------------
+   // Function to only allow decimal data entry
+   //-------------------------------------------
+   function jsDecimals(e)
+   {
+      var evt = (e) ? e : window.event;
+      var key = (evt.keyCode) ? evt.keyCode : evt.which;
+      if(key != null) 
+      {
+          key = parseInt(key, 10);
+          if((key < 48 || key > 57) && (key < 96 || key > 105)) 
+          {
+              if(!jsIsUserFriendlyChar(key, "Decimals"))
+              {
+                  return false;
+              }
+          }
+          else 
+          {
+              if(evt.shiftKey)
+              {
+                  return false;
+              }
+          }
+      }
+      return true;
+   }        
+   
+   //------------------------------------------
+   // Function to check for user friendly keys
+   //------------------------------------------
+   function jsIsUserFriendlyChar(val, step) 
+   {
+      // Backspace, Tab, Enter, Insert, and Delete
+      if(val == 8 || val == 9 || val == 13 || val == 45 || val == 46)
+      {
+          return true;
+      }
+      // Ctrl, Alt, CapsLock, Home, End, and Arrows
+      if((val > 16 && val < 21) || (val > 34 && val < 41))
+      {
+          return true;
+      }
+      if (step == "Decimals")
+      {
+          if(val == 190 || val == 110)
+          {
+              return true;
+          }
+      }
+      // The rest
+      return false;
+   }
+   
+   function verifyInput(){
+       var isValid = true;
+       $("#startDateErrorMsg").hide();
+       $("#endDateErrorMsg").hide();
+       $("#subTransIdErrorMsg").hide();
+       if($(".startDate").val().length == 0){
+           $("#startDateErrorMsg").show();
+           isValid = false;
+       }
+       if($(".endDate").val().length == 0){
+           $("#endDateErrorMsg").show();
+           isValid = false;
+       }
+      /* if($(".subTransId").val().length == ''){
+           $("#subTransIdErrorMsg").show();
+           isValid = false;
+       }*/
+       if(isValid){
+       get_usage_history();
+       }
+       return false;
+   }
+   /* MP added for setting backaground of failed or voided transaction inpayment history*/
+   function setBackgroundColor(tdId,payment_status,voiding_event_no){
+    //alert(tdId+'  '+payment_status+'   '+voiding_event_no);
+    var td = document.getElementById(tdId);
+    if(td){
+     var tr = td.parentNode;
+     //alert(tr);
+     if(payment_status == 'Failed' || (voiding_event_no!=null && voiding_event_no !='')){
+        tr.style.background = "#FFE7C3";
+     }
+    }
+   }
+          
+   
+</script>
+
+<style>
+    .Checking PA{
+        display:none;
+    }
+    
+    .header{
+        text-align:right;
+    }
+    
+  
+#tabs_wrapper {
+    width: 98%;
+    margin:0 auto;
+    margin-top :2px;
+}
+#tabs_container {
+    border-bottom: 1px solid #ccc;
+    
+}
+#tabs {
+    list-style: none;
+    padding: 5px 0 4px 0;
+    margin: 0 0 0 20px;
+    font: 0.90em arial;
+}
+#tabs li {
+    display: inline;
+}
+#tabs li a {
+    border: 1px solid #ccc;
+    padding: 4px 6px;
+    text-decoration: none;
+    background-color: #eeeeee;
+    border-bottom: none;
+    outline: none;
+    border-radius: 5px 5px 0 0;
+    -moz-border-radius: 5px 5px 0 0;
+    -webkit-border-top-left-radius: 5px;
+    -webkit-border-top-right-radius: 5px;
+    color:#000;
+}
+#tabs li a:hover {
+    background-color: #dddddd;
+    padding: 4px 6px;
+}
+#tabs li.active a {
+    border-bottom: 1px solid #fff;
+    background-color: #fff;
+    padding: 4px 6px 5px 6px;
+    border-bottom: none;
+}
+#tabs li.active a:hover {
+    background-color: #eeeeee;
+    padding: 4px 6px 5px 6px;
+    border-bottom: none;
+}
+#tabs li a.icon_accept:hover {
+    padding-left: 24px;
+}
+
+#tabs_content_container {
+    border: 1px solid #ccc;
+    border-top: none;
+    padding: 10px;
+    width: 98.4%;
+}
+ul li, ol li {
+margin-left: 0em;
+padding-left: 0;
+}
+
+td.left{font-weight: bold; width:25%;text-align:right;}
+td.right{padding-left:5px;}
+     
+</style>
+ <apex:actionstatus id="status">
+    <apex:facet name="start">
+        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 10%;opacity:.8;">
+            <img src="{!URLFOR($Resource.LodingGif)}" title="{!$Label.ARIA_GENERAL_CONFIG_LOADING}" /><br/><br/>
+            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+        </div>
+    </apex:facet>
+</apex:actionstatus>
+<apex:pageMessages ></apex:pageMessages>
+<apex:form id="frm" >
+    <apex:pagemessages escape="false" id="err_msg"></apex:pagemessages>
+    
+ <div id="tabs_wrapper">
+    <div id="tabs_container">
+        <ul id="tabs">
+            <li class="active" ><a href="#"><b>{!$Label.ARIA_USAGE_HISTORY}</b></a></li>
+            <li><a href="/apex/AriaRatedUnbilledUsage?id={!AccId}"><b>{!$Label.ARIA_USAGE_HISTORY_RATED_UNBILLED_USAGE}</b></a></li>
+        </ul>
+    </div>
+    <div id="tabs_content_container">
+        <div id="tab1" class="tab_content" style="display: block;">
+           
+           <apex:actionFunction id="getUsageHistory" name="get_usage_history" action="{!get_usage_history}" reRender="ariaUsageHisblock,err_msg" status="status"/>
+          <!-- apex action functions for paginations -->
+              <apex:actionFunction id="aFunction2" name="firstPage" action="{!firstBtnClick}" reRender="ariaUsageHisblock" status="status" />
+              <apex:actionFunction id="aFunction3" name="prePage" action="{!previousBtnClick}" reRender="ariaUsageHisblock" status="status" />
+              <apex:actionFunction id="aFunction4" name="nextPage" action="{!nextBtnClick}" reRender="ariaUsageHisblock" status="status" />
+              <apex:actionFunction id="aFunction5" name="lastPage" action="{!lastBtnClick}" reRender="ariaUsageHisblock" status="status" />
+              <apex:actionFunction id="aFunction6" name="setPageSize" reRender="ariaUsageHisblock" status="status" >
+                <apex:param name="pSize" value="" assignTo="{!PageSize}"/>
+              </apex:actionFunction>
+         <!-- apex action functions for paginations ends-->
+               
+        
+        
+        <apex:pageBlock id="pb">
+            <!-- #fbeea6 hsl(195, 61%, 88%)-->
+            <apex:outputPanel layout="block" style="background-color:hsl(195, 61%, 88%);padding:5px 15px;-webkit-border-radius:15px;">
+                    <apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_PROVIDE_DATE_RANGE}"></apex:outputLabel>
+                    <br/>
+            </apex:outputPanel>
+            <br/>
+             
+            <apex:pageBlockSection columns="1" collapsible="false">
+                   <apex:pageBlockSectionItem >
+                       <apex:outputLabel >{!$Label.ARIA_USAGE_HISTORY_FROM_DATE}</apex:outputLabel>
+                       <apex:outputPanel layout="block" styleClass="requiredInput">
+                                 <apex:outputPanel layout="block" styleClass="requiredBlock"></apex:outputPanel>
+                                 <apex:inputField value="{!uh.From_Date__c}" styleClass="startDate" style="width:150px;"/>
+                                 <div class="errorMsg" id="startDateErrorMsg" style="display:none;"><strong>{!$Label.ARIA_REFUND_ERROR}</strong>{!$Label.ARIA_USAGE_HISTORY_ENTER_FROM_DATE}</div>
+                       </apex:outputPanel>
+                   </apex:pageBlockSectionItem>
+                   <apex:pageBlockSectionItem >
+                       <apex:outputLabel >{!$Label.ARIA_USAGE_HISTORY_THROUGH_DATE}</apex:outputLabel>
+                       <apex:outputPanel layout="block" styleClass="requiredInput">
+                           <apex:outputPanel layout="block" styleClass="requiredBlock"></apex:outputPanel>
+                           <apex:inputField value="{!uh.Through_Date__c}" styleClass="endDate" style="width:150px;"/>
+                           <div class="errorMsg" id="endDateErrorMsg" style="display:none;"><strong>{!$Label.ARIA_REFUND_ERROR}</strong>{!$Label.ARIA_USAGE_HISTORY_ENTER_THROUGH_DATE}</div>
+                       </apex:outputPanel>
+                   </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                       <apex:outputLabel >{!$Label.ARIA_USAGE_HISTORY_USAGE_TYPE}</apex:outputLabel>
+                       <apex:outputPanel >
+                        <apex:selectList size="1" value="{!usageType}"  style="width:325px;">
+                            <apex:selectOptions value="{!usageTypes}"></apex:selectOptions>
+                        </apex:selectList>
+                       </apex:outputPanel>
+                   </apex:pageBlockSectionItem>
+              <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.ARIA_ACCOUNT_DETAIL_SUBSCRIPTION_ID}"> </apex:outputLabel>
+                    <apex:outputPanel layout="block" styleClass="requiredInput">
+                        <apex:outputPanel layout="block" styleClass="requiredBlock"></apex:outputPanel>
+                        <apex:selectList size="1" value="{!subscriptionTransId}" styleClass="subTransId" style="width:325px;" >
+                        <!-- onchange="get_usage_history();" -->
+                            <apex:selectOptions value="{!SubscriptionList}"></apex:selectOptions>
+                        </apex:selectList>
+                        <div class="errorMsg" id="subTransIdErrorMsg" style="display:none;"><strong>{!$Label.ARIA_REFUND_ERROR}</strong>{!$Label.ARIA_USAGE_HISTORY_PLEASE_SELECT_SUBSCRIPTION_ID}</div>
+                    </apex:outputPanel>
+              </apex:pageBlockSectionItem>
+              </apex:pageBlockSection>
+              <apex:pageBlockSection columns="1" collapsible="false">
+                   <apex:pageBlockSectionItem >
+                     <apex:outputLabel ></apex:outputLabel>
+                     <apex:outputPanel layout="block" style="text-align: right;padding-right: 1%;">
+                            <apex:commandButton value="{!$Label.ARIA_USAGE_HISTORY_RETRIEVE_USAGE}" onclick="return verifyInput();"/>
+                            <apex:commandButton value="{!$Label.ARIA_PAYMENT_CREDIT_CLOSE}" style="margin-left:10px;" onclick="return closeWin();"/>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+             </apex:pageBlockSection>
+            
+        </apex:pageBlock>   
+        <!--  Usage history code below in seperate pageBlock -->
+        <apex:outputPanel id="ariaUsageHisblock">
+        <apex:pageBlock id="ariaUsageHisblock1" rendered="{!histories!=null}">
+        <apex:outputPanel layout="block" style="background-color:hsl(195, 61%, 88%);padding:5px 15px;-webkit-border-radius:15px;">
+            <p>{!$Label.ARIA_USAGE_HISTORY_DISPLAYING_ALL_USAGE} <apex:outputText value="{0, date, MM'/'dd'/'yyyy}">
+                            <apex:param value="{!uh.From_Date__c}" />
+                        </apex:outputText> and <apex:outputText value="{0, date, MM'/'dd'/'yyyy}">
+                            <apex:param value="{!uh.Through_Date__c}" />
+                        </apex:outputText>, {!$Label.ARIA_USAGE_HISTORY_FOR_USAGE_TYPE}&nbsp;{!usageTypeDesc}</p>
+            <!-- 2/10/2014 -->
+        </apex:outputPanel>
+        <br/>
+        <ul style="list-style-type:none">
+        <li><!-- yyyy-MM-dd --> 
+            <apex:outputLink value="javascript:exportUsage('{!inStartDateString}','{!inEndDateString}','{!inAcctNo}','{!usageType}','{!userId}');">{!$Label.ARIA_USAGE_DOWNLOAD_USAGE}</apex:outputLink>
+        </li>
+        </ul>
+        <div class="paginator">
+      <span class="left">&nbsp;
+      <!-- 
+         <span onmouseout="ListPaginator.unhoverSelector(this)" onmouseover="ListPaginator.hoverSelector(this)" onmousedown="ListPaginator.showSelector('item_paginator_rpp_target')" id="item_paginator_rpp_target" class="selectorTarget">
+            {!start}-{!ends} of {!totalRecords}
+            <table cellspacing="0" cellpadding="0" id="item_paginator_rpp" class="selector rpp">
+                <tbody>
+                <tr onmousedown="setPageSize(10);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=10,'optSelected','optUnselected')}">
+                    <td>Display</td>    <td class="rppOpt">10</td>  <td>records per page</td>
+                </tr>
+                <tr onmousedown="setPageSize(25);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=25,'optSelected','optUnselected')}">
+                    <td>Display</td>    <td class="rppOpt">25</td>  <td>records per page</td>
+                </tr>
+                <tr onmousedown="setPageSize(50);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=50,'optSelected','optUnselected')}">
+                    <td>Display</td><td class="rppOpt">50</td>  <td>records per page</td>
+                </tr>
+                <tr onmousedown="setPageSize(100);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=100,'optSelected','optUnselected')}">
+                    <td>Display</td>    <td class="rppOpt">100</td> <td>records per page</td>
+                </tr>
+                
+            </tbody>
+          </table>
+        <img src="/s.gif" class="selectArrow" />
+       </span>
+       -->   
+      </span>
+      <span class="prevNextLinks">
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!previousButtonDisabled}">
+            <a href="javascript:firstPage();">
+                <img class="first" alt="{!$Label.ARIA_ACCT_HISTORY_FIRST_PAGE}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_FIRST_PAGE}" src="/s.gif"/>
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!previousButtonDisabled}">
+            <img class="firstoff" src="/s.gif"/>
+            </apex:outputPanel>
+        </span>
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!previousButtonDisabled}">
+            <a href="javascript:prePage();">
+                <img class="prev" alt="{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PREVIOUS}" src="/s.gif"/>{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!previousButtonDisabled}">
+            <img class="prevoff" src="/s.gif"/>{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}
+            </apex:outputPanel>
+        </span>
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!nextButtonDisabled}">
+            <a href="javascript:nextPage();">{!$Label.ARIA_PAYMENT_CREDIT_NEXT}
+                <img class="next" alt="{!$Label.ARIA_PAYMENT_CREDIT_NEXT}" title="{!$Label.ARIA_PAYMENT_CREDIT_NEXT}" src="/s.gif"/>
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!nextButtonDisabled}">
+            {!$Label.ARIA_PAYMENT_CREDIT_NEXT}<img class="nextoff" src="/s.gif"/>
+            </apex:outputPanel>
+        </span>
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!nextButtonDisabled}">
+            <a href="javascript:lastPage();">
+                <img class="last" alt="{!$Label.ARIA_REFUND_LAST_PAGE}" title="{!$Label.ARIA_REFUND_LAST_PAGE}" src="/s.gif"/>
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!nextButtonDisabled}">
+            <img class="lastoff" src="/s.gif"/>
+            </apex:outputPanel>
+        </span>
+     </span>
+     <span class="right"> {!$Label.ARIA_PAYMENT_REFUND_PAGE}&nbsp;{!PageNumber}&nbsp;{!$Label.ARIA_PAYMENT_CREDIT_OF}&nbsp;{!TotalPageNumber} 
+     <!--<input type="text" value="{!PageNumber}" onchange="jump(this.value);" maxlength="4" class="pageInput"/> of {!totalPageNumber}-->
+     </span>
+     </div>
+      <apex:outputPanel rendered="{!histories.size > 0}">
+      <table cellspacing="0" cellpadding="5" border="0" id="myTable" class="collapsible list">
+            <thead class="rich-table-thead">
+                <tr class="headerRow">
+                    <th colspan="2" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_DATE_TIME}"></apex:outputLabel></div></th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_BUILD}"></apex:outputLabel></div></th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div> <apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_USAGE}"></apex:outputLabel></div></th> 
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div> <apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_FROM_TO}"></apex:outputLabel></div></th> 
+                    <th colspan="1" scope="col" class="headerRow  headerlbl">{!$Label.ARIA_ACCOUNT_DETAIL_SUBSCRIPTION_ID}</th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl">{!$Label.ARIA_USAGE_HISTORY_CLIENT_SUBSCRIPTION_ID}</th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl">{!$Label.ARIA_USAGE_HISTORY_CHILD_SUBSCRIPTION_ID}</th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl">{!$Label.ARIA_USAGE_HISTORY_CLIENT_CHILD_SUBSCRIPTION_ID}</th> 
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div> <apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_IS_EXCLUDED}"></apex:outputLabel></div></th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_QUALIFIER_1}"></apex:outputLabel></div></th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_QUALIFIER_2}"></apex:outputLabel></div></th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_QUALIFIER_3}"></apex:outputLabel></div></th>
+                    <th colspan="1" scope="col" class="headerRow headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_QUALIFIER_4}"></apex:outputLabel></div></th> 
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_UNIT_QTY}"></apex:outputLabel></div></th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_UNIT_RATE}"></apex:outputLabel></div></th> 
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_CHARGE}"></apex:outputLabel></div></th> 
+                    
+                </tr> 
+            </thead>
+            <tbody>
+            <apex:repeat value="{!Histories}" var="t" id="repeat">
+                 <tr class="dataRow" onfocus="if (window.hiOn){hiOn(this);}" onblur="if (window.hiOff){hiOff(this);}" onmouseout="if (window.hiOff){hiOff(this);} " onmouseover="if (window.hiOn){hiOn(this);}">
+                    <td width="2%" colspan="1" class="dataCell">
+                        <apex:outputPanel rendered="{!t.usage_rec_no!=null}">   
+                         <a id="a_{!t.usage_rec_no}" href="javascript:;" class="collapsed" onclick="show_data(this,'{!t.usage_rec_no}',{!t.usage_rec_no});"></a>
+                        </apex:outputPanel>
+                    </td>
+                    <td>{!t.usage_date}<br/>{!t.usage_time}</td>
+                    <td><apex:outputPanel rendered="{!t.usage_rec_no!=null}">{!acc.Aria_User_Id__c}</apex:outputPanel></td>
+                    <td>{!t.usage_type_description}</td>
+                    <td><apex:outputLabel rendered="{!(t.telco_from!=null && t.telco_to!=null)}">{!$Label.ARIA_USAGE_MESSAGE_FROM}&nbsp;"{!t.telco_from}"&nbsp;{!$Label.ARIA_USAGE_MESSAGE_TO}&nbsp;"{!t.telco_to}"</apex:outputLabel></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>{!t.is_excluded}</td>
+                    <td>{!t.qualifier_1}</td>
+                    <td>{!t.qualifier_2}</td>
+                    <td>{!t.qualifier_3}</td>
+                    <td>{!t.qualifier_4}</td>
+                    <td>
+                        <!--  <apex:outputText rendered="{!(t.units!=null)}" value="{0, number, #######0} ">
+                            <apex:param value="{!t.units_description}" />
+                        </apex:outputText> -->
+                        {!t.units_description}
+                    </td>
+                    <td>
+                        <apex:outputText rendered="{!(t.pre_rated_rate!=null)}" value="{0, number, ###,###,##0.00}" style="float:right;">
+                            <apex:param value="{!t.pre_rated_rate}" />
+                        </apex:outputText>
+                    </td>
+                    <td>
+                        <apex:outputText rendered="{!(t.specific_record_charge_amount!=null)}" value="{0, number, ###,###,##0.00}" style="float:right;">
+                            <apex:param value="{!t.specific_record_charge_amount}" />
+                        </apex:outputText>
+                    </td>
+                </tr>
+                <tr id="{!t.usage_rec_no}" style="display:none;">
+                    <td colspan="1" style="border:0px;">&nbsp;</td>
+                    <td colspan="12" style="text-align:right;border:0px;">
+                        <table width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top: -5px;border-collapse: collapse;background-color: hsla(200, 100%, 89%, 0.29);">
+                            <tr>
+                                <td style="font-weight: bold;">{!$Label.ARIA_USAGE_INVOICE_TRANS_ID}</td>
+                                <td style="font-weight: bold;">{!$Label.ARIA_USAGE_RECORDED_UNIT}</td>
+                                <td style="font-weight: bold;">{!$Label.ARIA_USAGE_RECORDED_UNIT}</td>
+                                <td style="font-weight: bold;" width="20%">{!$Label.ARIA_USAGE_EXCLUSION_COMMENTS}</td>
+                                <td style="font-weight: bold;" width="20%">{!$Label.ARIA_USAGE_EXCLUDE_REASON_CODE}</td>
+                                
+                            </tr>
+                            <tr>
+                                <td>{!t.invoice_transaction_id}</td>
+                                <td>{!t.usage_rec_no}</td>
+                                <td>{!t.recorded_units}</td>
+                                <td>{!t.exclusion_comments}</td>
+                                <td>{!t.exclude_reason_cd}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+             </apex:repeat>
+             <tr style="font-weight: bold; background-color: #e3e3d7;">
+                <td colspan="3"></td>
+                <!--<td></td>
+                <td></td>-->
+                <td>{!$Label.ARIA_DISPUTE_TOTAL}:</td>
+                <!--<td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>-->
+                <td colspan="13">
+                        <apex:outputText value="{0, number, ###,###,##0.00}" style="float:right;">
+                            <apex:param value="{!grandChargeTotal}" />
+                        </apex:outputText>
+                </td>
+             </tr>
+            </tbody>
+       </table>
+       </apex:outputPanel>
+       <apex:outputPanel rendered="{!histories.size = 0}">
+          <table cellspacing="0" cellpadding="5" border="0" id="myTable" class="collapsible list">
+                <thead class="rich-table-thead">
+                    <tr class="headerRow ">
+                        <th colspan="2" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_DATE_TIME}"></apex:outputLabel></div></th>
+                        <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_BUILD}"></apex:outputLabel></div></th>
+                        <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_USAGE}"></apex:outputLabel></div></th>
+                        <th colspan="1" scope="col"  class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_FROM_TO}"></apex:outputLabel></div></th>
+                        <th colspan="1" scope="col"  class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_ACCOUNT_DETAIL_SUBSCRIPTION_ID}"></apex:outputLabel></div></th>
+                        <th colspan="1" scope="col"  class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_CLIENT_SUBSCRIPTION_ID}"></apex:outputLabel></div></th>
+                        <th colspan="1" scope="col"  class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_CHILD_SUBSCRIPTION_ID}"></apex:outputLabel></div></th>
+                        <th colspan="1" scope="col"  class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_CLIENT_CHILD_SUBSCRIPTION_ID}"></apex:outputLabel></div></th>
+                        <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_IS_EXCLUDED}"></apex:outputLabel></div></th>
+                        <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_QUALIFIER_1}"></apex:outputLabel></div></th>
+                        <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_QUALIFIER_2}"></apex:outputLabel></div></th>
+                        <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_QUALIFIER_3}"></apex:outputLabel></div></th>
+                        <th colspan="1" scope="col"  class="headerRow headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_QUALIFIER_4}"></apex:outputLabel></div></th>
+                        <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_UNIT_QTY}"></apex:outputLabel></div></th>
+                        <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_UNIT_RATE}"></apex:outputLabel></div></th>
+                        <th colspan="1" scope="col" class="headerRow  headerlbl"><div><apex:outputLabel escape="false" value="{!$Label.ARIA_USAGE_HISTORY_CHARGE}"></apex:outputLabel></div></th>
+                        
+                    </tr>
+                </thead>
+                <tr class="dataRow">
+                    <td colspan="13" style="text-align: center; font-style:italic;">{!$Label.ARIA_USAGE_NO_USAGE_HISTORY}</td>
+                </tr>
+                <tbody>
+                </tbody>
+           </table>
+       </apex:outputPanel> 
+     </apex:pageBlock>
+     </apex:outputPanel>
+         <script>
+            addEvent(document.body,"mousedown",function(a){ListPaginator.hideSelector('item_paginator_rpp_target')},!0); 
+        </script>
+                
+       </div>
+       
+    </div>
+</div>
+</apex:form>
+</apex:page>

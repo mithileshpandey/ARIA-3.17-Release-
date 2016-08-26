@@ -1,0 +1,738 @@
+<apex:page standardController="Account" id="pg" showheader="false" extensions="AriaRefundController">
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'collapse.css')}" /> 
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<style>
+    #tabs_wrapper {
+    width: 98%;
+    margin:0 auto;
+    margin-top :2px;
+    }
+    #tabs_container {
+        border-bottom: 1px solid #ccc;
+        
+    }
+    #tabs {
+        list-style: none;
+        padding: 5px 0 4px 0;
+        margin: 0 0 0 20px;
+        font: 0.90em arial;
+    }
+    #tabs li {
+        display: inline;
+    }
+    #tabs li a {
+        border: 1px solid #ccc;
+        padding: 4px 6px;
+        text-decoration: none;
+        background-color: #eeeeee;
+        border-bottom: none;
+        outline: none;
+        border-radius: 5px 5px 0 0;
+        -moz-border-radius: 5px 5px 0 0;
+        -webkit-border-top-left-radius: 5px;
+        -webkit-border-top-right-radius: 5px;
+        color:#000;
+    }
+    #tabs li a:hover {
+        background-color: #dddddd;
+        padding: 4px 6px;
+    }
+    #tabs li.active a {
+        border-bottom: 1px solid #fff;
+        background-color: #fff;
+        padding: 4px 6px 5px 6px;
+        border-bottom: none;
+    }
+    #tabs li.active a:hover {
+        background-color: #eeeeee;
+        padding: 4px 6px 5px 6px;
+        border-bottom: none;
+    }
+    #tabs li a.icon_accept:hover {
+        padding-left: 24px;
+    }
+    
+    #tabs_content_container {
+        border: 1px solid #ccc;
+        border-top: none;
+        padding: 10px;
+        width: 98.4%;
+    }
+    ul li, ol li {
+    margin-left: 0em;
+    padding-left: 0;
+    
+   .header{
+        text-align:right;
+    }
+    /* Added By MP */
+    th {text-align: center;border-bottom: thin solid black;}
+              td {text-align: left}
+              #drow {text-align: right;}
+              #crow {text-align: center;}
+              #lrow {padding-left: 25px;}
+              .drow {text-align: right;}
+              .crow {text-align: center;}
+              .fright{text-align: right;}
+              .fleft{text-align: left;}
+</style>
+<script>
+    function toggle(id){
+        $('.'+id).slideToggle(function() {
+            //alert($('#'+id).text()+' and '+$('#'+id).is(':visible'));
+            if($('#'+id).text()=='less'){
+                $('#'+id).text('more...');
+            }
+            else{
+                $('#'+id).text('less');
+            }
+            /*$('#'+id).text(
+              $('#'+id).is(':visible') ? "less" : "more"
+            );*/
+        });
+    }
+    function isNumberKey(evt, val)
+      {
+         var charCode = (evt.which) ? evt.which : event.keyCode
+         if (charCode == 46) {
+            // Allow only 1 decimal point ('.')...
+            
+            if((val) && (val.indexOf('.') >= 0))
+                return false;
+            else
+                return true;
+        }
+         
+         if (charCode > 31 && (charCode < 48 || charCode > 57))
+            return false;
+
+         return true;
+      }
+      
+      function twoDecimalPlaces(obj){
+        var decimalVal = obj.value.split('.');
+         if(decimalVal.length > 1 && decimalVal[1].length > 2){
+            obj.value = obj.value.substring(0,obj.value.length -1);
+         }
+      }
+      
+      function closeWin(){
+         var aid = window.parent.location.href.split('id=')[1];
+         aid = aid.split('&')[0];
+         window.opener.location.href = 'https://'+document.domain+'/'+aid.trim();
+         window.close();
+      }
+      function show_data(entity,id){
+                var tr = document.getElementById(id);
+                if(entity.className == "expanded"){
+                    entity.className ="collapsed";
+                    tr.style.display="none";
+                }
+                else if(entity.className == "collapsed"){
+                    entity.className ="expanded";
+                    tr.style.display="";
+                }
+                
+            }
+            
+       function ConfirmProcessRefund(){
+           var r = confirm('{!$Label.ARIA_REFUND_ISSUE_REFUND_MESSAGE}');
+            if (r==true){
+                  processRefund();
+                  //return false;
+              }
+             return false;
+           
+       }     
+            
+            
+</script>
+<apex:actionstatus id="status">
+    <apex:facet name="start">
+        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 95%;width:100%;padding-top: 10%;opacity:.8;">
+            <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+        </div>
+    </apex:facet>
+</apex:actionstatus>
+
+
+<apex:form id="frm">
+        <apex:actionFunction name="processRefund" action="{!processRefund}" reRender="frm" status="status"/>
+     <!-- apex action functions for paginations -->
+          <apex:actionFunction id="aFunction2" name="firstPage" action="{!firstBtnClick}" reRender="frm" status="status" />
+          <apex:actionFunction id="aFunction3" name="prePage" action="{!previousBtnClick}" reRender="frm" status="status" />
+          <apex:actionFunction id="aFunction4" name="nextPage" action="{!nextBtnClick}" reRender="frm" status="status" />
+          <apex:actionFunction id="aFunction5" name="lastPage" action="{!lastBtnClick}" reRender="frm" status="status" />
+          <apex:actionFunction id="aFunction6" name="setPageSize" reRender="frm" status="status" >
+            <apex:param name="pSize" value="" assignTo="{!PageSize}"/>
+          </apex:actionFunction>
+          <apex:actionFunction name="refresh_refundDetail" action="{!get_refundable_payments_details}" reRender="refundPayment" status="status"/>
+    <!-- apex action functions for paginations ends-->
+    <div id="tabs_wrapper">
+    <apex:pagemessages ></apex:pagemessages>
+        <div id="tabs_container">
+            <ul id="tabs">
+                <li ><a href="/apex/AriaPaymentsandCredits?id={!AccId}"><b>{!$Label.ARIA_PAYMENT_CREDIT_PAYMENTS}</b></a></li>
+                <li class="active"><a href="#"><b>{!$Label.ARIA_PAYMENT_CREDIT_REFUNDS}</b></a></li>
+                <li><a href="/apex/AriaCredits?id={!AccId}"><b>{!$Label.ARIA_PAYMENT_CREDIT_CREDITS}</b></a></li>
+                <li><a href="/apex/AriaDispute_Write_Offs?id={!AccId}"><b>{!$Label.ARIA_PAYMENT_CREDIT_WRITE_OFF}</b></a></li>
+<!--                 <li><a href="/apex/AriaReversal?id={!AccId}"><b>{!$Label.ARIA_PAYMENT_CREDIT_REVERSAL}</b></a></li> -->
+            </ul>
+        </div>
+         <div id="tabs_content_container" >
+             <apex:pageBlock rendered="{!$ObjectType.Aria_Refund__c.accessible}">
+                 <apex:pageBlockSection columns="1" rendered="{!refundMain}">
+                     <apex:pageBlockSectionItem >
+                         <apex:outputLabel ></apex:outputLabel>
+                         <apex:outputPanel layout="block" rendered="{!$ObjectType.Aria_Refund__c.createable}">
+                             <apex:commandButton value="{!$Label.ARIA_PAYMENT_REFUND_CREATE_NEW}" action="{!NewRefund}" reRender="frm" disabled="{!canCreateRefund}" status="status" style="margin-left: 25%;"/>
+                             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<apex:commandButton value="{!$Label.ARIA_PAYMENT_CREDIT_CLOSE}" onclick="return closeWin();"/>
+                         </apex:outputPanel>
+                     </apex:pageBlockSectionItem>
+                 </apex:pageBlockSection>
+                 <apex:pageBlockSection columns="1" rendered="{!refundMain}">
+                     <apex:pageBlockSectionItem >  
+                    <apex:outputPanel style="width:100%" layout="block">
+                             <div class="paginator">
+                          <span class="left">
+                             <span onmouseout="ListPaginator.unhoverSelector(this)" onmouseover="ListPaginator.hoverSelector(this)" onmousedown="ListPaginator.showSelector('item_paginator_rpp_target')" id="item_paginator_rpp_target" class="selectorTarget">
+                                {!start}-{!ends} of {!totalRecords}
+                                <table cellspacing="0" cellpadding="0" id="item_paginator_rpp" class="selector rpp">
+                                    <tbody>
+                                    <tr onmousedown="setPageSize(10);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=10,'optSelected','optUnselected')}">
+                                        <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">10</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                    </tr>
+                                    <tr onmousedown="setPageSize(25);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=25,'optSelected','optUnselected')}">
+                                        <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">25</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                    </tr>
+                                    <tr onmousedown="setPageSize(50);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=50,'optSelected','optUnselected')}">
+                                        <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td><td class="rppOpt">50</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                    </tr>
+                                    <tr onmousedown="setPageSize(100);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=100,'optSelected','optUnselected')}">
+                                        <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">100</td> <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                    </tr>
+                                    
+                                </tbody>
+                              </table>
+                            <img src="/s.gif" class="selectArrow" />
+                           </span>
+                              
+                          </span>
+                          <span class="prevNextLinks">
+                            <span class="prevNext">
+                                <apex:outputPanel rendered="{!!previousButtonDisabled}">
+                                <a href="javascript:firstPage();">
+                                    <img class="first" alt="First Page" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_FIRST_PAGE}" src="/s.gif"/>
+                                </a>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!previousButtonDisabled}">
+                                <img class="firstoff" src="/s.gif"/>
+                                </apex:outputPanel>
+                            </span>
+                            <span class="prevNext">
+                                <apex:outputPanel rendered="{!!previousButtonDisabled}">
+                                <a href="javascript:prePage();">
+                                    <img class="prev" alt="Previous" title="{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}" src="/s.gif"/>{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}
+                                </a>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!previousButtonDisabled}">
+                                <img class="prevoff" src="/s.gif"/>{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}
+                                </apex:outputPanel>
+                            </span>
+                            <span class="prevNext">
+                                <apex:outputPanel rendered="{!!nextButtonDisabled}">
+                                <a href="javascript:nextPage();">{!$Label.ARIA_PAYMENT_CREDIT_NEXT}
+                                    <img class="next" alt="Next" title="Next" src="/s.gif"/>
+                                </a>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!nextButtonDisabled}">
+                                {!$Label.ARIA_PAYMENT_CREDIT_NEXT}<img class="nextoff" src="/s.gif"/>
+                                </apex:outputPanel>
+                            </span>
+                            <span class="prevNext">
+                                <apex:outputPanel rendered="{!!nextButtonDisabled}">
+                                <a href="javascript:lastPage();">
+                                    <img class="last" alt="{!$Label.ARIA_REFUND_LAST_PAGE}" title="{!$Label.ARIA_REFUND_LAST_PAGE}" src="/s.gif"/>
+                                </a>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!nextButtonDisabled}">
+                                <img class="lastoff" src="/s.gif"/>
+                                </apex:outputPanel>
+                            </span> 
+                         </span>
+                         <span class="right">{!$Label.ARIA_PAYMENT_REFUND_PAGE}&nbsp;{!PageNumber}&nbsp;{!$Label.ARIA_PAYMENT_CREDIT_OF}&nbsp;{!TotalPageNumber}
+                         <!--<input type="text" value="{!PageNumber}" onchange="jump(this.value);" maxlength="4" class="pageInput"/> of {!totalPageNumber}-->
+                         </span>
+                        </div>
+                        <!-- Commented By MP on 2/22/2013
+                          <apex:pageBlockTable value="{!refundHistories_PN}" var="rh">
+                              <apex:column headerValue="Refund ID">
+                                  <apex:commandLink value="{!rh.refund_transaction_id}"/>
+                              </apex:column>
+                              <apex:column headerValue="Created By" value="{!rh.create_user}"/>
+                              <apex:column headerValue="Created Date" value="{!rh.create_date}"/>
+                              <apex:column headerValue="Reason" value="{!rh.reason_label}"/>
+                              <apex:column >
+                                  <apex:facet name="header"><div style="float;right;">Refund Amt</div></apex:facet>
+                                  <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                                       <apex:param value="{!rh.refund_amount}" />
+                                  </apex:outputText>
+                              </apex:column>   
+                          </apex:pageBlockTable>
+                        -->
+                        <table cellspacing="0" cellpadding="5" border="0" id="myTable" class="collapsible list">
+            <thead class="rich-table-thead">
+                <tr class="headerRow ">
+                    <th colspan="2" scope="col" class="headerRow  headerlbl"><div>{!$Label.ARIA_PAYMENT_REFUND_R_ID}</div></th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div>{!$Label.ARIA_PAYMENT_REFUND_CREATED_BY}</div></th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div>{!$Label.ARIA_PAYMENT_REFUND_CREATED_DATE}</div></th>
+                    <th colspan="1" scope="col"  class="headerRow  headerlbl"><div>{!$Label.ARIA_PAYMENT_CREDIT_REASON}</div></th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div style="text-align:right;">{!$Label.ARIA_PAYMENT_REFUND_REFUND_AMT}</div></th>
+                </tr>
+            </thead>
+            <tbody>
+            <apex:repeat value="{!refundHistories_PN}" var="rh" id="repeat">
+                 <tr class="dataRow" onfocus="if (window.hiOn){hiOn(this);}" onblur="if (window.hiOff){hiOff(this);}" onmouseout="if (window.hiOff){hiOff(this);} " onmouseover="if (window.hiOn){hiOn(this);}">
+                    <td width="2%" colspan="1" class="dataCell">
+                        <a id="a_{!rh.refund_transaction_id}" href="javascript:;" class="collapsed" onclick="show_data(this,'{!rh.refund_transaction_id}');"></a>
+                    </td>
+                    <td width="10%" colspan="1" class="dataCell">{!rh.refund_transaction_id}</td>
+                    <td width="10%" colspan="1" class="dataCell">{!rh.create_user}</td>
+                    <td width="11%" colspan="1" class="dataCell">{!rh.create_date}</td>
+                    <td width="25%" colspan="1" class="dataCell">{!IF(ISBLANK(rh.reason_label),'{none}', rh.reason_label)}</td>
+                    <td width="12%" colspan="1" class="dataCell" style="text-align:right;">
+                                <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                                       <apex:param value="{!rh.refund_amount}" />
+                                </apex:outputText>
+                    </td>
+                    
+                </tr>     
+                <tr id="{!rh.refund_transaction_id}" style="display:none;">
+                    <td colspan="1" style="border:0px;">&nbsp;</td>
+                    <td colspan="5" style="border:0px;">
+                         <table width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top: -5px;border-collapse: collapse;background-color: hsla(200, 100%, 89%, 0.29);">
+                            <tr>
+                                <td style="font-weight: bold;" width="40%">{!$Label.ARIA_PAYMENT_REFUND_PAYMENT_TO_REFUND}</td>
+                                <td style="font-weight: bold;" width="20%" align="right">{!$Label.ARIA_PAYMENT_REFUND_REFUND_AMOUNT}</td>
+                                <td style="font-weight: bold;" width="20%" align="center">{!$Label.ARIA_PAYMENT_CREDIT_REASON}</td>
+                                <td style="font-weight: bold;text-align:right;" width="20%">{!$Label.ARIA_PAYMENT_REFUND_INVOICE_REVERSALS}</td>
+                             </tr> 
+                             <tr>
+                                <td>{!$Label.ARIA_REFUND_PAYMENT_ID} {!rh.ref_payment_transaction_id} {!$Label.ARIA_ACCT_SERVICES_FROM} 
+                                    {!IF(rh.ref_payment_transaction_type=3,rh.cc_type&' ending in '& rh.payment_src_suffix ,'External Payment')}
+                                    , {!$Label.ARIA_PAYMENT_CREDIT_ORIGINAL_PAYMENT_AMOUNT} 
+                                     <apex:outputText value="{0, number, 0.00}">
+                                       <apex:param value="{!rh.ref_payment_amount}" />
+                                    </apex:outputText><!--{!rh.ref_payment_amount}-->
+                                   <!-- Payment ID 44296776 from External Payment , original payment amount 105.00-->
+                                </td>
+                                <td style="text-align:right;">
+                                <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                                       <apex:param value="{!rh.refund_amount}" />
+                                </apex:outputText>
+                               </td>
+                                <td align="center">{!rh.reason_label}</td>
+                                <td align="right">{!$Label.ARIA_PAYMENT_CREDIT_TOTAL_REVERSED_AMOUNT} 
+                                <apex:outputText value="{0, number, 0.00}">
+                                       <apex:param value="{!rh.total_reversed_amount}" />
+                                    </apex:outputText>
+                                </td>
+                             </tr>
+                             <apex:outputPanel layout="none" rendered="{!rh.invoice_reversals.size>0}">
+                             <tr><td colspan="4" width="100%">
+                             <table width="50%" cellspacing="0" cellpadding="0" border="0" style="margin-top: -5px;border-collapse: collapse;background-color: rgba(239, 243, 245, 0.29);">
+                            <tr>
+                                <td style="font-weight: bold;" width="40%">{!$Label.ARIA_DISPUTE_INVOICE_NO}</td>
+                                <td style="font-weight: bold;" width="20%">{!$Label.ARIA_PAYMENT_CREDIT_LINE_ITEM_NO}</td>
+                                <td style="font-weight: bold;text-align:right;" width="20%">{!$Label.ARIA_REFUND_REVERSAL_AMOUNT}</td>
+                            </tr>
+                             <apex:repeat value="{!rh.invoice_reversals}" var="ri" id="repeat">
+                              <tr>
+                                <td>{!ri.invoice_no}</td>
+                                <td>{!ri.invoice_line_no}</td>
+                                <td style="text-align:right;">
+                                <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                                       <apex:param value="{!ri.reversed_line_amount}" />
+                                </apex:outputText>
+                               </td>
+                              </tr>
+                              </apex:repeat>
+                             
+                             </table></td>
+                             </tr>
+                             </apex:outputPanel>
+                             
+                            </table>
+                     </td>
+                 </tr>
+              </apex:repeat>
+              <apex:outputPanel layout="none" style="text-align:center;" rendered="{!NOT(ISNULL(refundHistories_PN)) && refundHistories_PN.Size = 0}"><tr><td colspan="6"><div style="text-align:center;"><i>{!$Label.ARIA_PAYMENT_REFUND_NO_REFUND_REC}</i></div></td></tr></apex:outputPanel>
+            </tbody>
+          </table>
+                        
+                    </apex:outputPanel>
+                    </apex:pageBlockSectionItem>                     
+                 </apex:pageBlockSection>
+                 
+                 <!--   next section                              -->
+                 <apex:pageBlockSection columns="1" rendered="{!refundPayment}" id="refundPayment">
+                     <apex:pageBlockSectionItem >
+                         <apex:outputPanel layout="block" style="background-color:hsl(195, 61%, 88%)">
+                            <div style="float:right">
+                                <apex:outputLabel value="{!$Label.ARIA_PLAN_QUOTE_SUBSCRIPTIONS}" />&nbsp;&nbsp;&nbsp;&nbsp;
+                                <apex:selectList value="{!selectedSubscriptionId}" size="1" onchange="refresh_refundDetail()">
+                                    <apex:selectOptions value="{!subscriptionList}"/>
+                                </apex:selectList>
+                            </div>
+                            <br />
+                             <!-- <p>Click any payment ID to proceed.&nbsp;&nbsp;<a style="color: hsl(2, 96%, 51%);font-weight: 600;" href="javascript:toggle('page2more');" id="page2more">more</a></p> -->
+                             <p>{!$Label.ARIA_CREDIT_CLICK_PAYMENT_ID}&nbsp;&nbsp;<a style="color: hsl(2, 96%, 51%);font-weight: 600;" href="javascript:toggle('page2more');" id="page2more">{!$Label.ARIA_CREDIT_CLICK_MORE}</a></p>
+                             <div class="page2more" style="display:none">
+                             <apex:outputLabel escape="false" value="{!$Label.ARIA_CREDIT_CLICK_MORE_HEADER}"></apex:outputLabel>
+                             
+                            
+                                 <ul>
+                                     <apex:outputLabel escape="false" value="{!$Label.ARIA_CREDIT_CLICK_MORE_DETAILS}"></apex:outputLabel>
+                                </ul>
+                            </div>
+                         </apex:outputPanel>
+                     </apex:pageBlockSectionItem>
+                     <apex:outputPanel style="width:100%" layout="block">
+                         <div class="paginator">
+                          <span class="left">
+                             <span onmouseout="ListPaginator.unhoverSelector(this)" onmouseover="ListPaginator.hoverSelector(this)" onmousedown="ListPaginator.showSelector('item_paginator_rpp_target')" id="item_paginator_rpp_target" class="selectorTarget">
+                                {!start}-{!ends} of {!totalRecords}
+                                <table cellspacing="0" cellpadding="0" id="item_paginator_rpp" class="selector rpp">
+                                    <tbody>
+                                    <tr onmousedown="setPageSize(10);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=10,'optSelected','optUnselected')}">
+                                        <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">10</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                    </tr>
+                                    <tr onmousedown="setPageSize(25);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=25,'optSelected','optUnselected')}">
+                                        <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">25</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                    </tr>
+                                    <tr onmousedown="setPageSize(50);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=50,'optSelected','optUnselected')}">
+                                        <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td><td class="rppOpt">50</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                    </tr>
+                                    <tr onmousedown="setPageSize(100);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=100,'optSelected','optUnselected')}">
+                                        <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">100</td> <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                    </tr>
+                                    
+                                </tbody>
+                              </table>
+                            <img src="/s.gif" class="selectArrow" />
+                           </span>
+                               
+                          </span>
+                          <span class="prevNextLinks">
+                            <span class="prevNext">
+                                <apex:outputPanel rendered="{!!previousButtonDisabled}">
+                                <a href="javascript:firstPage();">
+                                    <img class="first" alt="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_FIRST_PAGE}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_FIRST_PAGE}" src="/s.gif"/>
+                                </a>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!previousButtonDisabled}">
+                                <img class="firstoff" src="/s.gif"/>
+                                </apex:outputPanel>
+                            </span>
+                            <span class="prevNext">
+                                <apex:outputPanel rendered="{!!previousButtonDisabled}">
+                                <a href="javascript:prePage();">
+                                    <img class="prev" alt="{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}" title="{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}" src="/s.gif"/>{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}
+                                </a>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!previousButtonDisabled}">
+                                <img class="prevoff" src="/s.gif"/>{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}
+                                </apex:outputPanel>
+                            </span>
+                            <span class="prevNext">
+                                <apex:outputPanel rendered="{!!nextButtonDisabled}">
+                                <a href="javascript:nextPage();">{!$Label.ARIA_PAYMENT_CREDIT_NEXT}
+                                    <img class="next" alt="{!$Label.ARIA_PAYMENT_CREDIT_NEXT}" title="{!$Label.ARIA_PAYMENT_CREDIT_NEXT}" src="/s.gif"/>
+                                </a>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!nextButtonDisabled}">
+                                {!$Label.ARIA_PAYMENT_CREDIT_NEXT}<img class="nextoff" src="/s.gif"/>
+                                </apex:outputPanel>
+                            </span>
+                            <span class="prevNext">
+                                <apex:outputPanel rendered="{!!nextButtonDisabled}">
+                                <a href="javascript:lastPage();">
+                                    <img class="last" alt="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_LAST_PAGE}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_LAST_PAGE}" src="/s.gif"/>
+                                </a>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!nextButtonDisabled}">
+                                <img class="lastoff" src="/s.gif"/>
+                                </apex:outputPanel>
+                            </span>
+                         </span>
+                         <span class="right">{!$Label.ARIA_PAYMENT_REFUND_PAGE} {!PageNumber}&nbsp;{!$Label.ARIA_PAYMENT_CREDIT_OF}&nbsp; {!TotalPageNumber}
+                         <!--<input type="text" value="{!PageNumber}" onchange="jump(this.value);" maxlength="4" class="pageInput"/> of {!totalPageNumber}-->
+                         </span>
+                        </div>
+                     
+                     
+                     
+                         <apex:pageBlockTable value="{!refundable_payments_PN}" var="rp" rendered ="{!NOT(ISNULL(refundable_payments_PN)) &&refundable_payments_PN.Size > 0}">
+                             <apex:column headerValue="{!$Label.ARIA_REFUND_TRANSACTION_NO}" ><!-- / Transaction No.-->
+                                 
+                                 <apex:commandLink value="{!rp.payment_transaction_id}" action="{!RefundPage}" reRender="frm" status="status">
+                                     <apex:param value="{!rp.payment_transaction_id}" name="transeId" assignTo="{!transeId}"/>
+                                     <apex:param value="{!rp.payment_refundable_amount}" name="refundable_amount" assignTo="{!refundable_amount}"/>
+                                 </apex:commandLink>
+                             </apex:column>
+                              <apex:column headerValue="{!$Label.ARIA_REFUND_POSTING_DATE}" value="{!rp.payment_date}"/>
+                              <apex:column headerValue="{!$Label.ARIA_PLAN_VIEW_PLAN_DESCRIPTION}" value="{!rp.payment_description}"/>
+                              <apex:column >
+                                  <apex:facet name="header"><div style="float:right;">{!$Label.ARIA_REFUND_ORIGINAL_AMT}</div></apex:facet>
+                                 <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                                   <apex:param value="{!rp.payment_amount}" />
+                                 </apex:outputText>
+                              </apex:column>  
+                              <apex:column >
+                                  <apex:facet name="header"><div style="float:right;">{!$Label.ARIA_REFUND_REFUNDED_AMT}</div></apex:facet>
+                                   <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                                   <apex:param value="{!rp.payment_refunded_amount}" />
+                                 </apex:outputText>  
+                              </apex:column>  
+                              <apex:column > 
+                                  <apex:facet name="header"><div style="float:right;">{!$Label.ARIA_REFUND_REFUNDABLE_AMT}</div></apex:facet>
+                                   <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                                   <apex:param value="{!rp.payment_refundable_amount}" />
+                                 </apex:outputText>
+                              </apex:column>  
+                         </apex:pageBlockTable>
+                         
+                         <apex:pageBlockTable value="{!refundable_payments_PN}" var="rp" rendered="{!NOT(ISNULL(refundable_payments_PN)) && refundable_payments_PN.Size = 0}">
+                             <apex:column headerValue="{!$Label.ARIA_REFUND_PAYMENT_ID}" ><!-- / Transaction No.-->
+                                 
+                                 <apex:commandLink value="{!rp.payment_transaction_id}" action="{!RefundPage}" reRender="frm" status="status">
+                                     <apex:param value="{!rp.payment_transaction_id}" name="transeId" assignTo="{!transeId}"/>
+                                     <apex:param value="{!rp.payment_refundable_amount}" name="refundable_amount" assignTo="{!refundable_amount}"/>
+                                 </apex:commandLink>
+                             </apex:column>
+                              <apex:column headerValue="{!$Label.ARIA_REFUND_POSTING_DATE}" value="{!rp.payment_date}"/>
+                              <apex:column headerValue="{!$Label.ARIA_DISPUTE_DESCRIPTION}" value="{!rp.payment_description}"/>
+                              <apex:column >
+                                  <apex:facet name="header"><div style="float:right;">{!$Label.ARIA_REFUND_ORIGINAL_AMT}</div></apex:facet>
+                                 <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                                   <apex:param value="{!rp.payment_amount}" />
+                                 </apex:outputText>
+                              </apex:column>  
+                              <apex:column >
+                                  <apex:facet name="header"><div style="float:right;">{!$Label.ARIA_REFUND_REFUNDED_AMT}</div></apex:facet>
+                                   <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                                   <apex:param value="{!rp.payment_refunded_amount}" />
+                                 </apex:outputText>
+                              </apex:column>  
+                              <apex:column > 
+                                  <apex:facet name="header"><div style="float:right;">{!$Label.ARIA_REFUND_REFUNDABLE_AMT}</div></apex:facet>
+                                   <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                                   <apex:param value="{!rp.payment_refundable_amount}" />
+                                 </apex:outputText>
+                              </apex:column>
+                              <apex:facet name="footer"><div style="text-align:center;"><i>{!$Label.ARIA_REFUND_NO_PAYMENT_RECORDS}</i></div></apex:facet>  
+                         </apex:pageBlockTable>
+                     </apex:outputPanel>
+                     <apex:pageBlockSectionItem > 
+                         <apex:outputPanel layout="block" style="float:right;">
+                             <apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_CANCEL}" action="{!CancelAction}" reRender="frm" status="status"/>&nbsp;&nbsp;&nbsp;&nbsp;
+                             <apex:commandButton value="{!$Label.ARIA_PAYMENT_CREDIT_CLOSE}" onclick="return closeWin();"/>
+                         </apex:outputPanel>
+                     </apex:pageBlockSectionItem>
+                 </apex:pageBlockSection>
+                 <!--                  third page block section                        -->
+                 <apex:pageBlockSection columns="1" rendered="{!page3}">
+                     <apex:pageBlockSectionItem >
+                         <apex:outputPanel layout="block" style="width:100%;background-color:hsl(195, 61%, 88%);">
+                              <p>{!$Label.ARIA_REFUND_PROVIDE_REFUND_AMT_GREATER_THAN_ZERO}(<apex:outputText value="{0, number, 0.00}" ><apex:param value="{!refundable_amount}" /></apex:outputText>)&nbsp;&nbsp;<a href="javascript:toggle('page3more');" style="color: hsl(2, 96%, 51%);font-weight: 600;" id="page3more">{!$Label.ARIA_CREDIT_CLICK_MORE}...</a></p>
+                              <div class="page3more" style="display:none">
+                              <apex:outputLabel escape="false" value="{!$Label.ARIA_REFUND_PROVIDE_REFUND_AMT_DETAILS_ONE}"></apex:outputLabel>
+                              <apex:outputLabel escape="false" value="{!$Label.ARIA_REFUND_PROVIDE_REFUND_AMT_DETAILS_TWO}"></apex:outputLabel>
+                              
+                              </div>
+                         </apex:outputPanel>
+                     </apex:pageBlockSectionItem>
+                     <apex:pageBlockSectionItem >
+                         <apex:outputLabel >{!$Label.ARIA_REFUND_AMOUNT_TO_REFUND}</apex:outputLabel>
+                         <apex:outputPanel >
+                             <apex:inputText value="{!amount_to_refund}" onkeyup="twoDecimalPlaces(this)" onkeypress="return isNumberKey(event, this.value)"/> &nbsp;&nbsp; ({!$Label.ARIA_PAYMENT_CREDIT_GREATER_LESS_EQUAL_TO_ZERO} <apex:outputText value="{0, number, 0.00}" ><apex:param value="{!refundable_amount}" /></apex:outputText>)
+                              
+                         </apex:outputPanel>
+                         
+                     </apex:pageBlockSectionItem>
+                     <apex:pageBlockSectionItem rendered="{!isExternalPayment}">
+                            <apex:outputLabel >{!$Label.ARIA_REFUND_CHECK_NO}</apex:outputLabel>
+                            <apex:outputPanel >
+                                 <apex:inputText value="{!refund_Check_No}" onkeypress="return isNumberKey(event,'.')"/>&nbsp;&nbsp;<i>({!$Label.ARIA_PAYMENT_CREDIT_REQUIRED_FOR_REFUNDS_MESSAGE})</i>
+                             </apex:outputPanel>
+                     </apex:pageBlockSectionItem>
+                     <apex:pageBlockSectionItem >
+                         <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_REASON}</apex:outputLabel>
+                         <apex:outputPanel layout="block" styleClass="requiredInput">
+                         <apex:outputPanel layout="block" styleClass="requiredBlock"></apex:outputPanel>
+                         <apex:selectList value="{!reason}" size="1" style="width:auto;" >
+                             <apex:selectOptions value="{!Reasons}"></apex:selectOptions>
+                         </apex:selectList>
+                         </apex:outputPanel>
+                     </apex:pageBlockSectionItem>
+                 
+                 <apex:pageBlockSectionItem >
+                         <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_CSR_COMMENTS}</apex:outputLabel>
+                         <apex:inputTextarea value="{!comments}" cols="120" rows="8" />
+                     </apex:pageBlockSectionItem>
+                  <!-- Added by MP for showing the reveersile payment list-->
+                  
+               <apex:PageBlockTable value="{!rpw}" var="rpwvar" rendered ="{!NOT(ISNULL(rpw)) &&rpw.Size > 0}">
+                    <apex:column headerValue="{!$Label.ARIA_REFUND_ACCT_NO}" value="{!rpwvar.invoiced_acct_no}"/>
+                    <apex:column headerValue="{!$Label.ARIA_REFUND_INVOICE_NO}" value="{!rpwvar.invoice_no} / {!rpwvar.invoice_line_no}"/>
+                    <apex:column headerValue="{!$Label.ARIA_REFUND_INVOICE_DATE}" value="{!rpwvar.invoice_date}"/>
+                    <apex:column headerValue="{!$Label.ARIA_REFUND_ITEM_DESCRIPTION}" value="{!rpwvar.invoice_line_description}"/>
+                    <apex:column >
+                        <apex:facet name="header"><div style="float:right;">{!$Label.ARIA_REFUND_ORIGINAL_AMOUNT}</div></apex:facet>
+                        <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                            <apex:param value="{!rpwvar.invoice_line_amount}" />
+                        </apex:outputText> 
+                      </apex:column>
+                    <apex:column >
+                        <apex:facet name="header"><div style="float:right;">{!$Label.ARIA_REFUND_PREVIOUSLY_REVERSED_AMOUNT}
+                        </div></apex:facet>
+                        <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                            <apex:param value="{!rpwvar.invoice_line_reversed_amount}" />
+                        </apex:outputText>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header"><div style="float:right;">{!$Label.ARIA_REFUND_REMAINING_REVERSIBLE_AMOUNT}
+                        </div></apex:facet>
+                        <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                            <apex:param value="{!rpwvar.invoice_line_reversible_amount}" />
+                        </apex:outputText>
+                    </apex:column>
+                    <apex:column headerValue="{!$Label.ARIA_REFUND_AMOUNT_TO_REVERSE_NOW}" >
+                        <apex:inputText value="{!rpwvar.amount_to_reverse_now}" style="width: 110px;" onkeyup="twoDecimalPlaces(this)" onkeypress="return isNumberKey(event, this.value)"/>
+                    </apex:column>
+                    <!--
+                    <apex:column >
+                        <apex:facet name="header">Recc. Service <br/>Line Reversing <br/>Date</apex:facet>
+                          N.A.
+                         <apex:inputText value="{!rpwvar.recc_service_line_reversing_date}"/>
+                    </apex:column>-->
+                </apex:PageBlockTable>
+                
+                 <apex:PageBlockTable value="{!rpw}" var="rpwvar" rendered="{!NOT(ISNULL(rpw)) && rpw.Size = 0}">
+                    <apex:column headerValue="{!$Label.ARIA_REFUND_ACCT_NO}" value="{!rpwvar.invoiced_acct_no}"/>
+                    <apex:column headerValue="{!$Label.ARIA_REFUND_INVOICE_NO}" value="{!rpwvar.invoice_no} / {!rpwvar.invoice_line_no}"/>
+                    <apex:column headerValue="{!$Label.ARIA_REFUND_INVOICE_DATE}" value="{!rpwvar.invoice_date}"/>
+                    <apex:column headerValue="{!$Label.ARIA_REFUND_ITEM_DESCRIPTION}" value="{!rpwvar.invoice_line_description}"/>
+                    <apex:column >
+                        <apex:facet name="header"><div style="float:right;">{!$Label.ARIA_REFUND_ORIGINAL_AMOUNT}</div></apex:facet>
+                        <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                            <apex:param value="{!rpwvar.invoice_line_amount}" />
+                        </apex:outputText>
+                      </apex:column>
+                    <apex:column >
+                        <!-- <apex:facet name="header"><div style="float:right;"> Previously <br/>Reversed<br/> Amount</div></apex:facet> -->
+                        <apex:facet name="header"><div style="float:right;"><apex:outputLabel escape="false" value="{!$Label.ARIA_REFUND_PREVIOUSLY_REVERSED_AMOUNT}"></apex:outputLabel></div></apex:facet>
+                        <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                            <apex:param value="{!rpwvar.invoice_line_reversed_amount}" />
+                        </apex:outputText>
+                    </apex:column>
+                    <apex:column >
+                        <!-- <apex:facet name="header"><div style="float:right;">Remaining<br/>Reversible<br/> Amount</div></apex:facet> -->
+                        <apex:facet name="header" ><div style="float:right;"><apex:outputLabel escape="false" 
+                        value="{!$Label.ARIA_REFUND_REMAINING_REVERSIBLE_AMOUNT}"></apex:outputLabel></div>
+                        </apex:facet>
+                        <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                            <apex:param value="{!rpwvar.invoice_line_reversible_amount}" />
+                        </apex:outputText>
+                    </apex:column>
+                    <apex:column headerValue="Amount To Reverse Now" >
+                        <apex:inputText value="{!rpwvar.amount_to_reverse_now}" onkeyup="twoDecimalPlaces(this)" style="width: 110px;" onkeypress="return isNumberKey(event, this.value)"/>
+                    </apex:column>
+                    <!--
+                    <apex:column >
+                        <apex:facet name="header">Recc. Service <br/>Line Reversing <br/>Date</apex:facet>
+                          N.A.
+                         <apex:inputText value="{!rpwvar.recc_service_line_reversing_date}"/>
+                    </apex:column>-->
+                    <apex:facet name="footer"><div style="text-align:center;"><i>{!$Label.ARIA_REFUND_NO_REVERSIBLE_ITEM}</i></div></apex:facet>
+                </apex:PageBlockTable> 
+                <apex:outputPanel layout="block" style="float:right">
+                    <apex:commandButton value="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_CANCEL}" action="{!CancelAction}" reRender="frm" status="status"/>
+                    &nbsp;&nbsp;
+                    <apex:commandButton value="{!$Label.ARIA_DISPUTE_BACK}" action="{!backFromGenerateRefund}" reRender="frm" status="status"/>
+                    &nbsp;&nbsp;<apex:commandButton value="{!$Label.ARIA_PAYMENT_CREDIT_CLOSE}" onclick="return closeWin();"/>&nbsp;&nbsp;
+                    <apex:commandButton value="{!$Label.ARIA_PAYMENT_CREDIT_GENERATE_REFUND}" action="{!generateRefund}" reRender="frm" status="status"/>
+                
+                </apex:outputPanel>
+                 </apex:pageBlockSection>
+                 <!--  Summary page block section  -->
+                <apex:pageBlockSection columns="1" rendered="{!summaryPage}">
+                    <apex:pageBlockSectionItem >
+                         <apex:outputLabel >{!$Label.ARIA_PAYMENT_REFUND_PAYMENT_TO_REFUND}:</apex:outputLabel>
+                         <apex:outputPanel >
+                         <apex:outputText value="{!$Label.ARIA_REFUND_TRANSACTION_NO}  {!transeId} {!$Label.ARIA_ACCT_SERVICES_FROM}  {!IF(isExternalPayment ,'External Payment', paymentDesc)}, {!$Label.ARIA_PAYMENT_CREDIT_ORIGINAL_PAYMENT_AMOUNT}"/><apex:outputText value="{0, number, 0.00}" ><apex:param value="{!refundable_amount}" /></apex:outputText>
+                         </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                         <apex:outputLabel >{!$Label.ARIA_REFUND_AMOUNT_TO_REFUND}:</apex:outputLabel>
+                         {!amount_to_refund}
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                         <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_REASON}:</apex:outputLabel>
+                         <apex:outputText value="{!reasonName}" />
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                         <apex:outputLabel >{!$Label.ARIA_PAYMENT_CREDIT_CSR_COMMENTS}:</apex:outputLabel>
+                         <apex:outputText value="{!comments}"/>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                         <apex:outputLabel >{!$Label.ARIA_PAYMENT_REFUND_INVOICE_REVERSALS}:</apex:outputLabel>
+                         <apex:outputPanel >
+                             <apex:outputText value="{!$Label.ARIA_PAYMENT_CREDIT_TOTAL_TO_BE_REVERSED} {0, number, 0.00}">
+                                 <apex:param value="{!tot_reversed}" />
+                             </apex:outputText>
+                             <!--
+                             <apex:outputLabel escape="false" value="{0, number, 0.00}">
+                                <apex:param value="{!tot_reversed}}" />
+                             </apex:outputLabel>
+                             -->
+                              <!-- {!tot_reversed}" />-->
+                                <ul>
+                                    <apex:repeat value="{!Refundedrpw}" var="rev">
+                                        <!-- removed as per demo feedback , Reversing Date {!rev.recc_service_line_reversing_date } -->
+                                        <!-- <li>Invoice {!rev.invoice_no}, Line Item {!rev.invoice_line_no }, Reversal Amount -->
+                                        <li>{!$Label.ARIA_REFUND_INVOICE}&nbsp;{!rev.invoice_no},&nbsp;{!$Label.ARIA_REFUND_LINE_ITEM}&nbsp; {!rev.invoice_line_no },&nbsp;{!$Label.ARIA_REFUND_REVERSAL_AMOUNT} 
+                                         
+                                            <apex:outputText value="{0, number, 0.00}">
+                                                <apex:param value="{!VALUE(rev.amount_to_reverse_now)}" />
+                                            </apex:outputText>
+                                        </li>
+                                    </apex:repeat>
+                                </ul>
+                             
+                         </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:outputPanel layout="block" style="float:right;margin-right:5%;">
+                    <apex:commandButton value="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_CANCEL}" action="{!CancelAction}" reRender="frm" status="status"/>
+                    &nbsp;&nbsp;
+                    <apex:commandButton value="{!$Label.ARIA_DISPUTE_BACK}" action="{!backtoRefundScreen}" reRender="frm" status="status"/>
+                     &nbsp;&nbsp;<apex:commandButton value="{!$Label.ARIA_PAYMENT_CREDIT_CLOSE}" onclick="return closeWin();"/>&nbsp;&nbsp;
+                    <apex:commandButton value="{!$Label.ARIA_REFUND_PROCESS_REFUND}" onclick="return ConfirmProcessRefund();"/>
+                
+                </apex:outputPanel>
+                 </apex:pageBlockSection>
+                
+             </apex:pageBlock>
+             <apex:outputPanel style="text-align:center;" layout="block" rendered="{! !$ObjectType.Aria_Refund__c.accessible}">
+                <p style="font-weight: 600;color: rgb(255, 82, 0);">{!$Label.ARIA_REFUND_PERMISSION_ERROR}</p>
+            </apex:outputPanel>
+             
+         </div>
+         </div> 
+          
+</apex:form>
+<script>
+    addEvent(document.body,"mousedown",function(a){ListPaginator.hideSelector('item_paginator_rpp_target')},!0); 
+</script>
+</apex:page>

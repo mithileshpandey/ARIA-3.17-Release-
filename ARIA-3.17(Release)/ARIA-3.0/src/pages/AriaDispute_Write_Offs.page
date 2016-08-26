@@ -1,0 +1,808 @@
+<apex:page showHeader="false" sidebar="false" standardController="Account" id="pg" extensions="AriaDisputenWriteOffExtn" action="{!callCunstructor}">
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+    <style>
+        #tabs_wrapper {
+            width: 98%;
+            margin:0 auto;
+            margin-top :2px;
+        }
+        #tabs_container {
+            border-bottom: 1px solid #ccc;
+        }
+        #tabs {
+            list-style: none;
+            padding: 5px 0 4px 0;
+            margin: 0 0 0 20px;
+            font: 0.90em arial;
+        }
+        #tabs li {
+            display: inline;
+        }
+        #tabs li a {
+            border: 1px solid #ccc;
+            padding: 4px 6px;
+            text-decoration: none;
+            background-color: #eeeeee;
+            border-bottom: none;
+            outline: none;
+            border-radius: 5px 5px 0 0;
+            -moz-border-radius: 5px 5px 0 0;
+            -webkit-border-top-left-radius: 5px;
+            -webkit-border-top-right-radius: 5px;
+            color:#000;
+        }
+        #tabs li a:hover {
+            background-color: #dddddd;
+            padding: 4px 6px;
+        }
+        #tabs li.active a {
+            border-bottom: 1px solid #fff;
+            background-color: #fff;
+            padding: 4px 6px 5px 6px;
+            border-bottom: none;
+        }
+        #tabs li.active a:hover {
+            background-color: #eeeeee;
+            padding: 4px 6px 5px 6px;
+            border-bottom: none;
+        }
+        #tabs li a.icon_accept:hover {
+            padding-left: 24px;
+        }
+        
+        #tabs_content_container {
+            border: 1px solid #ccc;
+            border-top: none;
+            padding: 10px;
+            width: 98.4%;
+        }
+        ul li, ol li {
+            margin-left: 0em;
+            padding-left: 0;
+        }
+       .header{
+            text-align:right;
+        }
+        /* Added By MP */
+        th {text-align: center;border-bottom: thin solid black;}
+        td {text-align: left}
+        #drow {text-align: right;}
+        #crow {text-align: center;}
+        #lrow {padding-left: 25px;}
+        .drow {text-align: right;}
+        .crow {text-align: center;}
+        .fright{text-align: right;}
+        .fleft{text-align: left;}
+        
+       .rowColor{
+          color:green;
+          background:pink;
+       }
+       .headerRow .hdrCenter {
+          
+          text-align:center;
+        }
+        .headerRow .hdrRight {
+          
+          text-align:right;
+        }
+        .headerRow .hdrLeft {
+          
+          text-align:Left;
+        }
+        .dataLeft{
+            float:left;
+        }
+        .dataRight{
+            float:right;
+        }
+        /* Tool Tip style below */
+        .toolTipWrapper{
+            background: #EAF3F2;
+            color: #000;
+            width: 205px;
+            position: absolute;
+            z-index: 98;
+            } 
+        .tooltipHeader{
+            background: #000080;
+            color: #fff;
+            padding: 2px;
+            width: 100%;
+            border: solid 1px #333;
+            font-size: 10px;
+         } 
+         .tooltipContent{
+            background: #fff;
+            color: #111010;
+            padding: 2px;
+            width: 100%;
+            font-size: 11px;
+            border: solid 1px #333;
+        }
+       .bPageBlock .detailList .labelCol {
+            width: 25%;
+            white-space: nowrap;
+            }
+    </style>
+       
+    <script>
+        function showPopUp(id){
+            var popupTop = 0,popupLeft = 0;
+            var height = $("#"+id).height();
+            var aTop = $('#a_'+id).offset().top;
+            var aLeft = $('#a_'+id).offset().left;
+            popupLeft = aLeft - 210;
+            popupTop = (aTop +10) - height;
+            $('#'+id).css({left:popupLeft,top:popupTop});
+      }
+     function showTooltip(id, title,comments)
+    {
+     var div = document.getElementById(id);
+     div.innerHTML = '<div class="tooltipHeader">' + title + '</div><div class="tooltipContent">' + comments + '</div>';
+     showPopUp(id);
+     div.style.display='';
+     }
+    function showTooltip1(id, title, desc)
+    {
+     var div = document.getElementById(id);
+     div.style.display = 'inline';
+     var newstring = desc.replace(/[\,]/g, "<br/>")
+     div.innerHTML = '<div class="tooltipHeader">' + title + '</div><div class="tooltipContent">' + desc + '</div>';
+    } 
+    function hideTooltip(id)
+    {
+     var div = document.getElementById(id);
+     div.style.display = 'none';
+    }
+        function setWTD(wtd){
+            document.getElementById('pg:frm:whatToDoId').value = wtd;
+            if(wtd == 'Create a New Write-Off'){
+                 document.getElementById('pg:frm:invoice_pb:invoice_sec:text_sec:WO_sec').style.display = 'block';
+                 document.getElementById('pg:frm:invoice_pb:invoice_sec:text_sec:DH_sec').style.display = 'none';
+            }else{
+                document.getElementById('pg:frm:invoice_pb:invoice_sec:text_sec:DH_sec').style.display = 'block';
+                document.getElementById('pg:frm:invoice_pb:invoice_sec:text_sec:WO_sec').style.display = 'none';
+            }
+        }
+        
+        function isNumberKey(evt, val)
+      {
+         var charCode = (evt.which) ? evt.which : event.keyCode
+         if (charCode == 46) {
+            // Allow only 1 decimal point ('.')...
+            
+            if((val) && (val.indexOf('.') >= 0))
+                return false;
+            else
+                return true;
+        }
+         
+         if (charCode > 31 && (charCode < 48 || charCode > 57))
+            return false;
+
+         return true;
+      }
+      
+      function twoDecimalPlaces(obj){
+        var decimalVal = obj.value.split('.');
+         if(decimalVal.length > 1 && decimalVal[1].length > 2){
+            obj.value = obj.value.substring(0,obj.value.length -1);
+         }
+      }
+      
+      function closeWin(){
+         var aid = window.parent.location.href.split('id=')[1];
+         aid = aid.split('&')[0];
+         window.opener.parent.location.href = 'https://'+document.domain+'/'+aid.trim();
+         self.close();
+    }
+    </script>
+
+    <apex:actionstatus id="status">
+        <apex:facet name="start">
+            <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:fixed;height: 70%;width:100%;padding-top: 15%;opacity:.8;">
+                <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+                <span class="waitingDescription" style="color: #6B3;;"><b>{!$Label.ARIA_GENERAL_CONFIG_LOADING}</b></span>
+            </div>
+        </apex:facet>
+    </apex:actionstatus>
+    
+    <apex:form id="frm">
+        <apex:inputHidden id="whatToDoId" value="{!whatToDo}"/>
+        <!-- apex action functions for invoice paginations -->
+        <apex:actionFunction id="aFunction2" name="firstPage" action="{!firstBtnClick}" reRender="frm" status="status" />
+        <apex:actionFunction id="aFunction3" name="prePage" action="{!previousBtnClick}" reRender="frm" status="status" />
+        <apex:actionFunction id="aFunction4" name="nextPage" action="{!nextBtnClick}" reRender="frm" status="status" />
+        <apex:actionFunction id="aFunction5" name="lastPage" action="{!lastBtnClick}" reRender="frm" status="status" />
+        <apex:actionFunction id="aFunction6" name="setPageSize" reRender="frm" status="status" >
+            <apex:param name="pSize" value="" assignTo="{!PageSize}"/>
+        </apex:actionFunction>
+        <!-- apex action functions for paginations ends-->
+        <!-- apex action functions for dispute paginations -->
+        <apex:actionFunction id="dFunction2" name="dispute_firstPage" action="{!DisputefirstBtnClick}" reRender="frm" status="status" />
+        <apex:actionFunction id="dFunction3" name="dispute_prePage" action="{!DisputepreviousBtnClick}" reRender="frm" status="status" />
+        <apex:actionFunction id="dFunction4" name="dispute_nextPage" action="{!DisputenextBtnClick}" reRender="frm" status="status" />
+        <apex:actionFunction id="dFunction5" name="dispute_lastPage" action="{!DisputelastBtnClick}" reRender="frm" status="status" />
+        <apex:actionFunction id="dFunction6" name="setDisputePageSize" reRender="frm" status="status" >
+            <apex:param name="pSize" value="" assignTo="{!DisputepageSize}"/>
+        </apex:actionFunction>
+        <apex:actionFunction name="refresh_writeOffDispute" action="{!get_acct_writeoff_or_disputes}" reRender="pbwriteoffHist" status="status" />
+        <apex:actionFunction name="refresh_InvoiceDetail" action="{!get_invoices_to_writeoff_or_disputeResponse}" reRender="invoiceSectionItem" status="status" />
+        
+        <!-- apex action functions for paginations ends-->
+        <div id="tabs_wrapper">
+                <div id="tabs_container">
+                    <ul id="tabs">
+                        <li ><a href="/apex/AriaPaymentsandCredits?id={!AccId}"><b>{!$Label.ARIA_PAYMENT_CREDIT_PAYMENTS}</b></a></li>
+                        <li ><a href="/apex/AriaRefunds?id={!AccId}"><b>{!$Label.ARIA_PAYMENT_CREDIT_REFUNDS}</b></a></li>
+                        <li><a href="/apex/AriaCredits?id={!AccId}"><b>{!$Label.ARIA_PAYMENT_CREDIT_CREDITS}</b></a></li>
+                        <li class="active"><a href="#"><b>{!$Label.ARIA_PAYMENT_CREDIT_WRITE_OFF}</b></a></li>
+<!--                         <li><a href="/apex/AriaReversal?id={!AccId}"><b>{!$Label.ARIA_PAYMENT_CREDIT_REVERSAL}</b></a></li> -->
+                    </ul>
+                </div>
+                <div id="tabs_content_container" >
+                    <apex:commandButton value="{!$Label.ARIA_PAYMENT_CREDIT_CLOSE}" style="float:right;margin-top:-9px;" onclick="return closeWin();"/>
+                    <apex:pageBlock id="invoice_pb">
+                    <apex:pagemessages rendered="{!pg_msg == 'UP'}"></apex:pagemessages>
+                     
+                        <apex:pageBlockSection columns="1" rendered="{!IF('invoice_list' == display_what, true, false)}" id="invoice_sec">
+                            <apex:pageBlockSectionItem id="test">
+                                <apex:outputPanel layout="block" id="check">
+                                     <apex:selectRadio id="wof" value="{!whatToDo}" onchange="setWTD(this.value);">
+                                        <apex:selectOption itemValue="Create a New Write-Off" itemLabel="{!$Label.ARIA_DISPUTE_CREATE_NEW_WRITE_OFF}" itemdisabled="{!showWriteOff}"/>
+                                        <apex:selectOption itemValue="Create Dispute Hold" itemLabel="{!$Label.ARIA_DISPUTE_CREATE_DISPUTE_HOLD}" itemdisabled="{!showDisputeHold}"/>
+                                    </apex:selectRadio>
+                                    <div style="float:right">
+                                    <apex:outputLabel value="{!$Label.ARIA_PLAN_QUOTE_SUBSCRIPTIONS}" />&nbsp;&nbsp;&nbsp;&nbsp;
+							        <apex:selectList value="{!selectedPlanInstanceNoForInvoice}" size="1" onchange="refresh_InvoiceDetail()">
+							            <apex:selectOptions value="{!subscriptionList}"/>
+							        </apex:selectList>
+                                   </div>
+                                 </apex:outputPanel>
+                            </apex:pageBlockSectionItem> 
+                            <apex:pageBlockSectionItem id="text_sec" >
+                               <apex:outputPanel layout="none" id="mid">
+                                 <apex:outputPanel id="WO_sec" layout="block" rendered="{!!showWriteOff}" styleClass="WO_Text" style="display:none;text-align:left;background-color: hsl(195, 61%, 88%);padding-left: 2%;padding-top: 1px;padding-bottom: 1px;">
+                                    {!$Label.ARIA_DISPUTE_CLICK_INVOICE_WRITE_OFF}
+                                 </apex:outputPanel>
+                                    <apex:outputPanel styleClass="DH_Text" rendered="{!!showDisputeHold}" id="DH_sec" layout="block" style="display:none;text-align:left;background-color: hsl(195, 61%, 88%);padding-left: 2%;padding-top: 1px;padding-bottom: 1px;">
+                                    <apex:outputLabel escape="false" value="{!$Label.ARIA_DISPUTE_HOLD_TEMPORARY}"></apex:outputLabel>                                  
+                                   
+                                    <ul>
+                                      <apex:outputLabel escape="false" value="{!$Label.ARIA_DISPUTE_HOLD_EXPIRATION}"></apex:outputLabel>
+                                    
+                                    </ul>
+                                    <apex:outputLabel escape="false" value="{!$Label.ARIA_DISPUTE_HOLD_DISPUTE}"></apex:outputLabel>
+                                    
+                                   </apex:outputPanel>
+                                   </apex:outputPanel>
+                                   
+							        
+                                 
+                            </apex:pageBlockSectionItem>
+                            
+                            <apex:pageBlockSectionItem id="invoiceSectionItem" rendered="{!!(showWriteOff && showDisputeHold)}"> 
+                                <apex:outputPanel layout="block"  >
+                                        <div class="paginator">
+                                                     <span class="left">
+                                                        <span onmouseout="ListPaginator.unhoverSelector(this)" onmouseover="ListPaginator.hoverSelector(this)" onmousedown="ListPaginator.showSelector('item_paginator_rpp_target')" id="item_paginator_rpp_target" class="selectorTarget">
+                                                            {!start}-{!ends}&nbsp;{!$Label.ARIA_PAYMENT_CREDIT_OF}&nbsp; {!totalRecords}
+                                                            <table cellspacing="0" cellpadding="0" id="item_paginator_rpp" class="selector rpp">
+                                                                <tbody>
+                                                                <tr onmousedown="setPageSize(10);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=10,'optSelected','optUnselected')}">
+                                                                <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">10</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                                            </tr>
+                                                            <tr onmousedown="setPageSize(25);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=25,'optSelected','optUnselected')}">
+                                                                <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">25</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                                            </tr>
+                                                            <tr onmousedown="setPageSize(50);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=50,'optSelected','optUnselected')}">
+                                                                <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td><td class="rppOpt">50</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                                            </tr>
+                                                            <tr onmousedown="setPageSize(100);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=100,'optSelected','optUnselected')}">
+                                                                           <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">100</td> <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                                                       </tr>
+                                                                   </tbody>
+                                                                 </table>
+                                                               <img src="/s.gif" class="selectArrow" />
+                                                          </span>
+                                                      </span>
+                                                     <span class="prevNextLinks">
+                                                       <span class="prevNext">
+                                                           <apex:outputPanel rendered="{!!previousButtonDisabled}">
+                                                           <a href="javascript:firstPage();">
+                                                               <img class="first" alt="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_FIRST_PAGE}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_FIRST_PAGE}" src="/s.gif"/>
+                                                           </a>
+                                                           </apex:outputPanel>
+                                                           <apex:outputPanel rendered="{!previousButtonDisabled}">
+                                                           <img class="firstoff" src="/s.gif"/>
+                                                           </apex:outputPanel>
+                                                       </span>
+                                                       <span class="prevNext">
+                                                           <apex:outputPanel rendered="{!!previousButtonDisabled}">
+                                                           <a href="javascript:prePage();">
+                                                               <img class="prev" alt="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PREVIOUS}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PREVIOUS}" src="/s.gif"/>{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}
+                                                           </a>
+                                                           </apex:outputPanel>
+                                                           <apex:outputPanel rendered="{!previousButtonDisabled}">
+                                                           <img class="prevoff" src="/s.gif"/>{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PREVIOUS}
+                                                           </apex:outputPanel>
+                                                       </span>
+                                                       <span class="prevNext">
+                                                           <apex:outputPanel rendered="{!!nextButtonDisabled}">
+                                                           <a href="javascript:nextPage();">
+                                                               {!$Label.ARIA_PAYMENT_CREDIT_NEXT}<img class="next" alt="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_NEXT}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_NEXT}" src="/s.gif"/>
+                                                           </a>
+                                                           </apex:outputPanel>
+                                                           <apex:outputPanel rendered="{!nextButtonDisabled}">
+                                                               {!$Label.ARIA_PAYMENT_CREDIT_NEXT}<img class="nextoff" src="/s.gif"/>
+                                                           </apex:outputPanel>
+                                                       </span>
+                                                       <span class="prevNext">
+                                                           <apex:outputPanel rendered="{!!nextButtonDisabled}">
+                                                           <a href="javascript:lastPage();">
+                                                               <img class="last" alt="{!$Label.ARIA_REFUND_LAST_PAGE}" title="{!$Label.ARIA_REFUND_LAST_PAGE}" src="/s.gif"/>
+                                                           </a>
+                                                           </apex:outputPanel>
+                                                           <apex:outputPanel rendered="{!nextButtonDisabled}">
+                                                           <img class="lastoff" src="/s.gif"/>
+                                                           </apex:outputPanel>
+                                                       </span>
+                                                    </span>
+                                                    <span class="right">{!$Label.ARIA_PAYMENT_REFUND_PAGE}&nbsp;{!PageNumber}&nbsp;{!$Label.ARIA_PAYMENT_CREDIT_OF}&nbsp; {!totalPageNumber}
+                                                    <!--<input type="text" value="{!PageNumber}" onchange="jump(this.value);" maxlength="4" class="pageInput"/> of {!totalPageNumber}-->
+                                                    </span>
+                                                </div>
+                                
+                                
+                                     <!-- this list show records for master plan change history of account -->
+                                     
+                                     <apex:pageBlockTable width="100%" columnClasses="crow" value="{!invoices }" var="in" rendered ="{!NOT(ISNULL(invoices)) &&invoices.Size > 0}">
+                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_INVOICE_NO}"  headerClass="hdrCenter" >
+                                              <apex:outputPanel styleClass="dataLeft">
+                                              <apex:commandLink value="{!in.invoice_no}" action="{!create_WriteOff_Dispute}" reRender="frm" status="status">
+                                                  <apex:param value="{!in.invoice_no}" assignTo="{!invoice_no}" name="invoice_no" />
+                                              </apex:commandLink></apex:outputPanel>
+                                          </apex:column>
+                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_BILL_DATE}" headerClass="hdrCenter" >
+                                              <apex:outputPanel styleClass="dataLeft">{!in.bill_date}</apex:outputPanel>
+                                          </apex:column>
+                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_DUE_DATE}" headerClass="hdrCenter" >
+                                              <apex:outputPanel styleClass="dataLeft">{!in.due_date}</apex:outputPanel>
+                                          </apex:column>
+                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_DAYS_PAST_DUE}" headerClass="hdrRight" style="text-align:right;" >
+                                              <apex:outputText value="{0, number, 0.00}"  style="text-align:right;" >
+                                               <apex:param value="{!in.days_past_due}" />
+                                             </apex:outputText>
+                                          </apex:column>
+                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_INVOICE_AMOUNT}" headerClass="hdrRight"  style="text-align:right;">
+                                             <apex:outputText value="{0, number, 0.00}"  style="text-align:right;" >
+                                               <apex:param value="{!in.invoice_amount}" />
+                                             </apex:outputText>
+                                          </apex:column>
+                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_TOTAL_PAID}" headerClass="hdrRight" style="text-align:right;">
+                                              <apex:outputText value="{0, number, 0.00}"  >
+                                               <apex:param value="{!in.total_paid}" />
+                                             </apex:outputText>
+                                              <apex:facet name="footer">
+                                                 <span style="float:right;">{!$Label.ARIA_DISPUTE_TOTAL_DUE_ON_ACCOUNT}</span>
+                                            </apex:facet>
+                                          </apex:column>
+                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_BALANCE_DUE}"  headerClass="hdrRight"  style="text-align:right;">
+                                           <apex:outputText value="{0, number, 0.00}"   >
+                                               <apex:param value="{!in.balance_due}" />
+                                             </apex:outputText>
+                                             
+                                     
+                                            <!-- Footer of the first Cell -->
+                                            <apex:facet name="footer">
+                                                <span class="t1" style="float:right;">{!tot_inv_Bal_due}</span>
+                                            </apex:facet>
+                                          </apex:column>
+                                   </apex:pageBlockTable>
+                                  
+                                  <!--  In case No records Found the below pageblock table will be rendered -->
+                                  <apex:pageBlockTable value="{!invoices }" var="in" rendered="{!NOT(ISNULL(invoices)) && invoices.Size = 0}">
+                                     <apex:column headerValue="{!$Label.ARIA_DISPUTE_INVOICE_NO}" headerClass="headerlbl" styleClass="drow" width="12%"/>
+                                     <apex:column headerValue="{!$Label.ARIA_DISPUTE_BILL_DATE}" headerClass="headerlbl" styleClass="drow" width="12%"/>
+                                     <apex:column headerValue="{!$Label.ARIA_DISPUTE_DUE_DATE}" headerClass="headerlbl" styleClass="drow" width="12%"/>
+                                     <apex:column headerValue="{!$Label.ARIA_DISPUTE_DAYS_PAST_DUE}" headerClass="headerlbl" styleClass="drow" width="12%"/>
+                                     <apex:column headerValue="{!$Label.ARIA_DISPUTE_INVOICE_AMOUNT}" headerClass="headerlbl" styleClass="drow" width="12%"/>
+                                     <apex:column headerValue="{!$Label.ARIA_DISPUTE_TOTAL_PAID}" headerClass="headerlbl" styleClass="drow" width="12%"/>
+                                     <apex:column headerValue="{!$Label.ARIA_DISPUTE_BALANCE_DUE}" headerClass="headerlbl" styleClass="drow" />
+                                     <apex:facet name="footer">{!$Label.ARIA_DISPUTE_NO_RECORDS}</apex:facet>
+                                  </apex:pageBlockTable>
+                                     <!--  <apex:commandButton value="Close" style="float:right;margin-top: 7px;margin-right: 10px;" onclick="return closeWin();"/> -->
+                                 
+                                   
+                                  </apex:outputPanel>
+                                  
+                                </apex:pageBlockSectionItem>
+                                <script>
+                                  setWTD('{!whatToDo}');
+                                 </script>
+                                
+                        </apex:pageBlockSection>
+                        
+                        <apex:pageBlockSection columns="1" rendered="{!IF('input_wodh' == display_what, true, false)}">
+                            <apex:pageBlockSectionItem >
+                                 <apex:outputPanel layout="block" style="text-align:left;background-color: hsl(195, 61%, 88%);padding-left: 2%;padding-top: 1px;padding-bottom: 1px;">
+                                    {!$Label.ARIA_DISPUTE_FILL_OUT_THE_FORM}&nbsp;{!acc_currency} {!inv_Bal_due}&nbsp;{!$Label.ARIA_DISPUTE_AND_CLICK_CREATE} <i>{!input_text}</i>.
+                                 </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem >
+                                <apex:outputLabel style="font-family: verdana;">{!$Label.ARIA_DISPUTE_INVOICE_NO}</apex:outputLabel>
+                                <apex:outputLabel >{!invoice_no}</apex:outputLabel>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem >
+                                <apex:outputLabel style="font-family: verdana;">{!input_text} {!$Label.ARIA_PAYMENT_CREDIT_AMOUNT}:</apex:outputLabel>
+                                <apex:outputPanel layout="block" style="float:left;" Styleclass="requiredInput"><div class="requiredBlock"></div>
+                                     <apex:inputText value="{!inp_var.WO_Amt}" size="30" style="text-align:right;" onkeyup="twoDecimalPlaces(this)" onkeypress="return isNumberKey(event, this.value)"/><i>({!$Label.ARIA_DISPUTE_MAXIMUM}&nbsp;{!acc_currency} {!inv_Bal_due})</i>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem >
+                                <apex:outputLabel style="font-family: verdana;" >{!input_text} {!$Label.ARIA_PAYMENT_CREDIT_REASON}:</apex:outputLabel>
+                                <apex:outputPanel layout="block" style="float:left;" Styleclass="requiredInput"><div class="requiredBlock"></div>
+                                <apex:selectList value="{!inp_var.WO_rsn}" size="1" style="width:180px;">
+                                    <apex:selectOptions value="{!WO_reasons}"/>
+                                </apex:selectList>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem >
+                                <apex:outputLabel style="font-family: verdana;">{!$Label.ARIA_PAYMENT_CREDIT_CSR_COMMENTS}</apex:outputLabel>
+                                <apex:outputPanel layout="block" style="float:left;" Styleclass="requiredInput"><div class="requiredBlock"></div>
+                                <apex:inputTextarea value="{!inp_var.WO_Comments}" rows="8" cols="110"/>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem >
+                                <apex:outputPanel layout="block" style="float:right;">
+                                    <table style="padding-right:25%;">
+                                        <tr>
+                                            <td><apex:commandButton value="{!$Label.ARIA_DISPUTE_CREATE} {!input_text}" action="{!verifyData_summuryPage}" reRender="invoice_pb" status="status"/></td>
+                                            <td><apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_CANCEL}" action="{!cancel_WO_Dispute}" reRender="invoice_pb" status="status"/></td>
+                                        </tr>
+                                    </table>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                        </apex:pageBlockSection>
+                        
+                       <apex:pageBlockSection columns="1" rendered="{!IF('summary_wodh' == display_what, true, false)}">
+ <apex:pageBlockSectionItem >
+                            <apex:outputPanel layout="block" style="text-align:left;background-color: hsl(195, 61%, 88%);padding-left: 2%;padding-top: 1px;padding-bottom: 1px;">
+                                   {!$Label.ARIA_DISPUTE_CONFIRM_ALL_ENTRIES}&nbsp;{!input_text}&nbsp;{!$Label.ARIA_DISPUTE_OR_CANCEL}.
+                                 </apex:outputPanel>
+                            </apex:pageBlockSectionItem> 
+                            <apex:pageBlockSectionItem >
+                                <apex:outputLabel style="font-family: verdana;">{!$Label.ARIA_DISPUTE_INVOICE_NO}</apex:outputLabel>
+                                <apex:outputLabel >{!invoice_no}</apex:outputLabel>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem >
+                                <apex:outputLabel style="font-family: verdana;">{!input_text} {!$Label.ARIA_PAYMENT_CREDIT_AMOUNT} </apex:outputLabel>
+                                <apex:outputLabel >{!acc_currency} {!inp_var.WO_Amt}</apex:outputLabel>
+                                
+                                
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem >
+                                <apex:outputLabel style="font-family: verdana;">{!input_text} {!$Label.ARIA_PAYMENT_CREDIT_REASON}</apex:outputLabel>
+                                <apex:outputLabel >{!inp_var.WO_rsn_text}</apex:outputLabel>
+                                
+                                
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem >
+                                <apex:outputLabel style="font-family: verdana;">{!$Label.ARIA_PAYMENT_CREDIT_CSR_COMMENTS}</apex:outputLabel>
+                                <apex:outputLabel >{!inp_var.WO_Comments}</apex:outputLabel>
+                               
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem >
+                                <apex:outputPanel layout="block" style="float:right;">
+                                    <table style="padding-right:25%;">
+                                        <tr>
+                                            <td align="left"><apex:commandButton value="{!$Label.ARIA_DISPUTE_CREATE} {!input_text}" action="{!final_create_WO_DH}" reRender="frm" status="status"/></td>
+                                            <td align="left"><apex:commandButton value="{!$Label.ARIA_PLAN_VIEW_CANCEL}" action="{!cancel_WO_Dispute}" reRender="invoice_pb" status="status"/></td>
+                                            <td align="left"><apex:commandButton value="{!$Label.ARIA_DISPUTE_BACK}" action="{!BackToPrevious}" reRender="invoice_pb" status="status"/></td>
+                                        </tr>
+                                    </table>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                        
+                        </apex:pageBlockSection>
+                        
+                    </apex:pageBlock><hr/><br/>
+                
+                
+                
+                    <apex:pageBlock id="pbwriteoffHist" title="{!$Label.ARIA_DISPUTE_WRITE_OFF_DISPUTE_HOLD_HISTORY}" >
+                     <apex:pagemessages rendered="{!pg_msg == 'DOWN'}"></apex:pagemessages>
+                     <div style="float:right">
+				        <apex:outputLabel value="{!$Label.ARIA_PLAN_QUOTE_SUBSCRIPTIONS}" />&nbsp;&nbsp;&nbsp;&nbsp;
+				        <apex:selectList value="{!selectedPlanInstanceNo}" size="1" onchange="refresh_writeOffDispute()">
+				            <apex:selectOptions value="{!subscriptionList}"/>
+				        </apex:selectList>
+				        </div>
+				        <br /><br />
+                         <apex:outputPanel layout="block" rendered="{!IF(display_what1 == 'WOHist_list', true, false)}" style="line-height: 1.5;width:97%;margin-left:1%;text-align:left;background-color: hsl(195, 61%, 88%);padding-left: 2%;padding-top: 1px;padding-bottom: 1px;">
+                               {!$Label.ARIA_DISPUTE_CLICK_INVOICE_VIEW_DETAILS}<br/>
+                               {!$Label.ARIA_DISPUTE_HOVER_OVER_ANY} <span style="text-decoration:none;background-color:#FACC2E;font-weight:bold; font-size:12px">?</span> {!$Label.ARIA_DISPUTE_ICON_TO_VIEW}<br/>
+                               {!$Label.ARIA_DISPUTE_FOR_ANY_WRITE_OFF_UNSETTLED}
+                         </apex:outputPanel>
+                            <apex:pageBlockSection columns="1" rendered="{!IF(display_what1 == 'unsettle', false, true)}">
+                                    <apex:pageblockSectionItem >
+                                           <apex:outputPanel layout="block" >
+                                           <apex:outputPanel rendered="{!display_what1 != 'invDetail_list'}">
+                                                <div class="paginator">
+                                                     <span class="left">
+                                                        <span onmouseout="ListPaginator.unhoverSelector(this)" onmouseover="ListPaginator.hoverSelector(this)" onmousedown="ListPaginator.showSelector('item_paginator_rpp_target_1')" id="item_paginator_rpp_target_1" class="selectorTarget">
+                                                            {!dispute_start}-{!dispute_ends} of {!dispute_totalRecords}
+                                                            <table cellspacing="0" cellpadding="0" id="item_paginator_rpp" class="selector rpp">
+                                                                <tbody>
+                                                                <tr onmousedown="setDisputePageSize(10);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(DisputePageSize=10,'optSelected','optUnselected')}">
+                                                                <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">10</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                                            </tr>
+                                                            <tr onmousedown="setDisputePageSize(25);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(DisputePageSize=25,'optSelected','optUnselected')}">
+                                                                <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">25</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                                            </tr>
+                                                            <tr onmousedown="setDisputePageSize(50);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(DisputePageSize=50,'optSelected','optUnselected')}">
+                                                                <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td><td class="rppOpt">50</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                                            </tr> 
+                                                            <tr onmousedown="setDisputePageSize(100);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(DisputePageSize=100,'optSelected','optUnselected')}">
+                                                                           <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">100</td> <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                                                                       </tr>
+                                                                   </tbody>
+                                                                 </table>
+                                                               <img src="/s.gif" class="selectArrow" />
+                                                          </span>
+                                                      </span>
+                                                     <span class="prevNextLinks">
+                                                       <span class="prevNext">
+                                                           <apex:outputPanel rendered="{!!DisputepreviousButtonDisabled}">
+                                                           <a href="javascript:dispute_firstPage();">
+                                                               <img class="first" alt="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_FIRST_PAGE}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_FIRST_PAGE}" src="/s.gif"/>
+                                                           </a>
+                                                           </apex:outputPanel>
+                                                           <apex:outputPanel rendered="{!DisputepreviousButtonDisabled}">
+                                                           <img class="firstoff" src="/s.gif"/>
+                                                           </apex:outputPanel>
+                                                       </span>
+                                                       <span class="prevNext">
+                                                           <apex:outputPanel rendered="{!!DisputepreviousButtonDisabled}">
+                                                           <a href="javascript:dispute_prePage();">
+                                                               <img class="prev" alt="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PREVIOUS}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PREVIOUS}" src="/s.gif"/>Previous
+                                                           </a>
+                                                           </apex:outputPanel>
+                                                           <apex:outputPanel rendered="{!DisputepreviousButtonDisabled}">
+                                                           <img class="prevoff" src="/s.gif"/>{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}
+                                                           </apex:outputPanel>
+                                                       </span>
+                                                       <span class="prevNext">
+                                                           <apex:outputPanel rendered="{!!DisputenextButtonDisabled}">
+                                                           <a href="javascript:dispute_nextPage();">
+                                                               {!$Label.ARIA_PAYMENT_CREDIT_NEXT}<img class="next" alt="{!$Label.ARIA_PAYMENT_CREDIT_NEXT}" title="{!$Label.ARIA_PAYMENT_CREDIT_NEXT}" src="/s.gif"/>
+                                                           </a>
+                                                           </apex:outputPanel>
+                                                           <apex:outputPanel rendered="{!DisputenextButtonDisabled}">
+                                                               {!$Label.ARIA_PAYMENT_CREDIT_NEXT}<img class="nextoff" src="/s.gif"/>
+                                                           </apex:outputPanel>
+                                                       </span>
+                                                       <span class="prevNext">
+                                                           <apex:outputPanel rendered="{!!DisputenextButtonDisabled}">
+                                                           <a href="javascript:dispute_lastPage();">
+                                                               <img class="last" alt="{!$Label.ARIA_REFUND_LAST_PAGE}" title="{!$Label.ARIA_REFUND_LAST_PAGE}" src="/s.gif"/>
+                                                           </a>
+                                                           </apex:outputPanel>
+                                                           <apex:outputPanel rendered="{!DisputenextButtonDisabled}">
+                                                           <img class="lastoff" src="/s.gif"/>
+                                                           </apex:outputPanel>
+                                                       </span>
+                                                    </span>
+                                                    <span class="right">{!$Label.ARIA_PAYMENT_REFUND_PAGE}&nbsp;{!dispute_PageNumber}&nbsp;{!$Label.ARIA_PAYMENT_CREDIT_OF}&nbsp; {!DisputeTotalPageNumber}
+                                                    <!--<input type="text" value="{!PageNumber}" onchange="jump(this.value);" maxlength="4" class="pageInput"/> of {!totalPageNumber}-->
+                                                    </span>
+                                                </div>
+                                                </apex:outputPanel>
+                                               <apex:outputPanel layout="block" rendered="{!IF(display_what1 == 'WOHist_list', true, false)}">
+                                                   <apex:outputPanel styleClass="DH_Text" id="DH_sec" layout="block" style="display:none;text-align:left;background-color: hsl(195, 61%, 88%);padding-left: 2%;padding-top: 1px;padding-bottom: 1px;">
+                                                   <!--  <p>A Dispute Hold is a temporary write-off booked against an account with the same effect on an account's balance as a standard write-off. Dispute Holds are subsequently either removed from the account or booked as "permanent" write-offs, either by explicit CSR action or by system action if the expiration date on the Dispute Hold is reached prior to any explicit CSR-action being taken upon it.</p> -->
+                                                   <apex:outputLabel escape="false" value="{!$Label.ARIA_DISPUTE_HOLD_TEMPORARY}"></apex:outputLabel>
+                                                    <ul>
+                                                    <apex:outputLabel escape="false" value="{!$Label.ARIA_DISPUTE_HOLD_EXPIRATION}"></apex:outputLabel>
+                                                   
+                                                    </ul>
+                                                    <apex:outputLabel escape="false" value="{!$Label.ARIA_DISPUTE_HOLD_DISPUTE}"></apex:outputLabel>
+                                                    
+                                                   </apex:outputPanel>
+                                               
+                                                    <apex:pageBlockTable width="100%" columnClasses="crow" value="{!writeOffDetails}" var="wd" rendered ="{!NOT(ISNULL(writeOffDetails)) &&writeOffDetails.Size > 0}">
+                                                        <apex:column headerValue="{!$Label.ARIA_DISPUTE_WO_NO}" headerClass="hdrCenter"  style="width:8%;" styleClass="{!IF(wd.dispute_ind == 1 && wd.can_unsettle == 'False','rowColor','')}">
+                                                            <span style="float:left;">{!wd.rec_no}</span>
+                                                        </apex:column>
+                                                        <apex:column headerValue="{!$Label.ARIA_PAYMENT_REFUND_CREATED_BY}" headerClass="hdrCenter"  style="width:16%;" styleClass="{!IF(wd.dispute_ind == 1 && wd.can_unsettle == 'False','rowColor','')}">
+                                                            <span style="float:left;">{!wd.created_by}</span>
+                                                        </apex:column>
+                                                        <apex:column headerValue="{!$Label.ARIA_PAYMENT_REFUND_CREATED_DATE}" headerClass=""  style="width:12%;" styleClass="{!IF(wd.dispute_ind == 1 && wd.can_unsettle == 'False','rowColor','')}">
+                                                            <span style="float:left;">{!wd.created_date}</span>
+                                                        </apex:column>
+                                                        <apex:column headerValue="{!$Label.ARIA_DISPUTE_WO_AMT}" headerClass="hdrRight" style="text-align:right;width:10%;" styleClass="{!IF(wd.dispute_ind == 1 && wd.can_unsettle == 'False','rowColor','')}">
+                                                            <apex:outputText value="{0, number, 0.00}"  style="text-align:right;" >
+                                                                  <apex:param value="{!wd.amount}" />
+                                                                </apex:outputText>
+                                                        </apex:column>
+                                                        <apex:column headerValue="{!$Label.ARIA_DISPUTE_INV_NO}" headerClass="hdrCenter" style="width:9%;" styleClass="{!IF(wd.dispute_ind == 1 && wd.can_unsettle == 'False','rowColor','')}">
+                                                            <apex:commandLink value="{!wd.invoice_no}" action="{!get_invoice_details}" reRender="frm" status="status">
+                                                                  <apex:param value="{!wd.invoice_no}" assignTo="{!invoice_no}" name="invoice_no" />
+                                                              </apex:commandLink>
+                                                        </apex:column>
+                                                        <apex:column headerValue="{!$Label.ARIA_DISPUTE_INV_DATE}" headerClass="hdrCenter" style="width:10%;" styleClass="{!IF(wd.dispute_ind == 1 && wd.can_unsettle == 'False','rowColor','')}">
+                                                            <span style="float:left;">{!wd.invoice_date}</span>
+                                                        </apex:column>
+                                                        <apex:column headerValue="{!$Label.ARIA_DISPUTE_INV_AMT}" headerClass="hdrRight" style="text-align:right;width:10%;" styleClass="{!IF(wd.dispute_ind == 1 && wd.can_unsettle == 'False','rowColor','')}" >
+                                                            <apex:outputText value="{0, number, 0.00}"  >
+                                                                 <apex:param value="{!wd.invoice_amt}" />
+                                                             </apex:outputText>
+                                                          </apex:column>
+                                                         <apex:column headerValue="{!$Label.ARIA_DISPUTE_TYPE_REASON}" headerClass="hdrCenter" styleClass="{!IF(wd.dispute_ind == 1 && wd.can_unsettle == 'False','rowColor','')}" >
+                                                              <span style="float:left;">
+                                                              &nbsp;
+                                                              <apex:outputPanel rendered="{!wd.comments!=''}">
+                                                              <a style="text-decoration:none;background-color:#FACC2E;font-weight:bold; font-size:12px" id="a_{!wd.rec_no}" href="javascript:;" onmouseover="showTooltip('{!wd.rec_no}','Comments from {!wd.created_by}','{!wd.comments}')" onmouseout="hideTooltip('{!wd.rec_no}')">
+                                                              ?
+                                                              </a>
+                                                              <div class="toolTipWrapper" style="display:none" id="{!wd.rec_no}"> </div>
+                                                              </apex:outputPanel>
+                                                              &nbsp;
+                                                              <apex:commandLink reRender="frm" status="status" action="{!un_settled_dispute_hold}" value="Un-Settled Dispute Hold:" rendered="{!wd.dispute_ind == 1 && wd.can_unsettle == 'True'}">
+                                                                  <apex:param value="{!wd.rec_no}" name="un_settle_dispute_no" assignTo="{!un_settle_dispute_no }"/>
+                                                              </apex:commandLink>
+                                                             {!IF(wd.dispute_ind == 1 && wd.can_unsettle == 'True',wd.secondary_reason_text,IF(wd.dispute_ind == 1 && wd.can_unsettle == 'False','Settled Dispute Hold:'&wd.secondary_reason_text, wd.reason_text ))} </span>
+                                                         </apex:column>
+                                                      </apex:pageBlockTable>
+                                                      
+                                                       <apex:pageBlockTable width="100%" columnClasses="crow" value="{!writeOffDetails}" var="wd" rendered="{!NOT(ISNULL(writeOffDetails)) && writeOffDetails.Size = 0 }">
+                                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_WO_NO}" headerClass="hdrCenter" ></apex:column>
+                                                          <apex:column headerValue="{!$Label.ARIA_PAYMENT_REFUND_CREATED_BY}" headerClass="hdrCenter" ></apex:column>
+                                                          <apex:column headerValue="{!$Label.ARIA_PAYMENT_REFUND_CREATED_DATE}" headerClass="hdrCenter" ></apex:column>
+                                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_WO_AMT}" headerClass="hdrRight" ></apex:column>
+                                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_INV_NO}" headerClass="hdrCenter" ></apex:column>
+                                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_INV_DATE}" headerClass="hdrCenter" ></apex:column>
+                                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_INV_AMT}" headerClass="hdrRight" ></apex:column>
+                                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_TYPE_REASON}" headerClass="hdrCenter" ></apex:column>
+                                                           <apex:facet name="footer">{!$Label.ARIA_DISPUTE_NO_RECORDS}</apex:facet>
+                                                      </apex:pageBlockTable>
+                                              </apex:outputPanel>
+                                              <apex:outputPanel layout="block" rendered="{!IF(display_what1 == 'invDetail_list', true, false)}">
+                                                  <apex:variable value="{!0.00}" var="total1"/>
+                                                    <apex:pageBlockTable width="100%"  columnClasses="crow" value="{!invoiceDetails}" var="ind" rendered ="{!NOT(ISNULL(writeOffDetails)) &&writeOffDetails.Size > 0 }">
+                                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_INVOICE_NO}" headerClass="hdrLeft">
+                                                              <span style="float:Left;">{!invoice_no}</span>
+                                                          </apex:column>
+                                                          <apex:column headerValue="{!$Label.ARIA_ITEM_VIEW_ITEM_NO}" headerClass="hdrRight">
+                                                               <span style="float:right;">{!ind.itemNumber}</span>
+                                                          </apex:column>
+                                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_DESCRIPTION}" headerClass="hdrLeft"  >
+                                                              <span style="float:left;">{!ind.description}</span>
+                                                          </apex:column>
+                                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_SERVICE_PLAN}" headerClass="hdrLeft"  >
+                                                              <span style="float:Left;">{! IF(ind.planNo != 0, "Plan " &TEXT(ind.planNo)& ' ('&ind.servicePlan&')', 'n/a')}  </span>
+                                                          </apex:column>
+                                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_UNITS}" headerClass="hdrRight"   >
+                                                              <span style="float:right;">{!ind.units}</span>
+                                                          </apex:column>
+                                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_UNIT_AMOUNT}" headerClass="hdrRight" >
+                                                              <span style="float:right;">{!ind.unitAmount}</span>
+                                                              <apex:facet name="footer">
+                                                                <span  style="float:right;">{!$Label.ARIA_DISPUTE_TOTAL}</span>
+                                                            </apex:facet>
+                                                          </apex:column>
+                                                          <apex:column headerValue="{!$Label.ARIA_DISPUTE_ITEM_AMOUNT}" headerClass="hdrRight" style="ba" >
+                                                              <span style="float:right;">{!ind.itemAmount}</span>
+                                                              <apex:variable var="total1" value="{!total1 + ind.itemAmount}" />
+                                                              <apex:facet name="footer">
+                                                                <span class="t2" style="float:right;"></span>
+                                                            </apex:facet>
+                                                          </apex:column>
+                                                       </apex:pageBlockTable>
+                                                       <script>
+                                                             document.getElementsByClassName('t2')[0].innerHTML = '{!total1}';
+                                                     </script>
+                                                       
+                                                       <apex:commandButton value="Back" style="float:right;margin-top: 7px;" reRender="pbwriteoffHist" action="{!backtoWOHistory}" status="status"/>
+                                                       <script>
+                                                         $(".mainTitle").text('Invoice Line Items');    
+                                                       </script>
+                                              </apex:outputPanel>
+                                       </apex:outputPanel>
+                                </apex:pageblockSectionItem>
+                         </apex:pageBlockSection>
+                         
+                         <apex:pageBlockSection columns="1" rendered="{!IF(display_what1 == 'unsettle', true, false)}">
+                                   <apex:outputPanel styleClass="DH_Text" rendered="{!IF(display_what2 == 'input_unsettle', true,false)}" id="DH_sec" layout="block" style="text-align:left;background-color: hsl(195, 61%, 88%);padding-left: 2%;padding-top: 1px;padding-bottom: 1px;">
+                                                   
+                                                   <apex:outputLabel escape="false" value="{!$Label.ARIA_DISPUTE_HOLD_TEMPORARY}"></apex:outputLabel>
+                                                    <ul>
+                                                    <apex:outputLabel escape="false" value="{!$Label.ARIA_DISPUTE_HOLD_EXPIRATION}"></apex:outputLabel>
+                                                   
+                                                    </ul>
+                                                    <apex:outputLabel escape="false" value="{!$Label.ARIA_DISPUTE_REMOVE_DISPUTE}"></apex:outputLabel>
+                                                    
+                                                   </apex:outputPanel>
+                                                   <apex:outputPanel rendered="{!IF(display_what2 == 'summary_unsettle', true,false)}" layout="block" style="text-align:left;background-color: hsl(195, 61%, 88%);padding-left: 2%;padding-top: 1px;padding-bottom: 1px;">
+                                                      <apex:outputLabel escape="false" value="{!$Label.ARIA_DISPUTE_CONFIRM_CLICK_SETTLE_DISPUTE}"></apex:outputLabel>
+                                                   </apex:outputPanel>
+                             
+                                             
+                             <apex:pageBlockSectionItem >
+                                 <apex:outputLabel style="font-family: verdana;">{!$Label.ARIA_DISPUTE_HOLD_NO}</apex:outputLabel> 
+                                 <apex:outputLabel >{!info_for_un_settle_dispute.rec_no}</apex:outputLabel>
+                             </apex:pageBlockSectionItem>
+                             <apex:pageBlockSectionItem >
+                                 <apex:outputLabel style="font-family: verdana;">{!$Label.ARIA_DISPUTE_INVOICE_NO}</apex:outputLabel>
+                                 <apex:outputLabel >
+                                    
+                                    <apex:commandLink value="{!info_for_un_settle_dispute.invoice_no}" action="{!get_invoice_details}" reRender="pbwriteoffHist" status="status">
+                                      <apex:param value="{!info_for_un_settle_dispute.invoice_no}" assignTo="{!invoice_no}" name="invoice_no" />
+                                      <apex:param value="No" assignTo="{!back_inv_det_to_WO_list}" name="back_inv_det_to_WO_list"/>
+                                  </apex:commandLink> 
+                                 </apex:outputLabel>
+                             </apex:pageBlockSectionItem>
+                             <apex:pageBlockSectionItem >
+                                 <apex:outputLabel style="font-family: verdana;">{!$Label.ARIA_DISPUTE_CREATION_DATE_CSR}</apex:outputLabel>
+                                 <apex:outputLabel >{!info_for_un_settle_dispute.dispute_creation_date} ({!info_for_un_settle_dispute.created_by})</apex:outputLabel>
+                             </apex:pageBlockSectionItem>
+                             <apex:pageBlockSectionItem >
+                                 <apex:outputLabel style="font-family: verdana;">{!$Label.ARIA_DISPUTE_EXPIRATION_DATE}</apex:outputLabel>
+                                 <apex:outputLabel >{!info_for_un_settle_dispute.dispute_exp_date}</apex:outputLabel>
+                             </apex:pageBlockSectionItem>
+                             <apex:pageBlockSectionItem >
+                                 <apex:outputLabel style="font-family: verdana;">{!$Label.ARIA_DISPUTE_HOLD_AMOUNT}</apex:outputLabel>
+                                 <apex:outputText value="{0, number, 0.00}">
+                                     <apex:param value="{!info_for_un_settle_dispute.amount}" />
+                                 </apex:outputText>
+                             </apex:pageBlockSectionItem>
+                             <apex:pageBlockSectionItem >
+                                 <apex:outputLabel style="font-family: verdana;">{!$Label.ARIA_DISPUTE_REASON}</apex:outputLabel>
+                                 <apex:outputLabel >{!info_for_un_settle_dispute.secondary_reason_text}</apex:outputLabel>
+                             </apex:pageBlockSectionItem>
+                             <apex:pageBlockSectionItem >
+                                 <apex:outputLabel style="font-family: verdana;">{!$Label.ARIA_DISPUTE_ORIGINAL_CSR_COMMENTS}</apex:outputLabel>
+                                 <apex:outputLabel >{!info_for_un_settle_dispute.comments}</apex:outputLabel>
+                             </apex:pageBlockSectionItem>
+                             <apex:pageBlockSectionItem >
+                                 <apex:outputLabel style="font-family: verdana;">{!$Label.ARIA_DISPUTE_SETTLEMENT_ACTION}</apex:outputLabel>
+                                 
+                                    <apex:outputPanel layout="layout" style="float:left;">
+                                        <apex:outputPanel layout="block" style="float:left;" Styleclass="requiredInput"><div class="requiredBlock"></div>
+                                        <apex:selectRadio id="wof" rendered="{!IF(display_what2 == 'input_unsettle', true,false)}" value="{!dis_input.settle_action}" layout="pageDirection" >
+                                            <apex:selectOption itemValue="1" itemLabel="{!$Label.ARIA_DISPUTE_WO_OPTION_ONE}"/>
+                                            <apex:selectOption itemValue="2" itemLabel="{!$Label.ARIA_DISPUTE_WO_OPTION_TWO}"/>
+                                             <apex:selectOption itemValue="3" itemLabel="{!$Label.ARIA_DISPUTE_WO_OPTION_THREE}"/>
+                                        </apex:selectRadio>
+                                        </apex:outputPanel>
+                                        <apex:outputLabel value="{!dis_input.settle_action_text}" rendered="{!IF(display_what2 == 'summary_unsettle', true,false)}"></apex:outputLabel>
+                                    </apex:outputPanel>
+                             </apex:pageBlockSectionItem> 
+                             <apex:pageBlockSectionItem >
+                                 <apex:outputLabel style="font-family: verdana;" >{!$Label.ARIA_DISPUTE_ADDIOTIONAL_CSR_COMMENTS}</apex:outputLabel>
+                                 <apex:outputPanel layout="layout" style="float:left;">
+                                     <apex:inputTextarea rendered="{!IF(display_what2 == 'input_unsettle', true,false)}" rows="8" value="{!dis_input.settle_comments}" cols="110"/>
+                                     <apex:outputLabel value="{!dis_input.settle_comments}" rendered="{!IF(display_what2 == 'summary_unsettle', true,false)}"></apex:outputLabel>
+                                 </apex:outputPanel> 
+                                 
+                             </apex:pageBlockSectionItem>
+                             <apex:pageBlockSectionItem >
+                                 <apex:outputPanel layout="block" style="float:right;">
+                                     <apex:commandButton style="font-family: verdana;" rendered="{!IF(display_what2 == 'input_unsettle', true,false)}" value="{!$Label.ARIA_DISPUTE_SETTLE_DISPUTE_HOLD}" reRender="pbwriteoffHist" status="status" action="{!Summary_un_settled_dispute_hold}"/>
+                                     <apex:commandButton style="font-family: verdana;" rendered="{!IF(display_what2 == 'summary_unsettle', true,false)}" value="{!$Label.ARIA_DISPUTE_SETTLE_DISPUTE_HOLD}" reRender="frm" status="status" action="{!final_un_settled_dispute_hold}"/>&nbsp;&nbsp;
+                                     <apex:commandButton style="font-family: verdana;" value="{!$Label.ARIA_PLAN_VIEW_CANCEL}" status="status" reRender="pbwriteoffHist" action="{!cancel_un_settled_dispute_hold}"/>&nbsp;&nbsp;
+                                     <apex:commandButton style="font-family: verdana;" rendered="{!IF(display_what2 == 'summary_unsettle', true,false)}" value="{!$Label.ARIA_DISPUTE_BACK}" status="status" reRender="pbwriteoffHist" action="{!back_un_settled_dispute_hold}"/>
+                                 </apex:outputPanel>
+                             </apex:pageBlockSectionItem>
+                         </apex:pageBlockSection>
+                         
+                  </apex:pageBlock>
+            </div>
+        </div> 
+    </apex:form>
+    <script>
+    addEvent(document.body,"mousedown",function(a){ListPaginator.hideSelector('item_paginator_rpp_target')},!0); 
+    addEvent(document.body,"mousedown",function(a){ListPaginator.hideSelector('item_paginator_rpp_target_1')},!0); 
+    </script>
+</apex:page>

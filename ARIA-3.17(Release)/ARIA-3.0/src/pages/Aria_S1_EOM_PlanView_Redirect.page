@@ -1,0 +1,12 @@
+<apex:page standardController="Account">
+  <h1>Please Wait</h1>
+    Redirecting ....
+  <script>
+    if ( (typeof window.sforce != 'undefined') && (window.sforce!=null) ) {
+            sforce.one.navigateToURL('/apex/ASF3__Aria_S1_EOM_ViewAccountPlan?id={!account.id}');       
+    }
+    else {
+      alert('Not in SF1 :(');
+    }
+ </script>
+</apex:page>

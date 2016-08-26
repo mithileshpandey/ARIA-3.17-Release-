@@ -1,0 +1,436 @@
+<apex:page standardController="Quote" extensions="AriaPlanQuotePdfController" showHeader="false" renderAs="PDF">
+
+<apex:stylesheet value="{!$Resource.SuperTable}/stylesheets/superTables.css"/>
+<apex:stylesheet value="{!$Resource.QuotePdfStyles}"/>
+<html>
+    <head>
+
+    </head>
+
+    <apex:outputpanel layout="block" rendered="true">
+        <table border="0" width="100%" cellspacing="0" cellpadding="0">
+            <tr > <td width="30%" style="vertical-align: top;">
+                        <apex:image value="{!CompanyLogo}"  width="125" height="75" /> 
+                        <!-- <apex:image value="{!{$resource[CompanyLogo]}" width="150" height="150"/> -->
+                     </td> 
+                  <td width="25%"> </td>
+                  <td width="50%" style="vertical-align: bottom;">
+                     <table border="0" cellspacing="0" cellpadding="0">
+                         <tr><td width="65%" style="font-weight: bold; vertical-align: bottom;">{!$Label.ARIA_PLAN_QUOTE_NUMBER}:</td>  <td width="35%" style="vertical-align: bottom;">{!quote.quoteNumber}</td> </tr>
+                         <tr><td style="font-weight: bold; vertical-align: bottom;" >{!$Label.ARIA_PAYMENT_REFUND_CREATED_DATE}:</td>             
+                         <td style="vertical-align: bottom;">{!QuoteInfoDetails.createdDate}</td> </tr>
+                         <tr style="display:{!IF(QuoteInfoDetails.expirationDate!=null,'','none')};"><td style="font-weight: bold; vertical-align: bottom;" ><apex:outputText value="{!$Label.ARIA_PLAN_QUOTE_EXPIRATION_DATE}:" /></td>              <td style="vertical-align: bottom;"><apex:outputText value="{!QuoteInfoDetails.expirationDate}" /> </td> </tr>
+                     </table>
+                  </td>
+           </tr>
+            <tr> <td colspan="3"><br/><br/></td> </tr>
+        </table>
+    </apex:outputpanel>
+
+    <apex:outputpanel layout="block" rendered="true">
+        <table border="0" width="100%" cellspacing="0" cellpadding="0" >
+            <tr><td width="17%" style="font-weight: bold;">{!$Label.ARIA_PLAN_QUOTE_COMPANY}:</td><td width="35%"><apex:outputText value="{!QuoteInfoDetails.companyName}"/></td> <td width="14%"></td>  <td width="19%" style="font-weight: bold;"></td>     <td width="15%"></td> </tr>
+            <tr > <td style="font-weight: bold;">{!$Label.ARIA_PLAN_QUOTE_ADDRESS}:</td> <td><apex:outputText value="{!QuoteInfoDetails.companyAddress1}"/> <br/>
+                                                                        <apex:outputText value="{!QuoteInfoDetails.companyAddress2}"/></td><td colspan="3"></td></tr>
+            
+            <tr style="display:{!IF(QuoteInfoDetails.personName!=null,'','none')};"><td style="font-weight: bold;"><apex:outputText value="{!$Label.ARIA_ITEM_VIEW_NAME}:" />   </td>    <td><apex:outputText value="{!QuoteInfoDetails.personName}"  />  </td>      <td></td>               <td></td>           <td></td></tr>
+            <tr style="display:{!IF(QuoteInfoDetails.personPhone!=null,'','none')};"><td style="font-weight: bold;"><apex:outputText value="{!$Label.ARIA_PLAN_QUOTE_PHONE}:" />  </td>   <td><apex:outputText value="{!QuoteInfoDetails.personPhone}" /> </td>       <td></td>               <td></td>           <td></td></tr>
+            <tr style="display:{!IF(QuoteInfoDetails.personEmail!=null,'','none')};"><td  style="font-weight: bold;"><apex:outputText value="Email:" /> </td>     <td><apex:outputText value="{!QuoteInfoDetails.personEmail}"  />  </td>       <td></td>               <td></td>           <td></td></tr>
+
+            <tr> <td colspan="5"><br/></td> </tr>
+            
+            <tr><td style="font-weight: bold;">{!$Label.ARIA_PLAN_QUOTE_PREPARED_BY}:</td>    <td><apex:outputText value="{!QuoteInfoDetails.preparedBy}"/> </td>                             <td></td>               <td style="font-weight: bold;"></td>                    <td></td></tr>
+            <tr><td style="font-weight: bold;">{!$Label.ARIA_PLAN_QUOTE_EMAIL}:</td>          <td> <apex:outputLabel value="{!QuoteInfoDetails.preparedByEmail}"/></td>                       <td></td>               <td style="font-weight: bold;"></td>                    <td></td></tr>
+            <tr><td></td>                                           <td></td>                                                                                       <td></td>               <td  style="font-weight: bold;"></td>                   <td></td></tr>
+            <tr><td></td>                                           <td></td>                                                                                       <td></td>               <td></td>                                               <td></td></tr>
+
+            <!-- <tr><td style="font-weight: bold;">Bill Name:</td>         <td><apex:outputText value="{!QuoteInfoDetails.billingName}"></apex:outputText></td>            <td></td>               <td  style="font-weight: bold;">Ship To Name:</td>                  <td><apex:outputText value="{!QuoteInfoDetails.shippingName}"/></td></tr>
+            <tr><td style="font-weight: bold;">Bill To:</td>        <td><apex:outputText value="{!QuoteInfoDetails.billingAddress1}"/><br/>
+                                                                            <apex:outputText value="{!QuoteInfoDetails.billingAddress2}"/> </td>                    <td></td>               <td  style="font-weight: bold;">Ship To:</td>                       <td> <apex:outputText value="{!QuoteInfoDetails.shippingAddress1}"/> <br/>
+                                                                                                                                                                                                                                                                        <apex:outputText value="{!QuoteInfoDetails.shippingAddress2}"/>  </td></tr> -->
+
+            <tr> <td colspan="5"><br/></td> </tr>
+            
+            <tr> <td colspan="5"><apex:outputText id="quoteTextBlock" value="{!QuoteInfoDetails.Description}"  /> <br/></td> </tr>
+            <tr> <td colspan="5"><br/></td> </tr>
+        </table >
+    </apex:outputpanel>
+    
+    
+    
+    <!-- 
+        <apex:outputpanel layout="block" rendered="{!IF(listQuoteLineItemsWrapper.size>0,true,false)}">
+            <table border="0" width="100%" cellspacing="0" cellpadding="0" >
+                
+                <tr>
+                    <td width="30%" style="border-top:0px; border-left:0px; text-align: left;">Product</td>
+                    <td width="15%" style="border-top:0px; border-left:0px; text-align: right;"> List Price</td>
+                    <td width="15%" style="border-top:0px; border-left:0px;text-align: right;">Sales Price</td>
+                    <td width="10%" style="border-top:0px; border-left:0px;text-align: right;">Quantity</td>
+                    <td width="10%" style="border-top:0px; border-left:0px;text-align: right;">Discount</td>
+                    <td width="20%" style="border-top:0px; border-left:0px; border-right:0px; text-align: right;">Total Price</td>
+                </tr>
+            </table>
+        </apex:outputpanel>
+        
+        
+        <apex:repeat value="{!listQuoteLineItemsWrapper}" var="theLineItem" id="theLineItems">
+            <apex:outputpanel layout="block" styleclass="{!IF(theLineItem.pageBreak==true,'page-break','')}">
+                <table border="1" width="100%" cellspacing="0" cellpadding="2" >
+                    <tr  style="border-top:0px; border-left:0px;">
+                        <td width="30%" style="text-align: left;"> <apex:outPutField value="{!theLineItem.qItem.PricebookEntry.product2.Name}" /></td>
+                        <td width="15%" style="text-align: right;"><apex:outPutField value="{!theLineItem.qItem.ListPrice}" /></td>
+                        <td width="15%" style="text-align: right;"><apex:outPutField value="{!theLineItem.qItem.UnitPrice}" /></td>
+                        <td width="10%" style="text-align: right;"><apex:outPutField value="{!theLineItem.qItem.Quantity}" /></td>
+                        <td width="10%" style="text-align: right;"><apex:outPutField value="{!theLineItem.qItem.Discount}" /></td>
+                        <td width="20%" style="text-align: right;"><apex:outPutField value="{!theLineItem.qItem.TotalPrice}" /></td> 
+                        
+                    </tr>
+                
+                </table>
+            </apex:outputpanel> 
+        </apex:repeat>
+
+        <br/>
+     -->
+    
+    <!-- 
+    <apex:outputpanel layout="block" rendered="{!IF(listQuoteLineItemsWrapper.size>0,true,false)}">
+            <table border="0" width="100%" cellspacing="0" cellpadding="2" >
+                <tr>
+                    <apex:repeat value="{!$ObjectType.QuoteLineItem.FieldSets.AraPlanQuotePdf}" var="f" id="theLineItemsSetHeader">
+                    <td style="{!IF((f.Label=='Product Name') || (f.Label=='Line Item Description'),'width: 25%;' ,'width: 10%;' )} {!IF(f.Label=='Product Name' || f.Label=='Line Item Description','text-align: left;' ,'text-align: right;' )}" >
+                        {!f.Label} </td>
+                    </apex:repeat>
+                </tr>
+            </table>
+    </apex:outputpanel>
+     -->    
+
+    <apex:pageBlock rendered="{!listQuoteLineItemsPageWrapper.size>0}">     
+        <apex:repeat value="{!listQuoteLineItemsPageWrapper}" var="lst" id="theLineItemsList">
+            <apex:dataTable value="{!lst}"  var="theLineItem" style="width:100%;" styleClass="textarea">
+                    <apex:repeat value="{!$ObjectType.QuoteLineItem.FieldSets.AraPlanQuotePdf}" var="f" id="theLineItemsSetLine">
+                        <!-- <apex:column value="{!theLineItem.qItem[f]}" styleClass="{!IF(theLineItem.even==true,'odd','')}" style="vertical-align: top; {!IF((f.Label=='Product Name') || (f.Label=='Line Item Description'),'width: 25%;', 'width: 14%;'  )} {!IF(f.Label=='Product Name' || f.Label=='Line Item Description','text-align: left;', 'text-align: right;' )}" > -->
+                        <apex:column value="{!theLineItem.qItem[f]}" headerClass="quoteheader" style="border-bottom: 1px solid black; vertical-align: top; {!IF((f.Label=='Product Name') || (f.Label=='Line Item Description'),'width: 25%;', 'width: 14%;'  )} {!IF(f.Label=='Product Name' || f.Label=='Line Item Description','text-align: left;', 'text-align: right;' )}" >
+                            <apex:facet name="header"><apex:outputText value="{!f.Label}" style="{!IF(f.Label=='Product Name' || f.Label=='Line Item Description','float: left;', 'float: right;' )}" /> </apex:facet>
+                        </apex:column>
+                    </apex:repeat>
+            </apex:dataTable>
+            <apex:outputpanel layout="block" styleclass="{!IF(lst.size>0 && lst[lst.size-1].pageBreak==true,'page-break','')}"></apex:outputpanel>
+        </apex:repeat>
+        <table border="0" width="100%" cellspacing="0" cellpadding="0" >
+           <tr><td width="60%"></td> <td width="20%">{!$Label.ARIA_PLAN_QUOTE_TAX}:</td> <td width="20%" style="font-weight: bold; text-align: right;"><apex:outputField value="{!Quote.Tax}" rendered="{!IF(Quote.Tax!=0,true,false)}"/>  <apex:outputText value="$0.00" rendered="{!IF(Quote.Tax!=0,false,true)}"/></td></tr>
+           <tr><td width="60%"></td> <td width="20%">{!$Label.ARIA_PLAN_QUOTE_SHIPPING}:</td> <td width="20%" style="font-weight: bold; text-align: right;"><apex:outputField value="{!Quote.ShippingHandling}" rendered="{!IF(Quote.ShippingHandling!=0,true,false)}"/> <apex:outputText value="$0.00" rendered="{!IF(Quote.ShippingHandling!=0,false,true)}"/></td></tr>
+        <tr><td width="60%"></td> <td width="20%">{!$Label.ARIA_PLAN_QUOTE_GRAND_TOTAL}:</td> <td width="20%" style="font-weight: bold; text-align: right;"><apex:outputField value="{!Quote.GrandTotal}" /></td></tr>
+        </table>
+    </apex:pageBlock>
+    <br/>
+     
+     
+     
+     <!-- 
+     <apex:outputpanel layout="block"  rendered="true" >
+      <table border="0" width="100%" cellspacing="0" cellpadding="3">   
+        <tr >
+            <apex:repeat value="{!$ObjectType.QuoteLineItem.FieldSets.AraPlanQuotePdf}" var="f" id="theLineItemsSetHeader">
+            <td  style="font-weight:bold; {!IF((f.Label=='Product Name') || (f.Label=='Line Item Description'),'width: 25%;' ,'width: 10%;' )} {!IF(f.Label=='Product Name' || f.Label=='Line Item Description','text-align: left;' ,'text-align: right;' )}" >
+                {!f.Label} </td>
+            </apex:repeat>
+        </tr>
+        <apex:repeat value="{!listQuoteLineItemsWrapper}" var="theLineItem" id="theLineItemsSet">
+            <tr >
+                <apex:repeat value="{!$ObjectType.QuoteLineItem.FieldSets.AraPlanQuotePdf}" var="f" id="theLineItemsSetLine">
+                    <td class="{!IF(theLineItem.even==true,'odd','')}" style="vertical-align; top; {!IF(f.Label=='Product Name' || f.Label=='Line Item Description','text-align: left;' ,'text-align: right;' )}" > 
+                        <div ><apex:outPutField value="{!theLineItem.qItem[f]}" /></div>
+                    </td> 
+                </apex:repeat>
+            </tr>
+            <apex:outputPanel layout="block" styleClass="{!IF(theLineItem.pageBreak==true,'page-break','')}" />
+        </apex:repeat>
+    </table>
+    </apex:outputpanel>
+    <br/>
+    -->
+    
+    <apex:pageBlock >
+    <apex:outputpanel layout="block" id="Services" rendered="true" >
+        <apex:outputText value="{!$Label.ARIA_PLAN_QUOTE_SUBSCRIPTIONS}" style="font-weight: bold; font-family: sans-serif; font-size: 11;" rendered="{!IF(listAccountPlanWrappers.size>0, true,false)}"/>
+        <br/><br/>
+        <apex:repeat value="{!listAccountPlanWrappers}" var="thePlanWrapper" id="theRepeatAccountPlanWrappers">
+                <table border="0" width="100%" cellspacing="0" cellpadding="0" >
+                    <tr> <td width="30%" ><b>{!thePlanWrapper.planDisplayName}</b>      </td> 
+                          <!-- <td width="20%"> {!thePlanWrapper.activeDate} - {!thePlanWrapper.terminatedDate}</td> -->
+                         <td width="30%"> {!thePlanWrapper.Units} &nbsp; {!$Label.ARIA_DISPUTE_UNITS}</td>
+                    </tr>
+                  </table>  
+                    <apex:repeat value="{!thePlanWrapper.listServiceWrapper}" var="theServiceWrapper" id="theRepeatServiceWrappers">
+                        <apex:outputpanel layout="block" styleclass="{!IF(theServiceWrapper.pageBreak==true,'page-break','')}">
+                            <table id="demoTable" border="0" width="100%" cellspacing="0" cellpadding="0" >
+                                <tr > 
+                                    <td valign="top" width="20%" style="border-bottom: 1px solid black;">
+                                        {!theServiceWrapper.serviceName}
+                                    </td>
+                                    <td  valign="top" width="20%" style="border-bottom: 1px solid black;">{!theServiceWrapper.serviceType}</td> 
+                                    <td  valign="top" width="20%" style="border-bottom: 1px solid black;"> </td> 
+                                    <apex:repeat value="{!theServiceWrapper.listScheduleWrapper}" var="theScheduleName" id="theRepeatSchedules">
+                                        <td valign="top" width="40%" style="border-bottom: 1px solid black;">
+                                            <apex:repeat value="{!theServiceWrapper.listScheduleWrapper}" var="theScheduleWrapper" id="theRepeatScheduleWrappers">
+                                                <apex:outputPanel id="ratesPanel" rendered="{!IF(theScheduleName.scheduleName == theScheduleWrapper.scheduleName, true, false)}">
+                                                    <table border="0" width="100%" cellspacing="0" cellpadding="2" >
+                                                        <apex:repeat value="{!theScheduleWrapper.listRateTierWrapper}" var="theRateTierWrapper" id="theRepeatRateTierWrappers">
+                                                            <tr> 
+                                                                <td width="20" align="left"><apex:outputText value="{!theRateTierWrapper.fromUnit}" />  </td> 
+                                                                <td width="20" align="left"><apex:outputText value="{!theRateTierWrapper.dash}" /></td>
+                                                                <td width="10" align="left"><apex:outputText value="{!theRateTierWrapper.toUnit}" /> <apex:outputText value="&infin;" escape="false" style="font-family: Arial Unicode MS; font-size:13pt;" rendered="{!theRateTierWrapper.isInfinity}" /> </td>
+                                                                <td width="20" align="right"><apex:outputText value="{!theRateTierWrapper.ratePerUnit}" /> </td> 
+                                                                <td width="30%" align="left">&nbsp; <apex:outputText value="{!theScheduleWrapper.rateScheduleCurrency}"/></td>
+                                                            </tr>
+                                                        </apex:repeat> 
+                                                    </table>
+                                                </apex:outputPanel>
+                                            </apex:repeat>
+                                        </td>
+                                    </apex:repeat>
+                                </tr>
+                            </table>
+                        </apex:outputpanel>
+                    </apex:repeat>   
+    
+                    <br/>
+                </apex:repeat>
+    </apex:outputpanel>
+    </apex:pageBlock>
+    <!--  Order Items started Here Added By MP on 1/30/2013 -->
+    
+    <apex:pageBlock rendered="{!Orders.size > 0}">
+    <br/>
+        <table id="demoTable" border="0" width="100%" cellspacing="0" cellpadding="0" >
+            <tr>
+                    <td valign="top" width="20%" style="border-bottom: 1px solid black;"><b>{!$Label.ARIA_ITEM_VIEW_SKU}</b></td>
+                    <td valign="top" width="20%" style="border-bottom: 1px solid black;"><b>{!$Label.ARIA_DISPUTE_DESCRIPTION}</b></td>
+                    <td valign="top" width="20%" style="border-bottom: 1px solid black;"><b>{!$Label.ARIA_PLAN_QUOTE_QUANTITY_PRICE}</b></td>
+                    <td valign="top" width="20%" style="border-bottom: 1px solid black;text-align:right;"><b>{!$Label.ARIA_PLAN_QUOTE_EXTENDED_PRICE}</b></td>
+            </tr>
+            <apex:repeat value="{!listorderLineItemsWrapper}" var="theOrder" id="theRepeatOrders"><!--  for order list -->
+                <tr><td colspan="4">
+                <apex:outputpanel layout="block" styleclass="{!IF(theOrder.pageBreak==true,'page-break','')}"> </apex:outputpanel>
+                </td></tr>
+                <apex:variable var="total" value="{!0}"/>
+                <apex:repeat value="{!theOrder.aItems}" var="theOrderItem" id="theRepeatOrderItems"><!--  for order items list -->
+                <!-- Extended_Price__c,Item_Label__c,F_Item_SKU__c,Unit_Amount__c,Units__c -->
+                    <tr>
+                        <td valign="top" style="border-bottom: 1px solid black;">{!theOrderItem.F_Item_SKU__c}</td>
+                        <td valign="top" style="border-bottom: 1px solid black;">{!theOrderItem.Item_Label__c}</td>
+                        <td valign="top" style="border-bottom: 1px solid black;">
+                            <apex:outputText value="{0, number, 0.00}" >
+                               <apex:param value="{!theOrderItem.Units__c}" />
+                         </apex:outputText>&nbsp; @ &nbsp;
+                             <apex:outputText value="{0, number, 0.00}"  >
+                               <apex:param value="{!theOrderItem.Unit_Amount__c}" />
+                         </apex:outputText>
+                        </td>
+                        <td valign="top" style="border-bottom: 1px solid black;">
+                         <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                               <apex:param value="{!theOrderItem.Extended_Price__c}" />
+                         </apex:outputText>
+                        </td>
+                    </tr>
+                    <apex:variable var="total" value="{!total+theOrderItem.Extended_Price__c}"/>
+                </apex:repeat>
+                <tr>
+                    <td ></td>
+                    <td ></td>
+                    <td ></td>
+                    <td ><b> <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                       <apex:param value="{!total}" />
+ </apex:outputText></b></td>
+                </tr>
+                <tr>
+                    <td ><br/></td>
+                    
+                </tr>
+               
+            </apex:repeat>
+             </table>
+        
+    <!-- 
+    <apex:outputpanel layout="block" id="Orders" rendered="true" >
+        <table id="demoTable" border="0" width="100%" cellspacing="0" cellpadding="0" >
+    </apex:outputpanel>
+     -->
+    </apex:pageBlock>
+    
+    <apex:pageBlock rendered="{!AppliedCoupons.size > 0}" Title="Coupons Applied: ">
+        <table id="demoTable" border="0" width="100%" cellspacing="0" cellpadding="0" >
+            <apex:variable value="{!1}" var="rowNum"/>
+            <apex:repeat value="{!AppliedCoupons}" var="coupon" id="theRepeatOrders">
+                <tr>
+                <td width="5%" align="left">&nbsp;&nbsp;{!FLOOR(rowNum)}.</td>
+                <td align="left">{!coupon.Coupon_Code__c}</td>
+                </tr>
+                <apex:variable var="rowNum" value="{!rowNum + 1}"/>
+            </apex:repeat>
+        </table>
+        <br/>
+         <table id="demoTable" border="0" width="100%" cellspacing="0" cellpadding="0" >
+            <tr>
+                <td align="left" style="border-bottom: 1px solid black;"><b>{!$Label.ARIA_CLIENT_PLAN_TEXT}</b></td>
+                <td align="left" style="border-bottom: 1px solid black;"><b>{!$Label.ARIA_ITEM_SERVICES_POP_UP_VIEW_SERVICE_NAME}</b></td>
+                <td align="left" style="border-bottom: 1px solid black;"><b>{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_START_DATE}</b></td>
+                <td align="right" style="border-bottom: 1px solid black;"><b>{!$Label.ARIA_PLAN_QUOTE_DISCOUNTED_PRICE}</b></td>
+                <td align="right" style="border-bottom: 1px solid black;"><b>{!$Label.ARIA_PLAN_QUOTE_DISCOUNT_RATE_PER_UNIT}</b></td>
+                <td align="right" style="border-bottom: 1px solid black;"><b>{!$Label.ARIA_PLAN_QUOTE_TOTAL_DISCOUNT}</b></td>
+            </tr>
+            <apex:repeat value="{!Invoice_Line_Item}" var="lineItem" id="theRepeatlineItem">
+                <tr>
+                <td align="left">{!lineItem.Client_Plan_Name__c}</td>
+                <td align="left">{!lineItem.Invoice_Service_Name__c}</td>
+                <td align="left">{!lineItem.Start_Date__c}</td>
+                <td align="right">
+                    
+                    <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                               <apex:param value="{!lineItem.Invoice_Units__c}" />
+                         </apex:outputText>
+                </td>
+                <td align="right">
+                    
+                    <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                               <apex:param value="{!lineItem.Invoice_Rate_Per_Unit__c}" />
+                         </apex:outputText>
+                </td>
+                <td align="right">
+                    <apex:outputText value="{0, number, 0.00}"  style="float:right;" >
+                               <apex:param value="{!lineItem.Invoice_Line_Amount__c}" />
+                         </apex:outputText>
+                </td>
+            </tr>
+            </apex:repeat>
+        </table>
+    </apex:pageBlock>
+    
+    <!--  Order Items Ends -->
+    
+    
+     
+     
+    <apex:pageBlock >
+    <table align="right" border="0" width="100%" cellspacing="0" cellpadding="0" >
+        <tr> <td colspan="3"><br/><br/></td> </tr>
+        <tr> <td width="20%"></td> 
+            <td width="70%">     
+                <apex:pageBlock >
+                    <apex:pageBlockSection columns="1" >
+                        <apex:outputLabel escape="false" value="{!$Label.ARIA_PLAN_QUOTE_PLAN_CHANGES}" rendered="{!IF( isCurrencyOnAccount && (hasMasterChanged || hasPlanAdded || hasPlanRemoved || hasPlanUnitChanged || hasAltRateChanged || hasCustomRateChanged), true, false)}"/>
+                        
+                        <apex:outputPanel rendered="{!IF( isCurrencyOnAccount, false, true)}">
+                            <apex:outputLabel escape="false" value="{!$Label.ARIA_PLAN_QUOTE_SETUP_FOR_FOLLOWING_PLANS} {!Account.Name}:" /><br/>
+                            <apex:outputText escape="false" value="{!completeSummaryText}" />
+                        </apex:outputPanel>     
+                                     
+                        <apex:outputPanel rendered="{!IF( hasMasterChanged, true, false)}">
+                            <br/>
+                            <b><apex:outputLabel escape="false" value="{!$Label.ARIA_PLAN_QUOTE_MASTER_PLAN_CHANGES}" /></b>
+                            <apex:repeat value="{!listChangesMade}" var="item" >
+                                <br/><apex:outputLabel value="{!item}"/>
+                            </apex:repeat>
+                        </apex:outputPanel>  
+                        <apex:outputPanel rendered="{!IF( hasPlanAdded, true, false)}">
+                            <br/>
+                            <b><apex:outputLabel escape="false" value="{!$Label.ARIA_PLAN_QUOTE_PLANS_ADDED}" /></b>
+                            <apex:repeat value="{!listPlanAdded}" var="item" >
+                                <br/><apex:outputLabel value="{!item}"/>
+                            </apex:repeat>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!IF( hasPlanRemoved, true, false)}">
+                            <b><apex:outputLabel escape="false" value="{!$Label.ARIA_PLAN_QUOTE_PLANS_REMOVED}" /></b>
+                            <apex:repeat value="{!listPlanRemoved}" var="item" >
+                                <br/><apex:outputLabel value="{!item}"/>
+                            </apex:repeat>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!IF( hasPlanUnitChanged, true, false)}">
+                            <br/>
+                            <b><apex:outputLabel escape="false" value="{!$Label.ARIA_PLAN_QUOTE_PLANS_WITH_UNIT_CHANGES}" /></b>
+                            <apex:repeat value="{!listPlanUnitChanges}" var="item" >
+                                <br/><apex:outputLabel value="{!item}"/>
+                            </apex:repeat>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!IF( hasAltRateChanged, true, false)}">
+                            <br/>
+                            <b><apex:outputLabel escape="false" value="{!$Label.ARIA_PLAN_QUOTE_ALTERNATE_RATE_SCHEDULE_CHOSEN}" /></b>
+                            <apex:repeat value="{!listAltRateChosen}" var="item" >
+                                <br/><apex:outputLabel value="{!item}"/>
+                            </apex:repeat>
+                        </apex:outputPanel> 
+                        <apex:outputPanel rendered="{!IF( hasCustomRateChanged, true, false)}">
+                            <br/>
+                            <b><apex:outputLabel escape="false" value="{!$Label.ARIA_PLAN_QUOTE_CUSTOM_RATE_CREATED}" /></b>
+                            <apex:repeat value="{!listCustomRateChanges}" var="item" >
+                                <br/><apex:outputLabel value="{!item}"/>
+                            </apex:repeat>
+                        </apex:outputPanel>              
+                    </apex:pageBlockSection>
+                </apex:pageBlock>
+        
+        
+        
+            </td>                       
+            <td width="10%"></td> 
+        </tr>
+        <tr> <td colspan="3"><br/></td> </tr>
+        <!-- 
+        <tr> 
+                <td width="20%"></td> 
+                <td width="70%"  ><apex:outputlabel escape="false" value="{!finPlanSummaryText}" /></td> 
+                <td width="10%"></td> 
+        </tr>
+        -->
+        
+        <!-- <tr> <td width="20%"></td> <td width="70%"  style="font-weight: bold;">Financial Summary of Account</td> 
+                               <td width="10%"></td> </tr>-->
+        <tr> 
+            <td width="20%"></td>
+            <td width="70%" valign="top">
+                <apex:outputlabel escape="false" value="{!finPlanSummaryText}" />
+                <p>{!$Label.ARIA_PLAN_QUOTE_TAXES}</p>
+            </td> 
+            <td width="10%"></td> 
+        </tr>
+        <!-- <tr><td colspan="3" valign="top"><apex:outputlabel escape="false" value="{!finPlanSummaryText}" /></td></tr>
+         
+                <tr> <td ></td>             <td >Recurring Monthly Cost Increase to add these Recurring Services <apex:outputText value="{0, number, 0.00}" >
+                       <apex:param value="{!monthlyCostIncreaseRec}" />
+                      </apex:outputText></td>                             <td ></td> </tr>
+        <tr> <td ></td>             <td>Total New Monthly Cost for all Recurring Services :<apex:outputText value="{0, number, 0.00}" >
+                       <apex:param value="{!totalNewMonthlyCostRec}" />
+                      </apex:outputText> </td>                      <td ></td> </tr>
+        <!-- MP on 1/30/2013-->
+         <!-- <tr> <td ></td>             <td>Total One time charges : <apex:outputText value="{0, number, 0.00}" >
+                       <apex:param value="{!oneTimeCharges}" />
+                      </apex:outputText></td>                      <td ></td> </tr>
+        <tr style="display:{!IF(isNULL(quote.Aria_Associated_Discount__c),'none','')};"> <td ></td>         <td >Discount reflected on Subscription prices above:&nbsp;<apex:outputField value="{!quote.Aria_Associated_Discount__c}" rendered="{!NOT(isNULL(quote.Aria_Associated_Discount__c))}" /> </td>     <td ></td> </tr>                                                                
+        <tr> <td ></td>             <td >*Note: Usage fees are omitted.</td>                                                       <td ></td> </tr>
+        <tr> <td ></td>             <td >Taxes are not reflected in the Subscription prices above</td>                                  <td ></td> </tr>
+        -->
+        <tr><td class="{!IF(listTermsConditionWrapper.size>0,'page-break','')}"></td></tr>
+     <tr style="display:{!IF(listTermsConditionWrapper.size>0,'block','none')}"><td colspan="3" ><br/><br/><b>{!$Label.ARIA_PLAN_QUOTE_TERMS}</b></td></tr>
+     <tr >
+         <td colspan="3" ><br/>
+         <apex:variable value="{!1}" var="rowNum"/>
+            <apex:repeat value="{!listTermsConditionWrapper}" var="tc" >
+                 <b style="font-size:12px;"> <apex:outputText value="{!FLOOR(rowNum)}"/>.<apex:outputLabel value="{!tc.plan_names}"/></b><hr/>
+                 <div style="font-size:11px;padding-left:5%;"><apex:outputText value="{!tc.description}" escape="false" ></apex:outputText></div>
+                  <apex:variable var="rowNum" value="{!rowNum + 1}"/>
+              </apex:repeat>
+             
+         </td>
+     </tr>
+    </table>
+    </apex:pageBlock>
+    
+    
+     
+     
+</html>
+
+</apex:page>

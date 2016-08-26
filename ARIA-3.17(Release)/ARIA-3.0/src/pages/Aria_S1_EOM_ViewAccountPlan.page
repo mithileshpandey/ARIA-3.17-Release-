@@ -1,0 +1,74 @@
+<apex:page sidebar="false" controller="Aria_S1_EOM_ViewAccountPlan">
+    <apex:stylesheet value="{!URLFOR($Resource.aria_s1_planhierarchy, '/css/style.css')}"/>
+    <apex:outputPanel layout="none" rendered="{!if(parentPlans.size==0,true,false)}">
+        <div style=" margin:5% auto; width:300px; font-size:15px;">
+        <apex:outputText style="font-weight: bold;" value="There is no plan defined on this account."></apex:outputText>
+        </div>
+    </apex:outputPanel>
+    <apex:outputPanel styleclass="container" layout="block" rendered="{!if(parentPlans != null && parentPlans.size>0,true,false)}">
+        <div class="full">
+            <strong style="cursor:pointer;" id="{!account.id}" onclick="accountDetail(this);" >Plan hierarchy for {!account.name} </strong>
+        </div>
+        <div class="full marTop10">
+            <ul class="table head">
+                <li>Name</li> 
+                <li>Units</li>
+                <li>ACV</li>
+            </ul>
+            <apex:variable var="rowCount" value="{!1}"/>
+            <apex:repeat value="{!parentPlans}" var="theAcctPlan" >
+                <ul id="parent_{!rowCount}" onclick="toggle(this);" class="table {!if(theAcctPlan.level == 1,'firstChild','')} {!if(theAcctPlan.level == 2,'secondChild','')} {!if(theAcctPlan.level == 3,'thirdChild','')}">
+                    <li><b>{!theAcctPlan.planDisplayName}</b></li>
+                    <li>{!theAcctPlan.units}</li>
+                    <li>{!theAcctPlan.acv}</li>
+                </ul>
+                <div class="description" id="parentDetails_{!rowCount}" style="display:none;">
+                    <div class="full"><strong>Description:</strong>{!theAcctPlan.planDescription}</div>
+                    <ul class="head">
+                        <li>PREV UNITS</li>
+                        <li>MRR TOTAL</li>
+                        <li>PREV MRR</li>
+                        <li>TCV</li>
+                        <li>ARR</li>
+                        <li>STATUS</li>
+                    </ul>
+                    <ul>
+                        <li><apex:outputText value="{0, number, 0.0}"> <apex:param value="{!theAcctPlan.preUnits}" /> </apex:outputText>&nbsp;</li>
+                        <li>{!theAcctPlan.mmrtotal}&nbsp;</li>
+                        <li>{!theAcctPlan.premmr}&nbsp;</li>
+                        <li>{!theAcctPlan.tcv}&nbsp;</li>
+                        <li>{!theAcctPlan.arr}&nbsp;</li>
+                        <li>{!theAcctPlan.planStatus}&nbsp;</li>
+                    </ul>
+                </div>
+                 <apex:variable var="rowCount" value="{!rowCount+1}" />
+            </apex:repeat>
+        </div>
+    </apex:outputPanel>
+    
+<script>
+  function toggle(obj) {
+        var objValue = obj.id;
+        var rowCount = objValue.substring(objValue.length-1 ,objValue.length);
+        var childId1 = 'parentDetails_'+rowCount;
+            if( document.getElementById(childId1).style.display=='none' ){
+               document.getElementById(childId1).style.display = '';
+             }else{
+               document.getElementById(childId1).style.display = 'none';
+             }
+    }
+    
+    function accountDetail(obj){
+        
+        if( (typeof sforce != 'undefined') && (sforce != null) ) {
+            // Salesforce1 navigation
+            sforce.one.navigateToSObject(obj.id);
+        }
+        else {
+            // Set the window's URL using a Visualforce expression
+            window.location.href = '{!URLFOR($Action.Account.View, account.Id)}';
+        }
+    }
+</script>
+
+</apex:page>

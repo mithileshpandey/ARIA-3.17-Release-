@@ -1,0 +1,6 @@
+<apex:page docType="html-5.0" sidebar="false" controller="AriaAdminToolController"><!--  action="{!redirect}" >-->
+  <apex:pageMessages />
+    
+    <apex:iframe src="{!adminURL}" width="100%" scrolling="true" frameborder="false" id="itarget" rendered="{!!ISBLANK(adminURL)}"/>
+    <!--<iframe frameborder="0" height="600px" id="itarget" name="itarget" scrolling="auto" src="{!adminURL}" title="Content" width="100%"></iframe>-->
+</apex:page>

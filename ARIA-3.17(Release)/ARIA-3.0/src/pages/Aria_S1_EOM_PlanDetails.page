@@ -1,0 +1,213 @@
+<apex:page sidebar="false" showHeader="false" standardController="Opportunity" extensions="Aria_S1_EOM_AccountPlanSelectionCtr" id="thePage2">
+<apex:stylesheet value="{!URLFOR($Resource.sf_resources,'styles/main.css')}"/>
+<apex:includeScript value="{!URLFOR($Resource.sf_resources,'scripts/jquery.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.sf_resources,'scripts/main.js')}"/>
+<style>
+    #datePicker{
+        display:none;
+    }
+</style>
+<div id="myCurtain" class="requiredLoaderBG" style="display:none;"></div>
+<apex:form id="mainPanel">
+    <div class="blue-header">
+         <div class="left-button" onclick="$('#myCurtain').show(); goHome();">Cancel</div>
+         <div class="right-button" onclick="submitForm1('{!$Component.units}','{!$Component.discount}');">Done</div>
+    </div>
+    <div class="page-header context-account">
+        <h1>{!pageHeaderDetail}</h1>
+        <p class="title truncate">{!selectedClientPlan.clientPlan.Name}</p>
+    </div>
+    
+        <div class="row group error" style="display:none;" id="errorMessageBlock">
+          <div class="col col-button span_4_of_4">
+              <div class="error-body">
+                <div class="error-title" id="errorMessage"></div>
+                <div class="close-button"></div>
+              </div>
+          </div>
+        </div>
+    <apex:outputPanel layout="block" styleclass="addplan-detail" id="addPlanDetail">
+        <div class="row">
+            <div class="col col-custom span_8_of_12">
+                <span class="title-combo">Billing Interval*</span>
+                <div class="styled-select">
+                    <apex:selectList size="1" value="{!selectedClientPlan.defaultBillingPlanValue}" disabled="{!IF(billingPlanList!= null && billingPlanList.size > 1,false,true)}">
+                      <apex:selectOptions value="{!billingPlanList}"></apex:selectOptions>
+                      <apex:actionSupport event="onchange" action="{!changeBillingInterval}" rerender="mainPanel" status="busyStatus"/>
+                    </apex:selectList>
+                </div>
+            </div>
+
+            <div class="col col-custom span_4_of_12">
+                <span class="title-combo" id="label-unit">Units*</span>
+                <apex:inputText maxlength="5" id="units" value="{!selectedClientPlan.units}" styleclass="unit-input unitField" onchange="validateUnit(this);"/>
+            </div>
+        </div>
+        <div class="row">
+          <div class="col col-custom span_12_of_12">
+                <span class="title-combo">Rate Schedule*</span>
+                <div class="styled-select">
+                    <apex:selectList size="1" value="{!selectedClientPlan.defaultRateScheduleValue}" onchange="refreshListPrice();">
+                      <apex:selectOptions value="{!rateScheduleList}"></apex:selectOptions>
+                    </apex:selectList>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+          <div class="col col-custom span_2_of_12">
+            <span class="title-combo" id="label-discount">Discount (%)</span>
+            <apex:inputText maxlength="5" id="discount" value="{!selectedClientPlan.discount}" styleclass="unit-input discountField" onchange="validateDiscount(this);"/>
+          </div>
+        </div> 
+        <div class="row">
+          <div class="col col-custom span_2_of_12">
+            <span class="list-price">LIST PRICE</span><br/>
+            <span class="list-price-value">
+                {!currencySymbol}{!selectedClientPlan.listPrice}
+            </span>
+          </div>
+          <div class="col col-custom span_2_of_12">
+            <span class="net-price">NET PRICE</span> <br/>
+            <span class="net-price-value">
+                {!currencySymbol}{!selectedClientPlan.netPrice}
+            </span>
+          </div>
+        </div>
+        <apex:outputPanel layout="none" rendered="{!enableAddChildPlan}">
+            <apex:outputPanel styleclass="row" layout="block" rendered="{!If(currentMode == 'Available_Add' || currentMode == 'Selected_ADD',true,false)}">
+              <div class="col col-custom span_12_of_12">
+                <div class="btn-full" onclick="addChildPlanScript('{!enableAddChildPlan}','{!$Component.units}','{!$Component.discount}');">Add Child Plans</div>
+              </div>
+            </apex:outputPanel>
+            <apex:outputPanel styleclass="row" layout="block" rendered="{!If(currentMode == 'Selected_EDIT',true,false)}">
+              <div class="col col-custom span_12_of_12">
+                <div class="btn-full" onclick="addChildPlanSelectedScript('{!enableAddChildPlan}','{!$Component.units}','{!$Component.discount}');">Add or Edit Child Plans</div>
+              </div>
+            </apex:outputPanel>
+         </apex:outputPanel>
+    </apex:outputPanel>
+    <apex:actionFunction action="{!done}" name="doneMe" status="busyStatus"/>
+    <apex:actionFunction action="{!RefreshListPrice}" name="refreshListPrice" rerender="addPlanDetail" status="busyStatus"/>
+    <apex:actionFunction action="{!addChildPlan}" name="addChildPlan"/>
+    <apex:actionFunction action="{!addChildPlanSelected}" name="addChildPlanSelected"/>
+    <apex:actionFunction action="{!goHome}" name="goHome" status="busyStatus">
+        <apex:param name="isMasterPlan" assignTo="{!isMasterPlan}" value="false"/>
+    </apex:actionFunction>
+    <apex:actionStatus id="busyStatus" startstyleClass="requiredLoaderBG" stopstyleclass="hide"/>
+</apex:form>
+<style>
+    .requiredLoaderBG{
+        background-color: rgb(71,71,71);
+        opacity:0.7;
+        filter:alpha(opacity=70);
+        //background-image:url('/img/loading.gif');
+        background-image:url("{!URLFOR($Resource.sf_resources,'/images/icons/ajax-loader.gif')}");
+        background-position: center center;
+        background-repeat: no-repeat;
+        height: 100%;
+        left: 0;
+        position: fixed;
+        text-align: center;
+        top: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+    .errorText{
+        border: 2px solid #9E5645 !important;
+        background-color: #EBCABE !important;
+    }
+</style>
+<script>
+    function addChildPlanScript(enableAddChildPlan,unitId,discountId){
+        var unitObj = document.getElementById(unitId);
+        var discountObj = document.getElementById(discountId);
+        var isValidForm = true;
+        if(isUnitValid(unitObj) != null){
+            isValidForm = false;
+        }
+        if(isDiscountValid(discountObj) != null){
+            isValidForm = false;
+        }
+        if(isValidForm == true && enableAddChildPlan=='true'){
+            $('#myCurtain').show();
+            addChildPlan();
+        }
+    }
+    function addChildPlanSelectedScript(enableAddChildPlan,unitId,discountId){
+        var unitObj = document.getElementById(unitId);
+        var discountObj = document.getElementById(discountId);
+        var isValidForm = true;
+        if(isUnitValid(unitObj) != null){
+            isValidForm = false;
+        }
+        if(isDiscountValid(discountObj) != null){
+            isValidForm = false;
+        }
+        if(isValidForm == true && enableAddChildPlan=='true'){
+            $('#myCurtain').show();
+            addChildPlanSelected();
+        }
+    }
+    function isPositiveInteger(val) {
+        return val == "0" || ((val | 0) > 0 && val % 1 == 0);
+    }
+    function isUnitValid(unitObj){
+        var errorMsg = null;
+        if(unitObj.value == null || unitObj.value.trim() =="" || isPositiveInteger(unitObj.value) == false || unitObj.value == 0){
+            errorMsg = "Unit value should be positive Integer";
+        }
+        return errorMsg;
+    }
+    function validateUnit(unitObj){
+        var errorMsg = isUnitValid(unitObj);
+        if(errorMsg != null){
+            console.log('value is invalid');
+            isValidFrom = false;
+            $(unitObj).addClass('errorText');
+            $('#errorMessage').text(errorMsg);
+            $('#label-unit').addClass('error-label');
+            $('#errorMessageBlock').show();
+        }else{
+            console.log('value is valid');
+            isValidFrom = true;
+            $(unitObj).removeClass('errorText');
+            $('#label-unit').removeClass('error-label');
+            $('#errorMessageBlock').hide();
+            refreshListPrice();
+        }
+    }
+    function isDiscountValid(discountObj){
+        var errorMsg = null;
+        if($.isNumeric(discountObj.value) == false){
+            errorMsg = "Discount value should be numeric";
+        }else if(discountObj.value <0 || discountObj.value >100){
+            errorMsg = "Discount value should between 0 to 100 only";
+        }
+        return errorMsg;
+    }
+    function validateDiscount(discountObj){
+        var errorMsg = isDiscountValid(discountObj);
+        if(errorMsg != null){
+            $(discountObj).addClass('errorText');
+            $('#errorMessage').text(errorMsg);
+            $('#discount-unit').addClass('error-label');
+            $('#errorMessageBlock').show();
+        }else{
+            $(discountObj).removeClass('errorText');
+            $('#discount-unit').removeClass('error-label');
+            $('#errorMessageBlock').hide();
+            refreshListPrice();
+        }
+    }
+    function submitForm1(unitId,discountId){
+        console.log('unit id ' + unitId + 'discountId '+ discountId);
+        var unitObj = document.getElementById(unitId);
+        var discountObj = document.getElementById(discountId);
+        if(isUnitValid(unitObj) == null && isDiscountValid(discountObj) == null)
+        {
+            $('#myCurtain').show(); 
+            doneMe();
+        }
+    }
+</script>
+</apex:page>

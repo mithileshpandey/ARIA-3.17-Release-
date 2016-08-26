@@ -1,0 +1,7 @@
+<apex:page standardController="Quote" extensions="AriaAccountPlanServicesOpportunity">
+
+	<apex:repeat value="{!accPlanServices}" var="plan" id="theRepeat">
+		<c:AriaAccountServices accountPlanIds="{!plan.accPlanStr}" accountPlanName="{!plan.planName}" source="Quote"/>
+	</apex:repeat> 
+
+</apex:page>

@@ -1,0 +1,398 @@
+<apex:page standardController="Account" sidebar="false" showHeader="false" id="thePage" extensions="AriaNewTransactionController">
+    <apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'collapse.css')}" /> 
+    <apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+        <style type="text/css">
+              th {text-align: center;border-bottom: thin solid black;}
+              td {text-align: left}
+              #drow {text-align: right;}
+              #crow {text-align: center;} 
+              #lrow {padding-left: 25px;}
+              .drow {text-align: right;}
+              .crow {text-align: center;}
+              .fright{text-align: right;}
+              .fleft{text-align: left;}
+              body .pbBody table.list tr.headerRow td, body .pbBody table.list tr.headerRow th {
+				    padding: 5px !important;
+				}
+        </style>
+   <apex:form id="frm" >
+           <apex:pagemessages ></apex:pagemessages>
+          <apex:actionFunction id="aFunction" name="getInvoice" action="{!InvoiceDetails}" reRender="pb" oncomplete="fun_complete('{!curTranNo}');">
+              <apex:param id="param" name="invoiceId" value="" assignTo="{!invoiceId}"/>
+          </apex:actionFunction>
+          <apex:actionFunction id="aFunction1" name="refresh_tran" action="{!refresh_transaction_list}" reRender="pb" status="status" >
+            <apex:param id="param1" name="days" value="" assignTo="{!days}"/>
+          </apex:actionFunction>
+          <apex:actionFunction id="aFunction12" name="refresh_trans" action="{!refresh_transaction_list}" reRender="pb" status="status" >
+          </apex:actionFunction>
+          <!-- apex action functions for paginations -->
+          <apex:actionFunction id="aFunction2" name="firstPage" action="{!firstBtnClick}" reRender="pb" status="status" />
+          <apex:actionFunction id="aFunction3" name="prePage" action="{!previousBtnClick}" reRender="pb" status="status" />
+          <apex:actionFunction id="aFunction4" name="nextPage" action="{!nextBtnClick}" reRender="pb" status="status" />
+          <apex:actionFunction id="aFunction5" name="lastPage" action="{!lastBtnClick}" reRender="pb" status="status" />
+          <apex:actionFunction id="aFunction6" name="setPageSize" reRender="pb" status="status" >
+            <apex:param name="pSize" value="" assignTo="{!PageSize}"/>
+          </apex:actionFunction>
+          <!-- apex action functions for paginations ends--> 
+          <apex:variable var="counter" value="{!0}" />
+          <apex:inputHidden id="curTranNo" value="{!curTranNo}"/>
+          <apex:pageBlock title="{!$Label.ARIA_NEW_TRANSACTIONS_TRANSACTION_HISTORY}" id="pb">
+          
+          <apex:actionStatus id="status">
+              <apex:facet name="start">
+                  <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 95%;width:100%;padding-top: 10%;opacity:.8;"> 
+                        <img  src="{!URLFOR($Resource.LodingGif)}" title="{!$Label.ARIA_GENERAL_CONFIG_LOADING}" /><br/><br/>
+                        <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+                   </div>
+              </apex:facet>
+          </apex:actionStatus>
+          <b>{!$Label.ARIA_NEW_TRANSACTIONS_SHOW_HISTORY}</b>&nbsp;&nbsp;<apex:selectList id="days" value="{!days}" size="1" onchange="refresh_tran(this.value);">
+              <!-- <apex:selectOption itemLabel="5 days" itemValue="-5"></apex:selectOption> -->
+              <apex:selectOption itemLabel="{!$Label.ARIA_NEW_TRANSACTIONS_LAST_30_DAYS}" itemValue="-30"></apex:selectOption>
+              <apex:selectOption itemLabel="{!$Label.ARIA_NEW_TRANSACTIONS_LAST_60_DAYS}" itemValue="-60"></apex:selectOption>
+              <apex:selectOption itemLabel="{!$Label.ARIA_NEW_TRANSACTIONS_LAST_90_DAYS}" itemValue="-90"></apex:selectOption>
+              <apex:selectOption itemLabel="{!$Label.ARIA_NEW_TRANSACTIONS_LAST_180_DAYS}" itemValue="-180"></apex:selectOption>
+              <apex:selectOption itemLabel="{!$Label.ARIA_NEW_TRANSACTIONS_LAST_1_YEAR}" itemValue="-365"></apex:selectOption>
+              <apex:selectOption itemLabel="{!$Label.ARIA_NEW_TRANSACTIONS_LAST_2_YEARS}" itemValue="-730"></apex:selectOption>
+          </apex:selectList>
+          <div style="float:right">
+            <apex:outputLabel value="{!$Label.ARIA_PLAN_QUOTE_SUBSCRIPTIONS}" />&nbsp;&nbsp;&nbsp;&nbsp; 
+              <apex:selectList value="{!subscriptionTransId}" size="1" onchange="refresh_trans();">
+                    <apex:selectOptions value="{!SubscriptionList}"></apex:selectOptions>
+              </apex:selectList>
+          </div>
+          <br />
+          <br />
+           <!-- Added for Pagination -->
+            
+      <div class="paginator">
+      <span class="left">
+         <span onmouseout="ListPaginator.unhoverSelector(this)" onmouseover="ListPaginator.hoverSelector(this)" onmousedown="ListPaginator.showSelector('item_paginator_rpp_target')" id="item_paginator_rpp_target" class="selectorTarget">
+            {!start}-{!ends} of {!totalRecords}
+            <table cellspacing="0" cellpadding="0" id="item_paginator_rpp" class="selector rpp">
+                <tbody>
+               
+                <tr onmousedown="setPageSize(10);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=10,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">10</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                <tr onmousedown="setPageSize(25);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=25,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">25</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                <tr onmousedown="setPageSize(50);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=50,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td><td class="rppOpt">50</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                <tr onmousedown="setPageSize(100);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=100,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">100</td> <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                
+            </tbody>
+          </table>
+        <img src="/s.gif" class="selectArrow" />
+       </span>
+       </span>
+      <span class="prevNextLinks">
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!previousButtonDisabled}">
+            <a href="javascript:firstPage();">
+                <img class="first" alt="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_FIRST_PAGE}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_FIRST_PAGE}" src="/s.gif"/>
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!previousButtonDisabled}">
+            <img class="firstoff" src="/s.gif"/>
+            </apex:outputPanel>
+        </span>
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!previousButtonDisabled}">
+            <a href="javascript:prePage();">
+                <img class="prev" alt="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PREVIOUS}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PREVIOUS}" src="/s.gif"/>{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PREVIOUS}
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!previousButtonDisabled}">
+            <img class="prevoff" src="/s.gif"/>{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PREVIOUS}
+            </apex:outputPanel>
+        </span>
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!nextButtonDisabled}">
+            <a href="javascript:nextPage();">
+                {!$Label.ARIA_ACCOUNT_PLAN_SELECTION_NEXT}<img class="next" alt="{!$Label.ARIA_PAYMENT_CREDIT_NEXT}" title="{!$Label.ARIA_PAYMENT_CREDIT_NEXT}" src="/s.gif"/>
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!nextButtonDisabled}">
+                {!$Label.ARIA_ACCOUNT_PLAN_SELECTION_NEXT}<img class="nextoff" src="/s.gif"/>
+            </apex:outputPanel>
+        </span>
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!nextButtonDisabled}">
+            <a href="javascript:lastPage();">
+                <img class="last" alt="{!$Label.ARIA_REFUND_LAST_PAGE}" title="{!$Label.ARIA_REFUND_LAST_PAGE}" src="/s.gif"/>
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!nextButtonDisabled}">
+            <img class="lastoff" src="/s.gif"/>
+            </apex:outputPanel>
+        </span>
+     </span>
+     <span class="right">{!$Label.ARIA_PAYMENT_REFUND_PAGE} {!PageNumber} {!$Label.ARIA_ACCOUNT_PLAN_SELECTION_OF} {!totalPageNumber}
+     <!--<input type="text" value="{!PageNumber}" onchange="jump(this.value);" maxlength="4" class="pageInput"/> of {!totalPageNumber}-->
+     </span>
+     </div>
+      
+     <!-- Added for pagination end-->
+          <table cellspacing="0" cellpadding="5" border="0" id="myTable" class="collapsible list">
+            <thead class="rich-table-thead">
+                <tr class="headerRow ">
+                    <th colspan="2" scope="col" class="headerRow  headerlbl"><div>{!$Label.ARIA_NEW_TRANSACTIONS_ID}</div></th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div style="text-align:right;">Starting<br/>Balance</div></th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div style="text-align:right;">Charge<br/>Amount</div></th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div style="text-align:right;">Credit<br/>Amount</div></th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div style="text-align:right;">Ending<br/>Balance</div></th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div>Credit Reason<br/> Description</div></th>
+                    
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div>{!$Label.ARIA_PAYMENT_CREDIT_DATE}</div></th>
+                    <th colspan="1" scope="col" class="headerRow  headerlbl"><div>{!$Label.ARIA_ITEM_VIEW_TYPE}</div></th>
+                   <!--  <th colspan="1" scope="col"  class="headerRow  headerlbl"><div style="text-align:right;">{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_AMOUNT}</div></th> -->
+                     <th colspan="1" scope="col" class="headerRow  headerlbl"><div>{!$Label.ARIA_ACCT_HISTORY_COMMENTS}</div></th> 
+                </tr>
+            </thead>
+            <tbody>
+          
+             <apex:repeat value="{!curTransaction}" var="t" id="repeat">
+                 <tr class="dataRow" onfocus="if (window.hiOn){hiOn(this);}" onblur="if (window.hiOff){hiOff(this);}" onmouseout="if (window.hiOff){hiOff(this);} " onmouseover="if (window.hiOn){hiOn(this);}">
+                    <td width="2%" colspan="1" class="dataCell">
+                        <a id="a_{!t.tranNumber}" href="javascript:;" class="collapsed" onclick="show_data(this,'{!t.tranNumber}',{!t.typeNum});"></a>
+                        
+                    </td>
+                    <td colspan="1" class="dataCell">{!t.tranNumber}</td>
+                   <td  colspan="1" class="dataCell" style="text-align:right;white-space:nowrap">
+                    		
+                            <apex:outputText value="{0,number,0.00}" rendered="{! t.startBalance != null && t.startBalance >= 0}">
+							    <apex:param value="{!t.startBalance}"/>
+							</apex:outputText>
+							<apex:outputText value="({0,number,0.00})" rendered="{!t.startBalance != null && t.startBalance < 0}">
+							    <apex:param value="{!t.startBalance * -1}"/>
+							</apex:outputText>
+                    </td>
+                    <td colspan="1" class="dataCell" style="text-align:right;white-space:nowrap">
+                    		
+                            <apex:outputText value="{0,number,0.00}" rendered="{! t.chargeAmount != null && t.chargeAmount >= 0}">
+							    <apex:param value="{!t.chargeAmount}"/>
+							</apex:outputText>
+							<apex:outputText value="({0,number,0.00})" rendered="{!t.chargeAmount != null && t.chargeAmount < 0}">
+							    <apex:param value="{!t.chargeAmount * -1}"/>
+							</apex:outputText>
+                    </td>
+                    <td colspan="1" class="dataCell" style="text-align:right;white-space:nowrap">
+                    		
+                            <apex:outputText value="{0,number,0.00}" rendered="{! t.creditAmount != null && t.creditAmount >= 0}">
+							    <apex:param value="{!t.creditAmount}"/>
+							</apex:outputText>
+							<apex:outputText value="({0,number,0.00})" rendered="{!t.creditAmount != null && t.creditAmount < 0}">
+							    <apex:param value="{!t.creditAmount * -1}"/>
+							</apex:outputText>
+                    </td>
+                    <td colspan="1" class="dataCell" style="text-align:right;white-space:nowrap">
+                    		
+                            <apex:outputText value="{0,number,0.00}" rendered="{! t.endBalance != null && t.endBalance >= 0}">
+							    <apex:param value="{!t.endBalance}"/>
+							</apex:outputText>
+							<apex:outputText value="({0,number,0.00})" rendered="{!t.endBalance != null && t.endBalance < 0}">
+							    <apex:param value="{!t.endBalance * -1}"/>
+							</apex:outputText>
+                    </td>
+                    <td  colspan="1" class="dataCell">{!t.creditReason}</td>
+                    <td colspan="1" class="dataCell" style="white-space:nowrap">{!t.dateStr}</td>
+                    <td colspan="1" class="dataCell">
+                        <apex:outputLink value="{!t.strType}" rendered="{!t.typeNum = 1}" target="_Blank">{!$Label.ARIA_REFUND_INVOICE}</apex:outputLink>
+                        <apex:outputLabel rendered="{!!(t.typeNum = 1)}">{!t.strType}</apex:outputLabel> 
+                    </td>
+                  
+                    <td colspan="1" class="dataCell" style="padding-left:10px;text-align :left;width:150px">{!t.commentStr}</td>
+                </tr> 
+                 <apex:outputPanel layout="none" rendered="{!t.typeNum!=1}">
+                <tr id="{!t.tranNumber}" style="display:none;">
+                    <td colspan="1" style="border:0px;">&nbsp;</td>
+                    <td colspan="8" style="text-align:right;border:0px;">
+                        <table width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top: -5px;border-collapse: collapse;background-color: hsla(200, 100%, 89%, 0.29);">
+                            <tr>
+                                <td style="font-weight: bold;">{!$Label.ARIA_COMMENTS_STATEMENT_NO}</td>
+                                <td style="font-weight: bold;text-align: right;" width="10%" >{!$Label.ARIA_NEW_TRANSACTION_APPLIED_AMOUNT}</td>
+                                <td style="font-weight: bold;">{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_CURRENCY}</td>
+                                <td style="font-weight: bold;" width="20%">{!$Label.ARIA_NEW_TRANSACTION_CREATE_DATE}</td>
+                                <td style="font-weight: bold;" width="20%">{!$Label.ARIA_NEW_TRANSACTION_VOID_DATE}</td>
+                                
+                                <td style="font-weight: bold;">{!$Label.ARIA_NEW_TRANSACTION_CLIENT_RECIEPT_ID}</td>
+                                <td style="font-weight: bold;">{!$Label.ARIA_NEW_TRANSACTION_SOURCE_ID}</td>
+                                
+                                <td style="font-weight: bold;">{!$Label.ARIA_NEW_TRANSACTION_VOID_REASON}</td>
+                                <td style="font-weight: bold;">{!$Label.ARIA_ACCT_HISTORY_COMMENTS}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                
+                                    <apex:outputLink value="#" id="link" onclick="setUrl(this);" rendered="{!LEN(TEXT(t.statementNo)) > 4}">
+                                        
+                                        <apex:outputText value="{0, number, 0}" id="sp"  style="text-align:right;" >
+                                           <apex:param value="{!t.statementNo}" />
+                                      </apex:outputText>
+                                    
+                                    
+                                    </apex:outputLink>
+                                    <apex:outputLabel rendered="{!!(LEN(TEXT(t.statementNo)) > 4)}">{!IF(t.statementNo = 0,'', t.statementNo)}</apex:outputLabel> 
+                                </td>
+                                <td><apex:outputText value="{0, number, 0.00}" style="float:right;">
+                                                           <apex:param value="{!t.tranAppAmount}" /> </apex:outputText></td>
+                                <td>{!t.tranCurrency}</td>
+                                <td>{!t.tranCreateDate}</td>
+                                <td>{!t.tranVoidDate}</td>
+                                
+                                <td>
+                               {!t.clientReciepid}
+                                   
+                                </td>
+                                <td>{!IF(t.tranSourceId= 0,'', t.tranSourceId)}</td>
+                                
+                                <td>{!t.tranVoidReason}</td>
+                                <td>{!t.tranComments}</td>
+                            </tr>
+                            
+                        </table>
+                    </td>
+                 </tr>
+              </apex:outputPanel>
+              <apex:outputPanel layout="none" rendered="{!t.typeNum=1}">
+                <tr id="{!t.tranNumber}_status" style="display:none">
+                   <td colspan="9" style="text-align:center;color:red;">{!$Label.ARIA_NEW_TRANSACTIONS_LOADING_INVOICE_DETAIL}...<img class="waitingImage" src="/img/loading.gif" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_LOADING}"/></td>
+                </tr>
+                <tr id="{!t.tranNumber}" style="display:none">
+                   <apex:outputPanel layout="none" id="invoicepanel">
+                       <!--  put here all the html stuff and starts the repeat -->
+                       <td colspan="1" style="border:0px;">&nbsp;</td>
+                       <td colspan="8" style="border:0px;backgound-color:#f2f3f3;">
+                         <table width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top: -5px;border-collapse: collapse;background-color: hsla(200, 100%, 89%, 0.29);">
+                              <tr>
+                                   <th style="text-align: left;">{!$Label.ARIA_ITEM_VIEW_ITEM_NO}</th>
+                                   <th style="text-align: left;">{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_DESCRIPTION}</th>
+                                   <th style="text-align: left;">{!$Label.ARIA_DISPUTE_SERVICE_PLAN}</th>
+                                   <th style="text-align: right;">{!$Label.ARIA_DISPUTE_UNITS}</th>
+                                   <th style="text-align: right;">{!$Label.ARIA_DISPUTE_UNIT_AMOUNT}</th>
+                                   <th style="text-align: right;">{!$Label.ARIA_DISPUTE_ITEM_AMOUNT}</th>
+                               </tr>
+                           <apex:repeat value="{!invoiceDetails_map[t.tranNumber]}"  var="invd">
+                               <tr>
+                                   <td align="right">{!invd.itemNumber}</td>
+                                   <td align="left">{!invd.description }</td>
+                                   <td align="left"><apex:outputPanel rendered="{!ISBLANK(TRIM(invd.servicePlan))}">n/a</apex:outputPanel><apex:outputPanel rendered="{!IF(ISBLANK(TRIM(invd.servicePlan)),false,true)}">Plan&nbsp;{!invd.planNo}&nbsp;({!invd.servicePlan })</apex:outputPanel></td>
+                                   <td align="right">
+                                        <apex:outputText value="{0, number, 0.00}" style="float:right;">
+                                                           <apex:param value="{!invd.units }" />
+                                            </apex:outputText>
+                                   </td>
+                                   <td align="right"><apex:outputText rendered="{!(invd.unitAmount > 0)}" value="{0, number, 0.00}" style="float:right;">
+                                                           <apex:param value="{!invd.unitAmount}" />
+                                     </apex:outputText>
+                                   </td>
+                                   <td align="right"><apex:outputText value="{0, number, 0.00}" style="float:right;">
+                                                           <apex:param value="{!invd.itemAmount}" /> </apex:outputText>
+                                   </td>
+                               </tr>
+                           </apex:repeat>
+                       </table>
+                       </td>
+                   </apex:outputPanel>
+               </tr>
+              </apex:outputPanel>    
+          </apex:repeat>
+        </tbody>
+      </table>
+     </apex:pageBlock>
+         
+   </apex:form>
+   <script>
+            var glob_entity;
+            var entity_id;
+            var arr_expanded;
+            var arr_processed_invoice = new Array();
+            var processed_invoice_counter = 0;
+            function update_expanded_array(){
+                var i = 0;
+                arr_expanded = new Array();
+                $('.expanded').each( function() {
+                    arr_expanded[i] = $(this).attr("id");
+                    i++;
+                });
+            }
+            function apply_css_for_expanded_link(){
+                var link_id,tr_id;
+                for(i=0;i<arr_expanded.length;i++){
+                    link_id = arr_expanded[i];
+                    tr_id   = link_id.substr(2);
+                    document.getElementById(link_id).className ="expanded";
+                    document.getElementById(tr_id).style.display="";
+                }
+            }
+            function update_processed_invoice_array(invoice_no){
+                arr_processed_invoice[processed_invoice_counter] = invoice_no;
+                processed_invoice_counter++;
+            }
+            function isProcessed(invoice_no){
+                var i = 0;
+                for (i=0;i < arr_processed_invoice.length;i++){
+                    if(invoice_no == arr_processed_invoice[i])
+                        break;
+                }
+                if(i == arr_processed_invoice.length){
+                    return false;
+                }
+                else{
+                    return true;
+                }
+            }
+            
+            function show_data(entity,id,typeNum){
+                
+                var tr = document.getElementById(id);
+                entity_id = entity.id;
+                glob_entity = entity;
+               
+                if(typeNum == 1 && entity.className == "collapsed"){
+                
+                    document.getElementById('thePage:frm:curTranNo').value=id;
+                    if(!isProcessed(id)){
+                        getInvoice(id);
+                        var tr_status = document.getElementById(id+'_status');
+                        tr_status.style.display="";
+                    }
+                    else{
+                        tr.style.display="";
+                    }
+                }
+                if(entity.className == "expanded"){
+                    entity.className ="collapsed";
+                    tr.style.display="none";
+                }
+                else if(entity.className == "collapsed"){
+                    entity.className ="expanded";
+                    if(typeNum != 1)
+                        tr.style.display="";
+                }
+                update_expanded_array();
+            }
+            function fun_complete(id){
+                var tr = document.getElementById(id);
+                //alert(tr);
+                update_processed_invoice_array(id);
+                apply_css_for_expanded_link();
+                document.getElementById(entity_id).className ="expanded";
+                tr.style.display="";
+           }
+         addEvent(document.body,"mousedown",function(a){ListPaginator.hideSelector('item_paginator_rpp_target')},!0); 
+         
+         function setUrl(ancor){
+             ancorId = ancor.id.substring(0,ancor.id.length -5 );
+             ancor.href ='AriaStatementDetail?stmt_no='+document.getElementById(ancorId+':sp').innerHTML.trim()+'&acctno={!a.Aria_Id__c}';
+             ancor.target = '_Blank';
+             
+         }
+         
+      </script>
+</apex:page>

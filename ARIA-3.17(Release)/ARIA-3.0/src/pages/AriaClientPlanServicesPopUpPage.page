@@ -1,0 +1,144 @@
+<apex:page standardController="Client_Plan__c" extensions="AriaClientPlanServicesPopUpExtension" sidebar="false" showheader="false">  
+<apex:stylesheet value="{!$Resource.SuperTable}/stylesheets/superTables.css"/>
+
+<style>
+
+.fakeContainer { /* The parent container */
+    margin: 0px;
+    padding: 0px;
+    border: none;
+    width: 620px; /* Required to set */
+    height: 180px; /* Required  to set */ 
+    overflow: hidden; /* Required to set */
+}
+
+
+    .bdrless td{ 
+       border-width: 3px;
+       bgcolor="#FF0000"; 
+    } 
+
+</style> 
+    
+    <table width="100%">
+        <tr>
+            <td><center><input type="button" value="{!$Label.ARIA_POP_UP_VIEW_PLAN_DETAILS}" class="btn" onClick="window.open('/{!thePlan.Id}','_new')"/> </center></td>
+            <td align="right" width="50px"><a href="javascript: window.parent.hideServicesPopUp();">    {!$Label.ARIA_PAYMENT_CREDIT_CLOSE}    </a></td>
+        </tr>
+    </table>    
+     
+    <!-- <c:AriaAccountServices accountPlanIds="{!thePlan.Id}" accountPlanName="{!thePlan.Name}" source="ServicesPopup" currencyStr="{!accountCurrency}"/>-->
+
+    <apex:pageBlock title="{!$Label.ARIA_POP_UP_SERVICES_FOR} {!thePlan.Name}" rendered="{!plansAndServices.size>-1}">
+        
+        <div class="fakeContainer"> 
+            <table id="demoTable" border="0" width="100%" class="list " cellspacing="0" cellpadding="0">
+                <tr class="headerRow" >
+                    <th width="100px">{!$Label.ARIA_CREDIT_SERVICE}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+                    <th width="100px">{!$Label.ARIA_ACCT_SERVICES_SERVICE_TYPE}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+                    
+                    <th  width="100px">{!$Label.ARIA_ACCT_SERVICES_TIERED_PRICING_RULE}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th> 
+                    
+                    
+                    <apex:repeat value="{!RateSchedules}" var="schedule">
+                        <th width="300px" align="center">{!schedule.CurrencyStr}<br/>{!schedule.rateScheduleName}</th>
+                    
+                    </apex:repeat>
+                                            
+                    
+                    
+                </tr>
+                                                                            
+                <apex:repeat value="{!plansAndServices}" var="plan">
+                    <tr  onMouseOver="this.bgColor='#f9feff'" onMouseOut="this.bgColor='#ffffff'">
+                        <td>{!plan.serviceName}</td>
+                        <td>{!plan.serviceType}</td>            
+                        <td>{!plan.usageType}</td>  
+                        
+                        
+                        <apex:repeat value="{!plan.rateSchedules}" var="schedule">
+                        <td>
+                            <apex:outputPanel id="tieredPricePanel" rendered="{!plan.isTieredPricing==true}">
+                                <table border="0" cellspacing="0" cellpadding="0" width="260px"> 
+                                <tr >
+                                    <td style="padding:0px; margin:0px;">
+                                                    <div style="width:260px; float:left;">
+                                                    <div style="width:65px;height:19px; background:url('/img/alohaSkin/grid_headerbg.gif') repeat-x scroll 0 bottom #FFFFFF; float:left;margin-left:0px;border:solid 1px #ccc; text-align:right;padding:2px;">From</div>
+                                                    <div style="width:20px;height:19px; float:left;margin-left:0px;border:solid 1px #ccc; text-align:right;padding:2px;background:url('/img/alohaSkin/grid_headerbg.gif') repeat-x scroll 0 bottom #FFFFFF;">&nbsp;</div>
+                                                    <div style="width:65px;height:19px; float:left; margin-left:0px;border:solid 1px #ccc; text-align:left;padding:2px;background:url('/img/alohaSkin/grid_headerbg.gif') repeat-x scroll 0 bottom #FFFFFF;">To</div>
+                                                    <div style="width:80px;height:19px; float:left; margin-left:0px;border:solid 1px #ccc; text-align:right;padding:2px;background:url('/img/alohaSkin/grid_headerbg.gif') repeat-x scroll 0 bottom #FFFFFF;">Price</div>
+                                                    </div>                                  
+                                    </td>
+                                
+                                
+                                </tr>
+                                <apex:repeat value="{!schedule.rateTiers}" var="tier">
+                                <tr >
+                                    <td style="padding:0px; margin:0px;">
+                                                    <div style="width:260px;  float:left;">
+                                                        <div style="width:65px;height:19px; float:left; margin-left:0px; border:solid 1px #ccc; text-align:right;padding:2px) repeat-x scroll 0 bottom #FFFFFF; float:left;margin-left:0px;border:solid 1px #ccc; text-align:right;padding:2px;"><apex:outputText value="{0,number,0}"><apex:param value="{!tier.fromUnits}" /></apex:outputText></div>
+                                                        <div style="width:20px;height:19px; float:left; margin-left:0px; border:solid 1px #ccc; text-align:right;padding:2px">-</div>
+                                                        <div style="width:65px;height:19px; float:left; margin-left:0px; border:solid 1px #ccc; text-align:right;padding:2px"><apex:outputText value="{0,number,0}" rendered="{!tier.toUnits>0}"><apex:param value="{!tier.toUnits}" /></apex:outputText><apex:outputtext value="<div style=\'font-size:24pt;\'>&infin;</div>" escape="false" rendered="{!IF(tier.toUnits>0,false,true)}"/></div>
+                                                        <div style="width:80px;height:19px; float:left; margin-left:0px; border:solid 1px #ccc; text-align:right;padding:2px"><apex:outputText value="{0, number, .00}"><apex:param value="{!tier.rate}" /></apex:outputText></div>
+                                                    </div>                                  
+                                    </td>
+                                
+                                
+                                </tr>   
+    
+                                </apex:repeat>
+                                </table>
+                            </apex:outputPanel>
+                            <apex:outputPanel id="tieredPricePanel3" rendered="{!plan.isTieredPricing==false}">
+                                <table border="0" cellspacing="0" cellpadding="0" width="240px"> 
+    
+                                <apex:repeat value="{!schedule.rateTiers}" var="tier">
+                                    <tr>
+    
+                                        <td colspan="4" align="right" width="240px">
+                                            <apex:outputText value="{0, number, .00}">
+                                                <apex:param value="{!tier.rate}" />
+                                            </apex:outputText></td>
+                                    </tr>
+                                </apex:repeat>
+                                </table>
+                            </apex:outputPanel>                         
+                        
+                        </td>   
+                        </apex:repeat>  
+                            
+                    </tr>
+                
+                </apex:repeat>
+                
+            </table>    
+            
+            </div>
+    
+    
+                
+        
+    
+    </apex:pageBlock>   
+<script type="text/javascript" src="{!$Resource.SuperTable}/javascripts/superTables.js"></script>
+<script type="text/javascript">
+//<![CDATA[
+
+(function() {
+    var mySt = new superTable("demoTable", {
+        fixedCols : 3,
+        headerRows : 1,
+        onStart : function () {
+            this.start = new Date();
+        },
+        onFinish : function () {
+                
+        }
+    });
+})();
+
+//]]>
+
+
+</script>	 
+</apex:page>

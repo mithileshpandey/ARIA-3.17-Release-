@@ -1,0 +1,194 @@
+<apex:page sidebar="false" showHeader="false" standardController="Opportunity" extensions="Aria_S1_EOM_AccountPlanSelectionCtr">
+<apex:stylesheet value="{!URLFOR($Resource.sf_resources,'styles/main.css')}"/>
+<apex:includeScript value="{!URLFOR($Resource.sf_resources,'scripts/jquery.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.sf_resources,'scripts/main.js')}"/>
+<div id="myCurtain" class="requiredLoaderBG" style="display:none;"></div>
+<apex:form >
+        <apex:actionFunction name="cancelCoupon" action="{!cancelCoupon}"  />
+        <apex:actionFunction name="assignCoupon" action="{!AssignCoupon}"  />
+        <apex:actionFunction name="removeCoupon" action="{!removeCoupon}" />
+        
+        <div class="alert" id="confirmBoxMine" style="display:none;">
+            <div class="row">
+                <div class="col alert-box span_12_of_12">
+                    <div class="close-icon" id="closeIcon" onclick="$('#confirmBoxMine').hide();"></div>
+                    <div class="title" id="alertBoxdescription">Are you sure you want to go back to opportunity detail page?</div>
+                    <div class="btn-full alert-btn" id="myYesButton">Yes</div>
+                    <span class="btn-full alert-btn" id="myNoButton">No</span>
+                </div>
+            </div>
+        </div>
+        
+    <style>
+    .input-fix {
+        width:73% !important;
+    }
+    .button-fix {
+        width: 23% !important;
+        margin-left: 12px;
+        margin-top:0px !important;
+    }
+    .digit-text {
+        font-size:18px;
+        color:#55565A;
+        font-weight:bold;
+    }
+    .digit-text-normal {
+        font-size:18px;
+        color:#55565A;
+    }
+    .margin0 {
+        margin:0px !important;
+    }
+    .text-label-desc {
+        padding:8px;
+        font-size:14px;
+        background:#E8E9EB;
+        border-radius: 4px;
+      -moz-border-radius: 4px;
+      -webkit-border-radius: 4px;
+    }
+    .text-label-desc-normal {
+        font-size:12px;
+        text-transform:uppercase;
+    }
+    @media only screen and (min-width: 90.063em) { 
+        .input-fix {
+            width:83% !important;
+        }
+        .button-fix {
+            width: 16% !important;
+            margin-top:0px !important;
+        }
+    }
+    
+    @media only screen and (min-width: 64.063em) and (max-width: 90em) { 
+        .input-fix {
+            width:83% !important;
+        }
+        .button-fix {
+            width: 16% !important;
+            margin-top:0px !important;
+        }   
+    }
+    .margin-top10 {
+        margin-top:10px !important;
+    }
+    
+   .btn-grey { 
+        background-color: #cccccc;
+        border: 2px solid #00629C;
+        width: 100%;
+        height: 38px;
+        line-height: 38px;
+        border-radius: 4px;
+        -moz-border-radius: 4px;
+        -webkit-border-radius: 4px;
+        opacity: .6;
+    }
+    #datePicker{
+        display:none;
+    }
+</style>
+<div class="blue-header">
+            <div class="left-button" onclick="$('#myCurtain').show(); cancelCoupon();">Cancel</div>
+            <div class="right-button" style="display:{!if(removeCoupon != null,'none','block')}"  onclick="$('#myCurtain').show(); assignCoupon();">Assign</div>
+            <div class="right-button" style="display:{!if(removeCoupon != null,'block','none')}" onclick=" removeAssignCoupon();">Remove</div>
+    </div>
+    <div class="page-header context-account">
+        <h1>Coupon Code Detail</h1>
+        <p class="title truncate">for {!opportunityObj.Name}</p>
+    </div>
+    <apex:outputPanel style="display:{!if(cpn_msg != '','block','none')}" id="errorMsg">
+        <div class="error-message">
+            <div class="row group error">
+                <div class="col col-button span_4_of_4"> 
+                    <div class="error-body">
+                        <div class="error-title title truncate">{!cpn_msg}</div>
+                        <div class="close-button" onclick="closeSuccessMsg();"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </apex:outputPanel>
+    
+<div class="coupon-codes">
+        <div class="row"><br/>
+            <div style="display:{!if(selectedCoupon.out_coupon_cd != null,'block','none')}">
+                <div class="col margin-top10 col-custom span_12_of_12 margin0">
+                    <div class="digit-text-normal title truncate">{!selectedCoupon.out_coupon_cd}</div>
+                </div>
+                <div class="col col-custom span_12_of_12 margin0">
+                    <div class="text-label-desc-normal">PROMO CODE</div>
+                </div>
+            </div>
+            <div>
+                <div class="col margin-top10 col-custom span_12_of_12 margin0">
+                    <div class="digit-text-normal title truncate">{!if(selectedCoupon.exp_date==null,'Never Expire', selectedCoupon.exp_date)}</div>
+                </div>
+                <div class="col col-custom span_12_of_12 margin0">
+                    <div class="text-label-desc-normal">EXPIRY DATE</div>
+                </div>
+            </div>
+            <div>
+                <div class="col margin-top10 col-custom span_12_of_12 margin0">
+                    <div class="digit-text-normal title truncate">{!If(selectedCoupon.coupon_status=='Draft','Active' ,selectedCoupon.coupon_status)}</div>
+                </div>
+                <div class="col col-custom span_12_of_12 margin0">
+                    <div class="text-label-desc-normal">STATUS</div>
+                </div>
+            </div>
+            <div style="display:{!if(selectedCoupon.description != null,'block','none')}">
+                <div class="col margin-top10 col-custom span_12_of_12 margin0">
+                    <div class="digit-text-normal title truncate">{!selectedCoupon.description}</div>
+                </div>
+                <div class="col col-custom span_12_of_12 margin0">
+                    <div class="text-label-desc-normal ">DESCRIPTION</div>
+                </div>
+            </div>
+            <div style="display:{!if(selectedTemplateName != null && selectedTemplateName!= '','block','none')}">
+                <div class="col margin-top10 col-custom span_12_of_12 margin0">
+                    <div class="digit-text-normal title truncate">{!selectedTemplateName}</div>
+                </div>
+                <div class="col col-custom span_12_of_12 margin0">
+                    <div class="text-label-desc-normal">TEMPLATE NAME</div>
+                </div>
+            </div>
+        </div>
+</div>
+<script>
+function removeAssignCoupon(){
+    $('#alertBoxdescription').text("Are you sure you want to remove the coupon code {!if(selectedCoupon.out_coupon_cd!=null && LEN(selectedCoupon.out_coupon_cd) > 8 , LEFT(selectedCoupon.out_coupon_cd,8) + '...',selectedCoupon.out_coupon_cd)}? ");
+    $('#myYesButton').text('Yes');
+    $('#myNoButton').text('No');
+    $('#closeIcon').show();
+    $('#myYesButton').attr("onclick","$('#confirmBoxMine').hide();$('#myCurtain').show();removeCoupon();");
+    $('#myNoButton').attr("onclick","$('#confirmBoxMine').hide();");
+    $("#confirmBoxMine").show();
+}
+</script>
+<style>
+    .requiredLoaderBG{
+        background-color: rgb(71,71,71);
+        opacity:0.7;
+        filter:alpha(opacity=70);
+        //background-image:url('/img/loading.gif');
+        background-image:url("{!URLFOR($Resource.sf_resources,'/images/icons/ajax-loader.gif')}");
+        background-position: center center;
+        background-repeat: no-repeat;
+        height: 100%;
+        left: 0;
+        position: fixed;
+        text-align: center;
+        top: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+    #curtainText{
+        position: relative;
+        top: 54%;
+        color: white;
+    }
+</style>
+</apex:form>
+</apex:page>

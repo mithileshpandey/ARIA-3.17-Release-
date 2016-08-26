@@ -1,0 +1,5 @@
+<apex:page standardController="Client_Plan__c" extensions="AriaClientPlanRateSchedulesController" >
+
+    <c:AriaClientPlanRateSchedules planId="{!clientPlan.Id}" planName="{!clientPlan.name}" />
+
+</apex:page>

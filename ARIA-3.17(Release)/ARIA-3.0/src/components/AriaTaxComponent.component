@@ -1,0 +1,114 @@
+<apex:component >
+<apex:attribute name="tabName" type="string" description="This will take active tab as value" />
+<style>
+#tabs_wrapper {
+   width: 98%;
+   margin:0 auto;
+   margin-top :2px;
+}
+#tabs_container1 {
+   border-bottom: 1px solid #ccc;
+   
+}
+#tabs1 {
+   list-style: none;
+   padding: 5px 0 4px 0;
+   margin: 0 0 0 0px;
+   font: 0.90em arial;
+}
+#tabs1 li {
+   display: inline;
+}
+#tabs1 li a {
+   border: 1px solid #ccc;
+   padding: 4px 6px;
+   text-decoration: none;
+   background-color: #eeeeee;
+   border-bottom: none;
+   outline: none;
+   border-radius: 5px 5px 0 0;
+   -moz-border-radius: 5px 5px 0 0;
+   -webkit-border-top-left-radius: 5px;
+   -webkit-border-top-right-radius: 5px;
+   color:#000;
+}
+#tabs1 li a:hover {
+   background-color: #dddddd;
+   padding: 4px 6px;
+}
+#tabs1 li.active a {
+   border-bottom: 1px solid #fff;
+   background-color: #fff;
+   padding: 4px 6px 5px 6px;
+   border-bottom: none;
+}
+#tabs1 li.active a:hover {
+   background-color: #eeeeee;
+   padding: 4px 6px 5px 6px;
+   border-bottom: none;
+}
+#tabs1 li a.icon_accept:hover {
+   padding-left: 24px;
+}
+
+#tabs_content_container1 {
+   border: 1px solid #ccc;
+   border-top: none;
+   padding: 10px;
+   width: 98.4%;
+}
+ul li, ol li {
+margin-left: 0em;
+padding-left: 0;
+}
+.planTable {
+  width:100%; 
+  border-collapse:collapse; 
+}
+.planheader td{
+   color:#fff;
+   line-height:26px;
+   background-color:#a6afa2;
+   padding-top:1px;
+   
+}
+.planTable td{
+   padding-top:1px;
+   border-width: 1px;
+   border-style:inset;
+}
+.paggingIconExt{
+   padding-bottom: 0px;
+   width: 25px;
+   height: 22px;
+}
+.paggingText{
+         font-weight: bold;
+}   
+</style>
+<!-- 
+<apex:actionstatus id="status">
+    <apex:facet name="start">
+      <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 20%;opacity:.8;">
+          <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+          <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+      </div>
+  </apex:facet>
+</apex:actionstatus> 
+
+
+    <div id="tabs_container1">
+       <ul id="tabs1">
+           <li class="{!IF(tabName='Plan','active','')}" ><a href="javascript:changeTab('Plan');"><b>Client Plan Tax Setup</b></a></li>
+           <li class="{!IF(tabName='OTP','active','')}"><a href="javascript:changeTab('OTP');"><b>One Time Product Tax Setup</b></a></li>
+       </ul>
+   </div>
+   <div id="tabs_content_container1">
+       <apex:outputPanel rendered="{!tabName='OTP'}">
+           <c:AriaOTPTaxSetupComponent ></c:AriaOTPTaxSetupComponent>
+       </apex:outputPanel>
+       <apex:outputPanel rendered="{!tabName='Plan'}">
+           <c:AriaTaxSetupComponent ></c:AriaTaxSetupComponent>
+       </apex:outputPanel>
+   </div> -->
+</apex:component>

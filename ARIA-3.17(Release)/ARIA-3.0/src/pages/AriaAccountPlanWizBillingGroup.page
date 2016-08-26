@@ -1,0 +1,639 @@
+<apex:page controller="AriaAccountPlanWizBillingGroupCtrl" sidebar="false" tabStyle="Account">
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/> 
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css"/> 
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/AriaAccountPlanWizard.css')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/tooltip.css')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/AriaAccountPlanWizard.css')}"/> 
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'collapse.css')}" />
+<style>
+    body button, body .x-btn1, body .btn1 {
+    display: inline-block;
+    zoom: 1;
+    vertical-align: baseline;
+    outline: none;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    font: 14px/100% Arial, Helvetica, sans-serif;
+    padding: .35em .5em .5em;
+    text-shadow: 0 1px 1px rgba(0,0,0,.3);
+    -webkit-border-radius: .5em;
+    -moz-border-radius: .5em;
+    border-radius: .3em;
+    color: #fff;
+    border: solid 1px #428BCA;
+    background: #428bca;
+    background: -webkit-gradient(linear, left top, left bottom, from(#428BCA), to(#428BCA));
+    background: -moz-linear-gradient(top, #428BCA, #428BCA);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#428BCA', endColorstr='#428BCA');
+}
+body input.btn1 {
+    float: right;
+    padding: .35em .5em .5em;
+}
+body button:hover, body .btn1:hover{
+    background: #3278b4;
+    background: -webkit-gradient(linear, left top, left bottom, from(#3278b4), to(#3278b4));
+    background: -moz-linear-gradient(top, #3278b4, #3278b4);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#3278b4', endColorstr='#3278b4');
+    background-position: right 0px;
+}
+
+    .header3{
+    
+    
+    }
+    .tdpad{
+        padding-top: 15px;
+    }
+    .taxdetails-tooltip.right {
+        min-width: 300px;
+        left:160px;;
+        top: 50%;
+        margin-top: -25px;
+        height: 50px;
+        margin-left: 0px;
+        opacity: .7;
+    }
+    .taxdetails-tooltip.right:after {
+        content: '';
+        width: 0;
+        height: 0;
+        border-left: none;
+        border-top: 5px solid transparent;
+        border-bottom: 5px solid transparent;
+        border-right: 5px solid #000;
+        position: absolute;
+        bottom: auto;
+        left: -5px;
+        right: 0px;
+        margin: 0px;
+        top: 50%;
+        margin-top: -5px;
+      
+    }
+    /*.white {
+    color: #fff;
+    border: 1px solid #999999;
+    background: #999999;
+    background: -webkit-gradient(linear,left top,left bottom,from(#9C8E8E),to(#ededed));
+    }*/
+.btn-Cancel{
+	background: #999999;
+	padding: 6px 15px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    border: 1px solid #999999;
+    float: left;
+    font: 13px Arial, Helvetica, sans-serif;
+    font-family: arial;
+    cursor: pointer;
+}
+.btn-Save{
+	background: #428bca;
+	padding: 6px 15px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    margin: 7px 0px 7px 20px;
+    border: 1px solid #428bca;
+    float: right;
+    font: 13px Arial, Helvetica, sans-serif;
+    font-family: arial;
+    cursor: pointer;
+}
+</style>
+<script>
+    $j = jQuery.noConflict();
+    $j(document).ready(
+	    function(){
+	  		if($j("[id$='StmtContactId']").val() != ''){
+	  			$j('#editStmtContactLink').show();
+	  		}
+	  		if($j("[id$='BillContactId']").val() != ''){
+	  			$j('#editBillingContactLink').show();
+	  		}
+	  		var bgVar ="{!billGroupWrap.bgSFId}";
+	  		if(bgVar == '000000000000ABC'){
+	  			hideAllFields();
+	  		}
+	    }
+    );
+    var byPassPaymentValidation = false;
+    function togglePaymentMethodBG(parentVal){
+            var className = "";
+            hideAllPayment();
+            showHideBillContact(parentVal);
+            if(parentVal == 'Credit card'){
+                $j('.elepayInfo span').text('Credit card info will be collected during commit.');
+                $j(".elepayInfo").show(200);
+            }else if(parentVal == 'Electronic Check (ACH)'){
+                $j('.elepayInfo span').text('Electronic Check (ACH) info will be collected during commit.');
+                $j(".elepayInfo").show(200);
+            }else if(parentVal == 'Token Agreement Id'){
+                $j(".tokenAgreementid").show(200);
+                $j(".tokenWR").show(200);
+                $j(".tokenRO").hide(200);
+            }else if(parentVal == 'Net terms'){
+                $j(".netTermInfoDiv").show(200);
+            }else if(parentVal == 'Other/None'){
+            }
+       }
+       function hideAllPayment(){
+            $j(".ccinfoDiv").hide(200);
+            $j(".achInfoDiv").hide(200);
+            $j(".netTermInfoDiv").hide(200);
+            $j(".elepayInfo").hide(200);
+            $j(".tokenAgreementid").hide(200);
+            
+       }
+        function hideReadOnlyFields(){
+            $j(".NT_ROnly").hide();
+            $j(".CC_ROnly").hide();
+            $j(".ECR_ROnly").hide();
+            $j(".PM_ROnly").hide();
+        }
+        function showReadOnlyFields(){
+            $j(".NT_ROnly").show();
+            $j(".CC_ROnly").show();
+            $j(".ECR_ROnly").show();
+            $j(".PM_ROnly").show();
+        }
+        
+        function hideEditOnlyFields(){
+            $j(".NT").hide();
+            $j(".CC").hide();
+            $j(".EC").hide();
+        }
+        function showEditOnlyFields(){
+            $j(".NT").show();
+            $j(".CC").show();
+            $j(".EC").show();
+        }
+        function showHideBillContact(payMethod){
+            //alert({!permSetBillgrp.showc_bill_contact});
+            if({!permSetBillgrp.showc_bill_contact}){
+                return;
+            }
+            //alert(payMethod);
+            if(payMethod == ''){
+                $j(".bContact").closest('tr').hide();
+            }else{
+                $j(".bContact").closest('tr').show();
+            }
+        }
+        function showReadOnly(pmVal){
+        //alert(pmVal);
+            var parentVal = pmVal;
+            hideEditOnlyFields();
+            hideReadOnlyFields();
+            $j(".PM_ROnly").show();
+            if(parentVal == 'Credit card'){
+                $j(".ccinfoDiv").show(200);
+                $j(".CC_ROnly").show();
+            }else if(parentVal == 'Electronic Check (ACH)'){
+                $j(".achInfoDiv").show(200);
+                $j(".ECR_ROnly").show();
+            }else if(parentVal.indexOf('Net terms') > -1){
+                $j(".netTermInfoDiv").show(200);
+                $j(".NT_ROnly").show();
+            }else if(parentVal == 'Other/None'){
+    
+            }else if(parentVal == 'Token Agreement Id'){
+                $j(".tokenAgreementid").show(200);
+                $j(".tokenWR").hide(200);
+                $j(".tokenRO").show(200);
+            }
+        }
+        
+        function changePaymethod(){
+            hideAllPayment();
+            showEditOnlyFields();
+            hideReadOnlyFields();
+            $j(".PM_ROnly").hide();
+            $j(".pmoptionList").show();
+            var obj= $j(".pmoptionList");
+            obj.val('');
+            obj.trigger("onchange");
+            document.getElementById('paymentLink').style.display='none';
+            document.getElementById('undoLink').style.display='';
+            byPassPaymentValidation = true;
+            $j(".hasUserChangedPayment").attr("checked",true);
+            //showHideBillContact();
+        }
+        
+        function undoChange(currPaymthd){
+            hideAllPayment();
+            hideEditOnlyFields();
+            hideReadOnlyFields();
+            $j(".PM_ROnly").show();
+            $j(".pmoptionList").hide();
+            document.getElementById('paymentLink').style.display='';
+            document.getElementById('undoLink').style.display='none';
+            //alert(currPaymthd);
+            showReadOnly(currPaymthd);
+            showHideBillContact();
+            byPassPaymentValidation = false;
+            $j(".hasUserChangedPayment").attr("checked",false);
+            
+        }
+        
+        function backOriginalTextColor(){
+             $j(".token" ).css('border-color','black');
+             $j(".tokenlabl" ).css('color','black');
+        }
+        var isPayMethodReq = false;
+        function paymentValidation(obj){
+            //alert($j(".pmoptionList").val());
+            if(isPayMethodReq == true && byPassPaymentValidation && $j(".pmoptionList").val() == ''){
+                alert('Please provide Payment Method.');
+                undoChange('{!billGroupWrap.billGrp.Primary_Payment_Method__r.Payment_Method__c}'); 
+                return false;
+            }
+            
+            $j("span.errorSpan").text(''); 
+            backOriginalTextColor();
+            $j(".errPera").hide();
+            var picklistVal = $j(".pmoptionList").val();
+            var rst = true;
+            var expDateFlag = false;
+            var errString = '';
+            var andtxt1 = 'and', andtxt2 = 'and';
+            if(picklistVal == 'Credit card_unuse'){
+                $j(".CC").each(function() {
+                        var element_value = $j(this).val();
+                        var element_id = $j(this).attr("id");
+                        if(element_id.includes('ccNumber') && element_value == ''){
+                            errString = 'Credit Card Number ';
+                            $j(".ccn" ).css('color','red');
+                            rst = false;
+                        }else if(element_id.includes('cvvNumber') && element_value == ''){
+                            errString = errString == ''? 'CVV Number ' : errString + andtxt1 +' CVV Number '; 
+                            $j(".cvv" ).css('color','red');
+                            rst = false;
+                        }else if(element_id.includes('mmCC') && element_value == ''){
+                            errString = errString == ''? 'Expiration Date ' : errString +andtxt2+' Expiration Date ';
+                            andtxt1 = ',';
+                            expDateFlag = true;
+                            $j(".ed" ).css('color','red');
+                            rst = false;
+                        }else if(element_id.includes('yyCC') && element_value == ''){
+                            if(!expDateFlag){
+                                errString = errString == ''? 'Expiration Date ' : errString +andtxt2+', Expiration Date ';
+                            }
+                            andtxt1 = ',';
+                            $j(".ed" ).css('color','red');
+                            rst = false;
+                        }
+                    });
+                }else if(picklistVal == 'Electronic Check (ACH)_temp'){
+                    $j(".EC").each(function() {
+                        var element_value = $j(this).val();
+                        var element_id = $j(this).attr("id");
+                        if(element_id.includes('routNumber') && element_value == ''){
+                            //alert('Please provide Routing number.');
+                            errString = 'Routing Number ';
+                            $j(".rn" ).css('color','red');
+                            rst = false;
+                            //return false;
+                        }else if(element_id.includes('acctNumber') && element_value == ''){
+                            //alert('Please Account number.');
+                            errString = errString == ''? 'Account Number ' : errString + andtxt1 +' Account Number';
+                            $j(".an" ).css('color','red');
+                            rst = false;
+                            //return false;
+                        }
+                    });
+                }else if(picklistVal == 'Token Agreement Id'){
+                    $j(".token").each(function() {
+                        var element_value = $j(this).val();
+                        var element_id = $j(this).attr("id");
+                        if(element_id.includes('tokenIdtxt') && element_value == ''){
+                            //alert('Please provide Routing number.');
+                            errString = 'Token Agreement Id ';
+                            $j(".token" ).css('border-color','red');
+                            $j(".tokenlabl" ).css('color','red');
+                            
+                            rst = false;
+                            //return false;
+                        }
+                    });
+                }
+                
+                
+                
+                if(errString != ''){
+                    errString = '<b>Error</b> You must enter a '+errString;
+                    $j(".errPera").show();
+                    $j("span.errorSpan").append(errString); 
+                }
+               // alert(rst);
+               if(rst){
+                   saveBillGroup();
+               }
+                
+                return false;
+            }
+			function openContactTab(contId) {
+				var contactId = document.getElementById(contId).value;
+				window.open('/'+contactId,'_blank');	
+			}
+			function hideAllFields(){
+				$j(".notifyMetod").hide(200);
+				$j(".NotificationTemplate").hide(200);
+				$j(".stmtTemplate").hide(200);
+				$j(".creditNoteTemplate").hide(200);
+				$j(".primaryPaymentMetod").hide(200);
+				$j(".billGrpName").hide(200);
+				$j(".clientDefinedId").hide(200);
+				$j(".billingContactCls").hide(200);
+				$j(".statmentContactCls").hide(200);
+				$j(".createNew").hide(200);
+				hideAllPayment();
+			}
+			function populateBillGroup(bgVar){
+			if($j(bgVar).val() == '000000000000ABC'){ 
+				hideAllFields();
+	        }else{
+				populateBillingGroup();
+			   }
+			}
+
+</script>
+
+<apex:form >
+<apex:actionstatus id="LoadingStatus">
+                <apex:facet name="start">
+                    <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 15%;opacity:.8;">
+                        <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+                        
+                        <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+                    </div>
+                </apex:facet>
+            </apex:actionstatus>
+<c:AriaPriceIndicatorComponent recid="{!$CurrentPage.parameters.id}" context="{!$CurrentPage.parameters.context}" selectedCurrency="{!$CurrentPage.parameters.accountCurrency}" accountName="{!accountName}" billingInterval="{!$CurrentPage.parameters.billingInterval}" />
+    
+    <apex:actionFunction name="populateBillingGroup" action="{!populateBillingGroup}" oncomplete="" rerender="mainDiv"  status="loadStatus">
+    </apex:actionFunction>
+    <apex:actionFunction name="populateNewBillingGroup" action="{!populateBillingGroup}" oncomplete="" rerender="mainDiv"  status="loadStatus">
+    <apex:param name="newBillGrp" value="New" assignTo="{!billGroupWrap.bgSFId}"/>
+    <apex:param name="redirectToExistBG" value="true" assignTo="{!redirectToExistBillingGroup}"/>
+    </apex:actionFunction>
+    <apex:actionstatus id="loadStatus">
+        <apex:facet name="start">
+            <div style="position:fixed; top:0; left:0; background:rgba(0,0,0,0.6); z-index:5; width:100%; height:100%;"></div>
+        </apex:facet> 
+    </apex:actionstatus>
+    <apex:outputPanel layout="block" style="padding-left: 10px;" id="mainDiv">
+        <table width="100%" border="0">
+            <tr>
+                <td>
+                   <span style="font-size:19px;">Billing Group</span>
+                </td>
+            </tr>
+             <tr>
+                <td>
+                   <span style="font-size:14px;">Edit an existing billing group or create a new one and configure settings.</span>
+                   <p style="color:red;display:none;" class="errPera" ><span class="errorSpan" style="background-color: rgba(255, 192, 203, 0.51);padding: 7px;border-radius: 3px;"><b>ERROR:</b></span></p>
+                </td>
+            </tr>
+            <tr style="display:{!IF(billGroupWrap.avlBillingGroups.size > 1,'','none')}">
+                <td style="padding-top: 5px;">
+                   <span style="font-size:13px;" class="taxTotal"><b>Select Billing Group</b>
+                        <img class="taxInfo"  src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" style="vertical-align: text-bottom;margin-left: 4px;"/>
+                            <div class="taxdetails-tooltip right" >
+                                   Editing a billing group can lead to potentially losing plans.
+                                </div>
+                   </span><br/>
+                   <apex:selectList value="{!billGroupWrap.bgSFId}" size="1" style="width: 240px;margin-top: 3px;" onchange="populateBillGroup(this);">
+                       <apex:selectOptions value="{!billGroupWrap.avlBillingGroups}"></apex:selectOptions>
+                   </apex:selectList>
+                   &nbsp;&nbsp;<apex:outputPanel rendered="{!if(billGroupWrap.avlBillingGroups.size >1,true,false)}"><a href="#" class="createNew" style="color:blue;" onclick="populateNewBillingGroup();">Create New</a></apex:outputPanel>
+                </td>
+            </tr>
+             <tr class="billGrpName">
+                <td class="tdpad">
+                   <span style="font-size:13px;" class="taxTotal"><b>Billing Group Name</b>
+                   <img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" style="vertical-align: text-bottom;margin-left: 4px;"/>
+                       <div class="taxdetails-tooltip right" >
+                            If no value is entered, SFDC will populate a value with BG - XXXX once it saved.
+                        </div>
+                   </span><br/>
+                   <apex:inputtext style="width: 224px;margin-top: 3px;" value="{!billGroupWrap.billGrp.Name}"/>
+                   &nbsp;&nbsp;<apex:outputPanel rendered="{!if(billGroupWrap.avlBillingGroups.size = 1,true,false)}"><a href="#" style="color:blue;"  onclick="populateNewBillingGroup();">Create New</a></apex:outputPanel>
+                </td>
+            </tr>
+            <tr class="clientDefinedId" style="display:{!IF(!permSetBillgrp.show_client_def_id,'','none')}">
+                <td class="tdpad">
+                   <span style="font-size:13px;" class="taxTotal"><b>Client Defined Identifier</b>
+                   <img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" style="vertical-align: text-bottom;margin-left: 4px;"/>
+                       <div class="taxdetails-tooltip right"    style="margin-left: 20px;">
+                            If no value is entered, SFDC will populate a value with random number once it saved.
+                        </div>
+                   </span><br/>
+                   <apex:inputtext rendered="{!!permSetBillgrp.show_client_def_id}" style="width: 224px;margin-top: 3px;" value="{!billGroupWrap.billGrp.Aria_Client_Def_Billing_Group_Id__c}"/>
+                </td>
+            </tr>
+            
+             <tr class="notifyMetod" style="display:{!IF(AND(!permSetBillgrp.show_notf_mthd, billGroupWrap.nm_options.size > 1),'','none')}">
+                <td class="tdpad">
+                   <span style="font-size:13px;"><b>Notification Method</b></span><br/>
+                   <apex:selectList size="1" value="{!billGroupWrap.billGrp.Notify_Method__c}" style="width: 240px;margin-top: 3px;"> 
+                    <apex:selectOptions value="{!billGroupWrap.nm_options}"></apex:selectOptions>
+                </apex:selectList>
+                </td>
+            </tr>
+             <tr class ="NotificationTemplate" style="display:{!IF(AND(!permSetBillgrp.show_notf_temp,billGroupWrap.ntg_options.size > 1) ,'','none')}">
+                <td class="tdpad">
+                    <apex:outputPanel layout="none" rendered="{!(billGroupWrap.ntg_options.size > 1)}">
+                   <span style="font-size:13px;"><b>Notification Method Template</b></span><br/>
+                    <apex:selectList size="1" value="{!billGroupWrap.billGrp.Notification_Template__c}" style="width: 240px;margin-top: 3px;"> 
+                        <apex:selectOptions value="{!billGroupWrap.ntg_options}"></apex:selectOptions>
+                    </apex:selectList>
+                    </apex:outputPanel>
+                </td>
+            </tr>
+             <tr class="stmtTemplate" style="display:{!IF(!permSetBillgrp.show_stat_temp,'','none')}">
+                <td class="tdpad">
+                    <apex:outputPanel layout="none" rendered="{!(billGroupWrap.st_options.size > 1)}">
+                       <span style="font-size:13px;"><b>Statement Template</b></span><br/>
+                       <apex:selectList size="1" value="{!billGroupWrap.billGrp.Statement_Template__c}" style="width: 240px;margin-top: 3px;"> 
+                       <apex:selectOptions value="{!billGroupWrap.st_options}"></apex:selectOptions>
+                    </apex:selectList>
+                 </apex:outputPanel>
+                </td>
+            </tr>
+             <tr class ="creditNoteTemplate" style="display:{!IF(!permSetBillgrp.show_crd_note_temp,'','none')}">
+                <td class="tdpad">
+                        <apex:outputPanel layout="none" rendered="{!(billGroupWrap.cnt_options.size > 1)}">
+                       <span style="font-size:13px;"><b>Credit Note Template</b></span><br/>
+                       <apex:selectList size="1" value="{!billGroupWrap.billGrp.Aria_Credit_Note_Template__c}" style="width: 240px;margin-top: 3px;" styleClass="Credit_Note_Template" >
+                         <apex:selectOptions value="{!billGroupWrap.cnt_options}"></apex:selectOptions>
+                    </apex:selectList>
+                </apex:outputPanel>
+                </td>
+            </tr>
+             <tr class="primaryPaymentMetod" style="display:{!IF(!permSetBillgrp.show_pay_mthd,'','none')}">
+                <td class="tdpad">
+                   <span style="font-size:13px;"><b>Primary Payment Method</b></span><br/>
+                   <apex:outputLabel value="{!billGroupWrap.billGrp.Primary_Payment_Method__r.Payment_Method__c}" styleClass="PM_ROnly"/>
+                   <apex:selectList size="1" styleClass="pmoptionList" value="{!billGroupWrap.sel_payment_method}" style="width: 240px;margin-top: 3px;" onchange="togglePaymentMethodBG(this.value);"> 
+                        <apex:selectOptions value="{!billGroupWrap.pmt_Options}"></apex:selectOptions>
+                    </apex:selectList> &nbsp;&nbsp;<a id="paymentLink" style="color: blue;" href="javascript:changePaymethod();"><b>Change</b></a><a id="undoLink" style="color: blue;" href="javascript:undoChange('{!billGroupWrap.billGrp.Primary_Payment_Method__r.Payment_Method__c}');"><b>Undo</b></a>
+                </td>
+            </tr>
+            <tr style="display:{!IF(!permSetBillgrp.show_pay_mthd,'','none')}">
+                <td class="tdpad">
+                <apex:outputPanel id="elepayInfo" style="margin-left:-20px;" styleClass="elepayInfo"  layout="block">
+                    <span style="color:red;padding-left:20px;">Credit card info will be collected during commit.</span>
+                </apex:outputPanel>
+                <apex:outputPanel id="ccinfoDiv" styleClass="ccinfoDiv"  layout="block">
+                   <table width="60%" border="0">
+                        <tr>
+                            <td align="left" width="27%">
+                                <span style="font-size:13px;" class="ccn"><b>Credit Card Number</b></span><br/>
+                                <apex:outputLabel value="************{!billGroupWrap.billGrp.Primary_Payment_Method__r.suffix__c}" styleClass="CC_ROnly"/>
+                            </td>
+                            <td align="left" width="13%">
+                                <span style="font-size:13px;" class="cvv"><b>CVV</b></span><br/>
+                                <apex:outputLabel value="***" styleClass="CC_ROnly"/>
+                            </td>
+                            <td align="left">
+                                <span style="font-size:13px;" class="ed"><b>Expiration Date</b></span><br/>
+                                <apex:outputLabel rendered="{! !ISNULL(billGroupWrap.billGrp.Primary_Payment_Method__r.cc_expire_mm__c)}" value="{!MonthAbbreviationName[billGroupWrap.billGrp.Primary_Payment_Method__r.cc_expire_mm__c]}" styleClass="CC_ROnly"/>
+                                &nbsp;&nbsp;
+                                <apex:outputLabel value="{!billGroupWrap.billGrp.Primary_Payment_Method__r.cc_Expire_yyyy__c}" styleClass="CC_ROnly"/>
+                            </td>
+                            <td align="left">
+                                <span style="font-size:13px;"><b>Tokenized Credit Card</b></span><br/>
+                                <apex:inputCheckbox styleClass="CC_ROnly" disabled="true" value="{!billGroupWrap.billGrp.Primary_Payment_Method__r.isTokenized__c}"/>
+                            </td>
+                        </tr>
+                  </table>
+                 </apex:outputPanel> 
+                 <apex:outputPanel id="achInfoDiv" styleClass="achInfoDiv"  layout="block">
+                   <table width="60%" border="0">
+                        <tr>
+                            <td align="left" width="27%">
+                                <span style="font-size:13px;" class="rn"><b>Routing Number</b></span><br/>
+                                <apex:outputLabel value="***********" styleClass="ECR_ROnly"/>
+                            </td>
+                            <td align="left" width="20%">
+                                <span style="font-size:13px;" class="an"><b>Account Number</b></span><br/>
+                                <apex:outputLabel value="***********" styleClass="ECR_ROnly"/>
+                            </td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                  </table>
+                 </apex:outputPanel> 
+                 <div id="netTermInfoDiv" class="netTermInfoDiv">
+                   <table width="60%" border="0">
+                        <tr>
+                            <td align="left" width="30%">
+                                <span style="font-size:13px;" ><b>Payment Terms</b><br/></span>
+                                 <apex:selectRadio value="{!billGroupWrap.net_term}"  styleClass="NT" style="margin-left: -18px;">
+                                    <apex:selectOptions value="{!NetTermsVal2}"></apex:selectOptions> 
+                                </apex:selectRadio>
+                                <apex:selectRadio disabled="true" value="{!billGroupWrap.billGrp.Primary_Payment_Method__r.Net_Terms__c}"  styleClass="NT_ROnly" style="margin-left: -18px;">
+                                    <apex:selectOptions value="{!NetTermsVal2}"></apex:selectOptions> 
+                                </apex:selectRadio>
+                            </td>
+                            <td align="left" width="20%">
+                                
+                            </td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                  </table>
+                 </div>
+                 <div id="tokenAgreementid" class="tokenAgreementid">
+                   <table width="60%" border="0">
+                        <tr>
+                            <td align="left" width="30%">
+                                <span style="font-size:13px;" class="tokenlabl"><b>Token / Agreement ID</b><br/></span>
+                                <div class="tokenWR">
+                                <apex:outputPanel styleClass="requiredInput" layout="block">
+                                <div class="requiredBlock"></div>
+                                <apex:inputText id="tokenIdtxt" styleClass="token" alt="Token / Agreement ID" onblur="$j(this).val($j(this).val().replace(/\s/g,''));"  value="{!billGroupWrap.tokenAgreementId}" style="width: 222px;margin-top: 3px;" />
+                                </apex:outputPanel>
+                                </div>
+                                <apex:outputLabel value="{!billGroupWrap.billGrp.Primary_Payment_Method__r.Agreement_Id__c}" styleClass="tokenRO"/>
+                            </td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                  </table>
+                 </div>
+                 
+                </td>
+            </tr>
+            
+            <tr class="billingContactCls" style="display:{!IF(!permSetBillgrp.showc_bill_contact,'','none')}">
+                <td style="padding-top: 5px;"><br/>
+<!--                 && billGroupWrap.billGrp.Primary_Payment_Method__r.Payment_Method__c = null -->
+                   <apex:outputLabel style="font-weight: 600;font-size:13px;" value="Billing Contact" styleClass="bContact" rendered="{!if((isPersonAccountEnable && isPersonaAccount  && !isAcctHaveAriaId),false,true)}"/><br/>
+                   <apex:outputPanel styleClass="bContact" rendered="{!if((isPersonAccountEnable && isPersonaAccount  && !isAcctHaveAriaId),false,true)}"> 
+                    <apex:inputHidden id="BillContactId"  value="{!billGroupWrap.billContactId}"/> 
+                    <apex:inputText id="BillContactName"  value="{!billGroupWrap.billContactDisplayName}" style="width:54%;margin-top: 3px;" disabled="{!if(OR((isPersonAccountEnable && isPersonaAccount  && isAcctHaveAriaId),(permSetBillgrp.ro_bill_contact)),true,false)}" html-placeholder="Enter Contact Name" />          
+                    <c:AutoCompleteComponent autoAccountId="{!account.Id}" autoContactType="billingContact" autoContactId="{!$Component.BillContactId}" autoContactName="{!$Component.BillContactName}"/>
+                	<a id ="editBillingContactLink" href="#" onclick="openContactTab('{!$Component.BillContactId}');return false;" style="color:blue;display:none;">Edit</a>
+                </apex:outputPanel>
+                </td>
+            </tr>
+            <tr class="statmentContactCls" style="display:{!IF(!permSetBillgrp.show_st_contact,'','none')}">
+                <td style="padding-top: 5px;">
+                   <apex:outputLabel style="font-weight: 600;font-size:13px;" value="Statement Contact" rendered="{!if((isPersonAccountEnable && isPersonaAccount && !isAcctHaveAriaId), false,true)}"/><br/>
+                   <apex:outputPanel rendered="{!if((isPersonAccountEnable && isPersonaAccount && !isAcctHaveAriaId), false,true)}">
+                    <apex:inputHidden id="StmtContactId" value="{!billGroupWrap.stmtContactId}"/>       
+                    <apex:inputText id="StmtContactName" disabled="{!if((isPersonAccountEnable && isPersonaAccount),true,false)}" value="{!billGroupWrap.stmtContactDisplayName}" style="width:54%;margin-top: 3px;" html-placeholder="Enter Contact Name" />           
+                    <c:AutoCompleteComponent autoAccountId="{!account.Id}" autoContactType="stmtContact" autoContactId="{!$Component.StmtContactId}" autoContactName="{!$Component.StmtContactName}"/>
+                	<a id ="editStmtContactLink" href="#" onclick="openContactTab('{!$Component.StmtContactId}');return false;" style="color:blue;display:none;">Edit</a>
+                </apex:outputPanel>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 25px;">
+                <input type="button" onclick ="cancelBillGroup();" class="btn-Cancel" value="Cancel" style="float:left;"/>
+<!--                 <input type="button" class="btn btn1" value="Save" style="float:right; margin-right: 20px;" onclick="return paymentValidation(this);"/> -->
+                <apex:commandButton value="Save" style="float:right; margin-right: 20px;"  styleClass="btn1"  onclick="return paymentValidation(this);"/> 
+                <apex:actionFunction name="saveBillGroup" status="LoadingStatus" reRender="mainDiv" action="{!saveBillGroup}"  ></apex:actionFunction>
+                <apex:actionFunction name="cancelBillGroup" action="{!cancelBillGroup}" status="LoadingStatus" ></apex:actionFunction>
+               </td>
+            </tr>
+        </table>
+        <apex:inputCheckbox value="{!billGroupWrap.hasUserChangedPayment}" styleClass="hasUserChangedPayment" id="hasUserChangedPayment" style="display:none;"/>
+        <script>
+                    var obj= $j(".pmoptionList");
+                    hideAllPayment();
+                    //alert('{!billGroupWrap.billGrp.Primary_Payment_Method__r.Aria_Id__c}');
+                    if('{!billGroupWrap.billGrp.Primary_Payment_Method__r.Aria_Id__c}' == ''){
+                        hideReadOnlyFields();
+                        showEditOnlyFields();
+                        document.getElementById('paymentLink').style.display='none';
+                        document.getElementById('undoLink').style.display='none';
+                        byPassPaymentValidation = true;
+                        showHideBillContact('{!billGroupWrap.billGrp.Primary_Payment_Method__r.Payment_Method__c}');
+                        obj.val('{!billGroupWrap.billGrp.Primary_Payment_Method__r.Payment_Method__c}');
+                        obj.trigger("onchange");
+                    }else{
+                        obj.hide();
+                        showReadOnly('{!billGroupWrap.billGrp.Primary_Payment_Method__r.Payment_Method__c}');
+                        document.getElementById('paymentLink').style.display='';
+                        document.getElementById('undoLink').style.display='none';
+                        byPassPaymentValidation = false;
+                        showHideBillContact('{!billGroupWrap.billGrp.Primary_Payment_Method__r.Payment_Method__c}');
+                    }
+                    
+                    isPayMethodReq = {!billGroupWrap.isPayMethodReq};
+                    
+                    
+                 </script>
+        
+    </apex:outputPanel>
+           
+</apex:form>
+</apex:page>

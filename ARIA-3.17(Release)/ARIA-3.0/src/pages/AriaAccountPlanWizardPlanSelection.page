@@ -1,0 +1,2076 @@
+<apex:page controller="AriaAccountPlanWizardPlanSelectionCtrl" docType="html-5.0" showHeader="true" sidebar="false"  tabStyle="Account" id="thePage" action="{!initPlanSelectection}">
+
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'collapse.css')}" /> 
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<apex:includeScript value="https://code.jquery.com/jquery-1.12.0.min.js" /> 
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/AriaAccountPlanWizard.css')}"/> 
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.js"></script>
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css"/>
+<style>
+
+.ui-dialog-buttonset{
+	width:100%;
+}
+.leftFloatClass{
+	background: #999 !important;
+    color: #fff !important;
+}
+.rightFloatClass{
+	float: right !important;
+	background: #428BCA !important;
+    color: #fff !important;
+    border-color: #428BCA !important;
+}
+/*Rakesh Start */
+.scrollDiv {
+	min-height: 320px;
+	/* you will need to pass height from main page and this height will be less than 40px as pe main page dialog height*/
+    /*max-height: 420px; 
+    overflow-y: auto;*/
+	/*background: #f8f8f8*/
+}
+.buttonPanel {
+    padding-top: 25px;
+    /*background: #f8f8f8;*/
+    padding-bottom: 2px; 
+}
+.button:hover {
+    text-decoration: none;
+}
+.button, .button:focus {
+    display: inline-block;
+    zoom: 1;
+    vertical-align: baseline;
+    outline: none;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    font: 14px/100% Arial, Helvetica, sans-serif;
+    padding: .35em .5em .5em;
+    text-shadow: 0 1px 1px rgba(0,0,0,.3);
+    -webkit-border-radius: .5em;
+    -moz-border-radius: .5em;
+    border-radius: .3em;
+    -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    -moz-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    box-shadow: 0 1px 2px rgba(0,0,0,.2);
+}
+.blue, .blue:focus{
+	float:right;
+    color: #fff;
+    border: solid 1px #0076a3;
+    background: #428bca;
+    background: -webkit-gradient(linear, left top, left bottom, from(#00adee), to(#0078a5));
+    background: -moz-linear-gradient(top, #00adee, #0078a5);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#00adee', endColorstr='#0078a5');
+}
+.blue:hover {
+    background: #007ead;
+    background: -webkit-gradient(linear, left top, left bottom, from(#0095cc), to(#00678e));
+    background: -moz-linear-gradient(top, #0095cc, #00678e);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0095cc', endColorstr='#00678e');
+}
+/*.white {
+    float:left;
+    color: #fff;
+    border: solid 1px #0076a3;
+    background: #428bca;
+    background: -webkit-gradient(linear, left top, left bottom, from(#00adee), to(#0078a5));
+    background: -moz-linear-gradient(top, #00adee, #0078a5);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#00adee', endColorstr='#0078a5');
+}*/
+/*.white {
+    color: #fff;
+    border: 1px solid #999999;
+    background: #999999;
+    background: -webkit-gradient(linear,left top,left bottom,from(#9C8E8E),to(#ededed));
+    }*/
+ 
+.white:hover {
+    background: #ededed;
+    background: -webkit-gradient(linear,left top,left bottom,from(#999999),to(#dcdcdc));
+    background: -moz-linear-gradient(top,#999999,#dcdcdc);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#dcdcdc');
+}
+
+/*.white:hover {
+    background: #999999;
+    background: -webkit-gradient(linear, left top, left bottom, from(#0095cc), to(#00678e));
+    background: -moz-linear-gradient(top, #0095cc, #00678e);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0095cc', endColorstr='#00678e');
+}*/
+/* Rakesh Ends*/
+.paggingTD{
+	padding-left:0px;
+	padding-right:0px;
+}
+  
+        h2 span{
+        	padding: 0 16px;
+		    background: #f97417 top right no-repeat;
+		    color: #fff;
+        }
+      
+		.accountTab .tertiaryPalette, .individualPalette .accountBlock .tertiaryPalette, .layoutEdit .individualPalette .accountBlock .tertiaryPalette {
+		    background-color: #F7F7F7 !important;
+		    border-color: #F7F7F7 !important;
+		}
+		
+		.apexp .bPageBlock.apexDefaultPageBlock .pbBody .pbSubheader {
+		    border-top: 0 !important;
+		    color: #0C0B0B !important;
+		}
+		
+		h3 { 
+			margin-left: 15px !important; 
+		}
+		.apexp .bPageBlock.apexDefaultPageBlock .pbBody .pbSubheader .hideListButton {
+		    background-position: 1px -11px;
+		}
+		.apexp .bPageBlock.apexDefaultPageBlock .pbBody .pbSubheader .showListButton {
+		    background-position: 1px -1px;
+		}
+		.pbSubsection {
+		   /*margin-left: 32px;*/	
+		}
+	
+	.accountTab .pageTitleIcon, .individualPalette .accountBlock .pageTitleIcon {
+    background-image: url('{!URLFOR($Resource.QuoteIcon)}') !important;
+    background-position: 0 -3px; 
+    width: 51px;
+    height: 47px;
+}
+.headerRow{
+    vertical-align:middle !important; 
+    background: #eeeeee !important; /* Old browsers */
+    background: -moz-linear-gradient(top,  #eeeeee 0%, #cccccc 100%) !important; /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#eeeeee), color-stop(100%,#cccccc)) !important; /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* Chrome10+,Safari5.1+ */ 
+    background: -o-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* IE10+ */
+    background: linear-gradient(to bottom,  #eeeeee 0%,#cccccc 100%) !important; /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#eeeeee', endColorstr='#cccccc',GradientType=0 ) !important; /* IE6-9 */ 
+}
+.divborder tr td{
+            border:0px !important;
+            vertical-align:top !important;
+        }
+        .forChangeTitleColor .tertiaryPalette{
+            background-color: #000042 !important;
+        }
+        
+        
+        .ui-widget-overlay {
+            background: #aaaaaa url(images/ui-bg_flat_0_aaaaaa_40x100.png) 50% 200% repeat-x !important;
+            opacity: .3;
+            filter: Alpha(Opacity=30);
+        }
+        .bPageBlock .dataCol {
+    padding-top: 2px;
+    padding-right: 2px;
+    padding-bottom: 2px;
+    padding-left: 0px;
+    text-align: left;
+}
+.navigation{
+    display: block;
+    background-color: #8a9ebe;
+    height: 18px;
+    font-size: 1.1em;
+    padding-top: 2px;
+    padding-left: 18px;
+    font-weight: bold;
+    margin-left: 13px;
+    margin-right: 15px;
+}
+
+.navigation a{
+    color: white;
+}
+
+.gradiantHeader{
+	font-size:13px;
+	font-family: arial,sans-serif;
+	text-align: left;
+	vertical-align: middle;
+    border-width: 1px;
+    padding: 6px;
+    border-style: solid;
+    border-color: #CCCCCC;
+    background-color:#D4D4D4;
+    height:20px;
+    background: #eeeeee; /* Old browsers */
+    background: -moz-linear-gradient(top,  #eeeeee 0%, #cccccc 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#eeeeee), color-stop(100%,#cccccc)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  #eeeeee 0%,#cccccc 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  #eeeeee 0%,#cccccc 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  #eeeeee 0%,#cccccc 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  #eeeeee 0%,#cccccc 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#eeeeee', endColorstr='#cccccc',GradientType=0 ); /* IE6-9 */
+}
+
+.gradiantHeader.service{
+	font-size:12px;
+	vertical-align: middle !important;
+	border-right-width: 1px !important;
+	border-right-color: white !important;
+	padding-left: 5px !important;
+}
+.serviceContent{
+
+	vertical-align: top !important;
+	border-left-width: 1px !important;
+    border-left-color: #CCCCCC !important;
+    border-right-width: 0px !important;
+    border-right-color: #CCCCCC !important;
+    border-top-width: 1px !important;
+    border-top-color: #CCCCCC !important;
+    border-bottom-width: 0px !important;
+    border-bottom-color: #CCCCCC !important;
+	padding-left: 5px !important;
+	padding-top: 10px !important;
+}
+.serviceContent.rateTier{
+	border-left-color: #FFFFFF !important;
+	border-right-color: #FFFFFF !important;
+    border-top-color: #FFFFFF !important;
+	border-bottom-color: #FFFFFF !important;
+	background-color: #F8F8F8 !important;
+}
+
+.myTable{
+    border-width: 0px !important;
+    border-style: solid !important;
+    border-color: #fff ;
+    font-size: 12px !important;	
+    background-color:#ffffff ;    
+}
+.myTable tbody tr:nth-child(even) {
+	background-color:#eeeeee !important ;
+}
+.myTable tbody tr td {
+	border-width: 1px !important;
+	border-style: solid !important;
+    border-color: #fff ;
+}
+table.altrowstable {
+    font-family: verdana,arial,sans-serif;
+    font-size:12px;
+    color:#333333;
+    /*border-width: 1px;*/
+    border-color: #CCCCCC;
+    border-collapse: collapse;
+    text-align:left
+}
+table.altrowstable th {
+    font-size:12px;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #CCCCCC;
+    border-left: 1px solid #f8f8f8;
+    border-right: 1px solid #f8f8f8;
+
+}
+table.altrowstable td {
+    border-width: 0px;
+    padding-left: 4px !important; 
+    padding-right: 8px !important;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    border-style: solid;
+    /*border-color: #CCCCCC;*/
+    /*border-left: 1px solid #f8f8f8;*/
+    border-right: 2px solid #f8f8f8;
+    /*border-top: 0.5px solid #f8f8f8;*/
+    border-bottom: 1px solid #f8f8f8;
+}
+.wrap-text {
+	display: inline-block;
+    width: 95%;
+    word-wrap: break-word;
+}
+table.altrowstable td:first-child {
+	border-right: none;
+	//padding-left: 0px !important; 
+}
+table.altrowstable td:last-child {
+	border-right: none;
+    padding-right: 0px !important;
+}
+table.subaltrowstable {
+    font-family: verdana,arial,sans-serif;
+    font-size:12px;
+    color:#333333;
+    border-width: 1px;
+    border-color: #CCCCCC;
+    border-collapse: collapse;
+    text-align:left
+}
+table.subaltrowstable th {
+    font-size:13px;
+    border-width: 1px;
+    padding: 0px;
+    border-style: solid;
+    border-color: #CCCCCC;
+
+}
+table.subaltrowstable td {
+    border-width: 1px;
+    padding: 6px;
+    border-style: solid;
+    border-color: #CCCCCC;
+}
+.totalClass{
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    font-stretch: expanded;
+    color: #333;
+}
+.planConfiglabel{
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    font-stretch: expanded;
+    color: #333;
+}
+.oddrowcolor{
+    background-color:#FFFFFF;
+}
+.evenrowcolor{
+    background-color:#eeeeee;
+}
+.promotionalrow{
+    background-color:#FAE4D6;
+}
+.replacedrow{
+    background-color:#F5E389;
+}
+.selectedRow{
+	background-color:#1797c0;
+    color:#FFFFFF;
+    border-color: #1797c0;
+}
+.newPlanActionAlign{
+    padding-left:10px;
+    text-align:center;
+}
+.extPlanActionAlign{
+    padding-left:10px;
+    text-align:center;
+}
+
+.quoteButtons {
+    -moz-box-shadow: 0px 10px 10px -7px #faa61e;
+    -webkit-box-shadow: 0px 10px 10px -7px #faa61e;
+    box-shadow: 0px 10px 10px -7px #faa61e;
+    background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #faa61e), color-stop(1, #faa61e));
+    background:-moz-linear-gradient(top, #faa61e 5%, #faa61e 100%);
+    background:-webkit-linear-gradient(top, #faa61e 5%, #faa61e 100%);
+    background:-o-linear-gradient(top, #faa61e 5%, #faa61e 100%);
+    background:-ms-linear-gradient(top, #faa61e 5%, #faa61e 100%);
+    background:linear-gradient(to bottom, #faa61e 5%, #faa61e 100%);
+    filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#faa61e', endColorstr='#faa61e',GradientType=0);
+    background-color:#faa61e;
+    -moz-border-radius:4px;
+    -webkit-border-radius:4px;
+    border-radius:4px;
+    border:1px solid #faa61e;
+    display:inline-block;
+    cursor:pointer;
+    color:#ffffff;
+    font-family:arial;
+    font-size:13px;
+    font-weight:bold;
+    padding:10px 30px;
+    text-decoration:none;
+    text-shadow:0px 1px 0px #faa61e;
+}
+.quoteButtons:hover {
+    background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #faa61e), color-stop(1, #faa61e));
+    background:-moz-linear-gradient(top, #faa61e 5%, #faa61e 100%);
+    background:-webkit-linear-gradient(top, #faa61e 5%, #faa61e 100%);
+    background:-o-linear-gradient(top, #faa61e 5%, #faa61e 100%);
+    background:-ms-linear-gradient(top, #faa61e 5%, #faa61e 100%);
+    background:linear-gradient(to bottom, #faa61e 5%, #faa61e 100%);
+    filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#faa61e', endColorstr='#faa61e',GradientType=0);
+    background-color:#faa61e;
+}
+.quoteButtons:active {
+    position:relative;
+    top:1px;
+}
+input[type='checkbox'] {
+    width:15px;
+    height:20px;
+    background:white;
+    border-radius:5px;
+    border:2px solid #555;
+    float:left;
+}
+input[type='checkbox']:checked {
+    background: #abd;
+}
+select{
+   
+    height: 27px;
+    border-radius: 3px;
+    border: 1px solid #CCC;
+    font-weight: 200;
+    font-size: 13px;
+    font-family: Verdana;
+    box-shadow: 1px 1px 5px #CCC;
+}
+select: hover{
+    width: 245px;
+    height: 24px;
+    border-radius: 3px;
+    border: 1px solid #CCC;
+    font-weight: 200;
+    font-size: 13px;
+    font-family: Verdana;
+    box-shadow: 1px 1px 5px #CCC;
+}
+input[type='text']{
+    width: 56px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid #CCC;
+    padding: 7px;
+    font-weight: 200;
+    font-size: 13px;
+    font-family: Verdana;
+    box-shadow: 1px 1px 5px #CCC;
+}
+input[type='text']:hover{
+    box-shadow: 1px 1px 5px #CCC;
+}
+.curtainCls{
+     padding-left:0px;border:3px solid #0066CC;/*position:absolute;*/ background-color:#FFFFFF; padding-right:0px; width:100%;
+     box-sizing: border-box;
+}
+
+.subPlanCurtainClsWithoutBorder{
+     padding-left:50px;position:absolute;width:92%;
+}
+
+.subplancurtainCls{
+     padding-left:20px;border:medium solid #0066CC; height:500px; background-color:#FFFFFF; padding-right:20px;
+}
+.selectedtPlanRow{
+    //background-color:#1797c0;
+    color:#FFFFFF;
+    border-color:#1797c0;
+}
+.normalPlanRow{
+    //background-color:#1797c0;
+    color:#000000;
+    border-color:#CCCCCC;
+}
+.selectedtPlanCls {
+    border-width: 1px;
+    padding: 6px;
+    border-style: solid;
+    border-color: #CCCCCC;
+    background-color:#000066;
+}
+table.plan_services {
+    font-family: verdana,arial,sans-serif;
+    font-size:12px;
+    color:#000000;
+    border-width: 0px;
+    border-color: #CCCCCC;
+    border-collapse: collapse;
+    text-align:left;
+    border-collapse:collapse;
+    /*margin-left:45px;*/
+  
+}
+table.plan_services th {
+    font-size:13px;
+    border-width: 0px;
+    padding: 0px;
+    border-style: solid;
+    border-color: #0000CC;
+    background-color:#FFFFFF;
+    height:35px;
+    vertical-align:bottom;
+   
+}
+table.plan_services tr{
+    border-bottom: 0px solid #0099CC;
+    border-top: 0px solid #000099;
+}
+table.plan_services td {
+    border-width: 0px;
+    padding: 0px;
+    border-style: solid;
+    border-color: #0000FF;
+     height:20px; vertical-align:top;padding-top:2px;
+    background-color:#FFFFFF;
+}
+
+table.subplan_services {
+    font-family: verdana,arial,sans-serif;
+    font-size:12px;
+    color:#000000;
+    border-width: 0px;
+    border-color: #CCCCCC;
+    border-collapse: collapse;
+    text-align:left;
+   /* marging-left:45px;*/
+    background-color:#eeeeee;
+}
+table.subplan_services th {
+    font-size:13px;
+    border-width: 0px;
+    border-style: solid;
+    border-color: #0000CC;
+    height:35px;
+    vertical-align:bottom;
+    text-align:left;
+}
+table.subplan_services tr{
+    border-bottom: 2px solid #0099CC;
+    border-top: 0px solid #000099;
+}
+table.subplan_services td {
+    border-width: 0px;
+  
+    border-style: solid;
+    border-color: #0000FF;
+    height:20px; 
+    vertical-align:top;
+    padding-top:2px;
+}
+.style21 {font-family: Arial, Helvetica, sans-serif; font-size: 12px; }
+
+.linkDiv{
+    background-color: #D5EBBE;
+    padding-left: 16px;
+    margin-bottom: 2px;
+}
+.linkStl{
+    color: blue;
+    font-weight: 600;
+}
+
+.configField { 
+    width: 20.5%; 
+}
+.paymentSectionLabel{
+    float: left;
+    width: 100%;
+    padding-bottom: 5px; 
+    font-weight: bold !important;
+}
+.strikedText{
+text-decoration:line-through;
+}
+.normalText{
+text-decoration:inherit;
+}
+
+.paggingIconNormal{
+    padding-bottom: 1px;
+    width: 20px;
+    height: 20px;
+}
+
+.paggingIconExt{
+    padding-bottom: 0px;
+    width: 25px;
+    height: 22px;
+}
+.paggingText{
+          font-weight: bold;
+}
+
+table.planConfigTable{
+	width: 100%;
+	margin-left:30px;
+}
+table.planConfigTable tr{
+	
+}
+table.planConfigTable td{
+    font-weight:bold;
+}
+.btn-Cancel{
+	background: #999999;
+	padding: 6px 15px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    border: 1px solid #999999;
+    float: left;
+    font: 13px Arial, Helvetica, sans-serif;
+    font-family: arial;
+    cursor: pointer;
+}
+.btn-Save{
+	background: #428bca;
+	padding: 6px 15px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    margin: 7px 0px 7px 20px;
+    border: 1px solid #428bca;
+    float: right;
+    font: 13px Arial, Helvetica, sans-serif;
+    font-family: arial;
+    cursor: pointer;
+}
+</style>
+ 
+<script type="text/javascript">
+$j = jQuery.noConflict(); 
+ 
+
+var hasNext={!hasNext};
+var hasPrevious={!hasPrevious};
+var billingInt = {"1":"Monthly","3":"Quaterly","6":"Half-Yearly","12":"Yearly"} 
+var planNoNameMap={}; 
+var nspre = 'ASF3__'; 
+var mRecType = '{!MRType}';
+ (function() {
+  'use strict';  
+  
+  var demoApp = angular.module('demoApp', []);
+  
+    demoApp.controller('MainCtrl', function($scope, $timeout ,$http) {
+      $scope.nspre='ASF3__';
+      $scope.mRecType='{!MRType}';
+      $scope.list = {!JsonString};
+      $scope.extList = {!extJsonString};
+      //console.log($scope.list);
+      $scope.planExclusionStr= {!planExclusionStr};
+      $scope.replacedPlansMap={};
+      $scope.replacedPlansBackupMap={};
+      $scope.exculsivePlansMap={}; 
+      $scope.isAcctHaveAriaId={!isAcctHaveAriaId};
+      
+      updateClientInstanceNo($scope.list,$scope.extList);
+      
+      updateNodeIdOnLoad($scope.list,$scope.extList);
+      
+      updateExculsivePlansMapOnLoad($scope.exculsivePlansMap, $scope.list);
+      
+      updatePlanNoNameMapOnLoad($scope.list,$scope.extList);
+      
+      
+    $scope.ngSetFocus = function(e){
+    	var obj = e.target;
+    	if($(obj).is('td')){
+    		obj = $(obj).children('input')[0];
+    	}else if($(obj).is('span')){
+    		obj = $(obj).siblings('input')[0];
+    	}else{
+    		return;
+    	}
+    	
+    	if(typeof obj != "undefined"){
+    		$j(obj).removeClass('ng-hide');
+    		obj.focus();
+    	}
+    }
+      
+    $scope.ListPriceVal = 0;
+    $scope.PriceVal = 0;
+    $scope.ngRecalculatePrice = function(pw){
+    	//console.log('----ngRecalculatePrice');
+        if(pw.node.Unit==''){
+            return;
+        }
+        $scope.ListPriceVal = 0;
+        $scope.PriceVal = 0;
+        angular.forEach(pw.node.services, function(service,serviceIndex){
+            $scope.ngcalculateData(service,pw.node, false);
+        });
+        pw.node.ListPrice = $scope.ListPriceVal;
+        pw.node.Price = $scope.PriceVal;
+        updateJson($scope.list, $scope.extList);
+        if(pw.node.planInstanceNumber!=null){
+        }
+        
+        $timeout(function(){
+        }); 
+        
+        
+    };
+    $scope.ngAdjustCustomRate = function(pw){
+        $scope.ListPriceVal = 0;
+        $scope.PriceVal = 0;
+        pw.node.Discount = pw.node.Discount == null ? 0 : pw.node.Discount;
+        angular.forEach(pw.node.services, function(service,serviceIndex){
+            var accountRateTiers = service.selectedRateSchedule.accountRateTiers;
+            angular.forEach(accountRateTiers, function(accountRateTier,accountRateTierIndex){
+                accountRateTier[nspre+'Rate_per_Unit__c'] = accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] - accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] * pw.node.Discount/100;
+            });
+            $scope.ngcalculateData(service,pw.node, false);
+        });
+        pw.node.ListPrice = $scope.ListPriceVal;
+        pw.node.Price = $scope.PriceVal;
+        updateJson($scope.list, $scope.extList);
+        $timeout(function(){
+        });         
+    };
+    function isInTier(unit,fromUnit,toUnit ){
+        if( unit >= fromUnit && ( unit <= toUnit || toUnit == null) ){
+            return true;
+        }
+        return false;       
+    }
+    $scope.ngcalculateData = function(service,selectedNode,loopFlag, rateTier){
+        var units = selectedNode.Unit;
+        selectedNode.isCustomRate=true;
+        if(rateTier){
+            rateTier[nspre+'Build_Custom_Rate_Call__c']=true;
+        }
+        //$scope.ListPriceVal = 0;
+        //$scope.PriceVal = 0;
+        var unit;
+        //console.log(' inside ngcalculate data method' + service.cps[nspre+'Service__r[nspre+'Service_Type__c']);
+        
+        if(service.cps[nspre+'Service__r'][nspre+'Service_Type__c'] == "Recurring"){
+            //console.log('service type is Recurring');
+            var accountRateTiers = service.selectedRateSchedule.accountRateTiers;
+            //console.log('service.cps[nspre+'Tiered_Pricing_Rule__c'] : '+service.cps[nspre+'Tiered_Pricing_Rule__c']);
+            if(service.cps[nspre+'Tiered_Pricing_Rule__c'] == "Standard"){
+                //console.log('pricing rule standard');
+                service.listPrice = 0;
+                service.netPrice = 0;
+                angular.forEach(accountRateTiers, function(accountRateTier,accountRateTierIndex){
+                    //console.log('inside loop account rate tiers standard');
+                    if(!isInTier(units, accountRateTier[nspre+'FromUnit__c'], accountRateTier[nspre+'ToUnit__c'] )) {
+                      //console.log('inside inTier');
+                      if(units >= accountRateTier[nspre+'FromUnit__c']){
+                          unit = (null != accountRateTier[nspre+'ToUnit__c']) ? (accountRateTier[nspre+'ToUnit__c'] - accountRateTier[nspre+'FromUnit__c'] + 1) : 1.0 ;
+                          service.listPrice += accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] * unit;
+                          service.netPrice += accountRateTier[nspre+'Rate_per_Unit__c']  * unit;
+                          $scope.ListPriceVal += accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] * unit;
+                          $scope.PriceVal += accountRateTier[nspre+'Rate_per_Unit__c']  * unit;
+                      }
+                  } else {
+                        //console.log('not in tier');
+                       var remainingUnitsInHighestTier = units - accountRateTier[nspre+'FromUnit__c'] + 1.0;
+                       service.listPrice  += accountRateTier[nspre+'Orig_Rate_Per_Unit__c']  * remainingUnitsInHighestTier;
+                       service.netPrice  += accountRateTier[nspre+'Rate_per_Unit__c']  * remainingUnitsInHighestTier;
+                       $scope.ListPriceVal += accountRateTier[nspre+'Orig_Rate_Per_Unit__c']  * remainingUnitsInHighestTier;
+                       $scope.PriceVal += accountRateTier[nspre+'Rate_per_Unit__c']  * remainingUnitsInHighestTier;
+                  }
+                });
+            }
+            else if (service.cps[nspre+'Tiered_Pricing_Rule__c'] == "Volume Discount") {
+                 service.listPrice = 0;
+                 service.netPrice = 0;
+                 angular.forEach(accountRateTiers, function(accountRateTier,accountRateTierIndex){
+                     if(isInTier( units, accountRateTier[nspre+'FromUnit__c'], accountRateTier[nspre+'ToUnit__c'] )) { 
+                         service.listPrice += units * accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] ;
+                         service.netPrice += units * accountRateTier[nspre+'Rate_per_Unit__c'] ;
+                         $scope.ListPriceVal += units * accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] ;
+                         $scope.PriceVal += units * accountRateTier[nspre+'Rate_per_Unit__c'] ;
+                     }
+                 });
+             }
+             else{
+                 service.listPrice = 0;
+                 service.netPrice = 0;
+                 angular.forEach(accountRateTiers, function(accountRateTier,accountRateTierIndex){
+                     if(isInTier(units, accountRateTier[nspre+'FromUnit__c'], accountRateTier[nspre+'ToUnit__c'])) {
+                         service.listPrice += accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] ;
+                         service.netPrice += accountRateTier[nspre+'Rate_per_Unit__c'] ;
+                         $scope.ListPriceVal += accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] ;
+                         $scope.PriceVal += accountRateTier[nspre+'Rate_per_Unit__c'] ;
+                     }                                       
+                 });
+             }
+        }
+        //listPriceForPlan += listPriceForService;
+        //netPriceForPlan += netPriceForService;
+        if(loopFlag){
+            updateJson($scope.list, $scope.extList);
+        }
+     };
+    
+        var tempExculsivePlans = [];
+        var tempPlanGrpID = [];
+        function checkPlanExclusion(nodeID, planAriaID){
+                var result = false;
+                if(nodeID.indexOf('-')>-1){
+                        
+	                   var currPlanExclusionList =[];
+	                   if( typeof $scope.planExclusionStr[planAriaID] == "undefined"){
+	                                currPlanExclusionList=[];
+	                   }else{
+	                                currPlanExclusionList = $scope.planExclusionStr[planAriaID];
+	                   }
+					
+						               
+                        //iterate over list -> x
+                        var i=0; 
+                        var j=0;
+                        for(i=0; i< currPlanExclusionList.length && !result; i++){
+                                var tempPlan1 = currPlanExclusionList[i];
+                        		for(j=0; j< tempExculsivePlans.length && !result; j++){
+                                		var tempPlan2 = tempExculsivePlans[j].split('|')[1];
+                                		if(tempPlan1==tempPlan2){
+                                			var newPlanName=getPlanName(planAriaID);
+                                			var oldPlanName=getPlanName(tempPlan1);
+			                        		showGenericDialog('Alert','You cannot purchase '+newPlanName+' along with '+oldPlanName+'. Please change your selection');
+                                			result = true;
+                                		}
+                                
+                                }
+			            }
+                }
+                return result;
+        }
+        
+        function getPlanName(planNo){
+                var planName='New Plan';
+                if(typeof planNoNameMap[planNo] != "undefined"){
+                        planName=planNoNameMap[planNo];
+                }
+                return planName;
+        }
+        var tempAriaID =0;
+        function getPlanAriaID(cpInstID){
+        	var i=0;
+        	for(i=0;i<$scope.list.length && tempAriaID==0;i++){
+        		var plan = $scope.list[i];
+        		getPlanAriaIDRec(plan, cpInstID);
+        		
+        	}
+        }
+        
+        function getPlanAriaIDRec(plan, cpInstID){
+        	var i=0;
+        	if(plan.node.clientPlanInstanceNumber == cpInstID){
+       			tempAriaID = plan.node.ariaClientPlanId;
+       		}
+        	for(i=0;i<plan.children.length && tempAriaID==0;i++){
+        		var child = plan.children[i];
+        		getPlanAriaIDRec(child, cpInstID);
+        	}
+        }
+        
+     var planExclusionFlag=true;                 
+     $scope.ngCheckBoxChangeHandler = function(e, pw) {
+        //console.log(value.target.checked);
+        //console.log($scope.list);
+        planExclusionFlag=true;
+        if(!e.target.checked){
+            if(!confirm('Removing any plan will also remove the children. Are you sure ?')){
+                e.target.checked=true;
+                return false;
+            }
+        }
+       
+		 tempExculsivePlans = [];
+         tempPlanGrpID = [];
+         
+        if(e.target.checked){
+        		var grpNo=pw.groupNo;
+                var nodeId = pw.node.nodeId+'';
+                var arr = nodeId.split('-');
+                var idtobePassed = "";
+                
+                var key = nodeId.substr(0,nodeId.indexOf('-'));
+				if(typeof $scope.exculsivePlansMap[key] != "undefined"){    
+					tempExculsivePlans = $scope.exculsivePlansMap[key];
+				}
+				
+                for(var i=0;i<arr.length && planExclusionFlag;i++){
+                    idtobePassed = idtobePassed +(idtobePassed.length >0? "-":"")+ arr[i];
+                    tempAriaID = 0;
+                    getPlanAriaID(arr[i]);
+                    if(checkPlanExclusion(idtobePassed, tempAriaID)){
+                    	planExclusionFlag = false;
+                    }else{
+                    	if(grpNo.indexOf('_ext')>-1){
+	                        $scope.checkNode($scope.extList,idtobePassed,i,grpNo);
+	                    }else{
+	                        $scope.checkNode($scope.list,idtobePassed,i,grpNo);
+	                    }
+                    }
+                }
+                if(planExclusionFlag){
+                	console.log('planExclusionFlag='+planExclusionFlag+', updating scope.exculsivePlansMap for key '+key);
+                	if(typeof $scope.exculsivePlansMap[key] != "undefined"){    
+						$scope.exculsivePlansMap[key].concat(tempExculsivePlans);
+					}else{
+						$scope.exculsivePlansMap[key]=tempExculsivePlans;
+					}
+                }else{
+                	//uncheck plans in tempPlanGrpID
+                	e.target.checked=false;
+                	var i=0; 
+                	for(i=0;i<$scope.list.length;i++){
+                		var plan = $scope.list[i];
+                		plan = unCheckPlan(plan);
+                		
+                	}
+                	tempPlanGrpID = [];
+                    //return false;
+                }
+        }else{
+            unCheckChildren(pw);
+        }
+        //$scope.$apply();
+     };
+
+     $scope.checkNode = function(list1, currentNodeId,index){
+        //console.log('current node id ' +currentNodeId + ' node index : '+ index);
+        angular.forEach(list1, function(plan,key){
+            if(index == 0){
+                if(plan.node.nodeId == currentNodeId)
+                {
+                    //console.log('setting group selected true for node id  level '+index);
+                    //console.log("check box id : chkmain_"+plan.groupNo);
+                    var checkboxObj = document.getElementById("chkmain_"+plan.groupNo);
+                        
+                    if(!plan.isGroupSelected){
+                    	checkboxObj.checked = true;
+                        plan.isGroupSelected = true;
+                    	//planSelection(checkboxObj, plan.groupNo, plan.optionLabel);
+                    	tempPlanGrpID.push(plan.groupNo);
+                    }
+	                    
+                    
+                }
+            }else if(index >= 1){
+                angular.forEach(plan.children,function(childPlan,key){
+                    if(index ==1){
+                        if(childPlan.node.nodeId == currentNodeId){
+                            //console.log("check box id : chkmain_"+childPlan.groupNo);
+                            var checkboxObj2 = document.getElementById("chkmain_"+childPlan.groupNo);
+                            if(!childPlan.isGroupSelected){
+                            	checkboxObj2.checked = true;
+                                childPlan.isGroupSelected = true;
+	                            //planSelection(checkboxObj2, childPlan.groupNo, childPlan.optionLabel);
+	                            var planNodeID = currentNodeId.substr(currentNodeId.lastIndexOf('-')+1,currentNodeId.length);
+                        		tempExculsivePlans.push(planNodeID+'|'+childPlan.node.ariaClientPlanId);
+                        		tempPlanGrpID.push(childPlan.groupNo);
+                            }
+                        }
+                    }else if(index >=2){
+                        angular.forEach(childPlan.children,function(childPlan2,key){
+                            if(index == 2){
+                                if(childPlan2.node.nodeId == currentNodeId){
+                                    var checkbox3 = document.getElementById("chkmain_"+childPlan2.groupNo);
+                                    if(!childPlan2.isGroupSelected){
+                                    	checkbox3.checked = true;
+                                        childPlan2.isGroupSelected = true;
+	                                    //planSelection(checkbox3, childPlan2.groupNo, childPlan2.optionLabel);
+	                                    var planNodeID = currentNodeId.substr(currentNodeId.lastIndexOf('-')+1,currentNodeId.length);
+                        				tempExculsivePlans.push(planNodeID+'|'+childPlan2.node.ariaClientPlanId);
+                        				tempPlanGrpID.push(childPlan2.groupNo);
+                                    }
+                                }
+                            }else if(index >=3){
+                                angular.forEach(childPlan2.children,function(childPlan3,key){
+                                    if(index == 3){
+                                        if(childPlan3.node.nodeId == currentNodeId){
+                                            var checkbox4 = document.getElementById("chkmain_"+childPlan3.groupNo);
+                                            if(!childPlan3.isGroupSelected){
+                                            	checkbox4.checked = true;
+                                                childPlan3.isGroupSelected = true;
+	                                            //planSelection(checkbox4, childPlan3.groupNo, childPlan3.optionLabel);
+	                                            var planNodeID = currentNodeId.substr(currentNodeId.lastIndexOf('-')+1,currentNodeId.length);
+                        						tempExculsivePlans.push(planNodeID+'|'+childPlan3.node.ariaClientPlanId);
+                        						tempPlanGrpID.push(childPlan3.groupNo);
+                                            }
+                                        }
+                                    }else {
+                                        console.log('node not found');
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+         });
+         
+     };
+     
+     function unCheckPlan(plan){
+
+     	if(tempPlanGrpID.indexOf(plan.groupNo)>-1){
+     		var checkboxObj = document.getElementById("chkmain_"+plan.groupNo);
+     		checkboxObj.checked=false;
+     		plan.isGroupSelected=false;
+     		//return plan;
+     	}
+     		
+     	for(var idx=0;idx< plan.children.length; idx++){
+	        var child = plan.children[idx];
+	        child = unCheckPlan(child);
+	    }
+	    return plan;
+     }
+     
+     function unCheckChildren(plan){
+        if(plan.isGroupSelected){
+             plan.isGroupSelected=false;
+             var checkboxObjID = 'chkmain_'+plan.groupNo;
+             var checkboxObj = $j('#'+checkboxObjID);
+             checkboxObj[0].checked=false;
+             
+             if(plan.node.planType == 'Supplemental'){
+                var nodeID = plan.node.nodeId;
+                if(nodeID.indexOf('-') > -1){
+                     var ID = nodeID.substr(0, nodeID.indexOf('-'))+'-'+plan.node.ariaClientPlanId;
+                     //$scope.exculsivePlansMap[ID+'-'+plan.node.ariaClientPlanId]=plan.node.ariaClientPlanId;       
+                     if(typeof $scope.exculsivePlansMap[ID] != "undefined"){
+                     	delete $scope.exculsivePlansMap[ID];
+               		 }
+                }
+             }
+             
+             planSelection(checkboxObj, plan.groupNo, plan.optionLabel);
+             
+             //plan.planInstances.splice(0,plan.planInstances.length); //removing instances
+             
+             for(var idx=plan.children.length-1 ; idx>=0 ; idx--){
+             	var value=plan.children[idx];
+             	unCheckChildren(value, plan);
+             }
+	        
+	        if(typeof parent != "undefined" && typeof parent.children != "undefined" && plan.isInstance){
+        		deleteFromParent(parent, plan);
+         	}
+         }
+         
+     }
+     
+     function deleteFromParent(parent, plan){
+        //console.log('---------callign deleteFromParent-------------');
+        var idx=0;
+        for(idx=0;idx<parent.children.length;idx++){
+            if(plan.node.clientPlanInstanceNumber == parent.children[idx].node.clientPlanInstanceNumber){
+                //console.log('---------callign deleteFromParent-------------Match found');     
+                parent.children.splice(idx,1);
+                break;
+            }
+        }
+     }
+     
+     $scope.ngPlanSelection = function(e, groupNo, optionList){
+        updateJson($scope.list, $scope.extList);
+     };
+     $scope.ngUpdateBillingFilter = function (pw){
+                var selectedBillingInterval = pw.selectedBillingInterval;
+                var services = pw.node.services;
+                //alert(selectedBillingInterval);
+                var rateScheduleID = '';
+                rateScheduleID = $scope.ngPopulateRateScheduleSelectOptionFilter(pw, selectedBillingInterval, true);
+                $scope.ngSetSelectedRateSchedule(rateScheduleID, pw);
+     };
+     $scope.ngSetSelectedRateSchedule = function (selectedOption,pw){
+                var services = pw.node.services;
+            angular.forEach(services, function(value,key){
+            var serviceKey = key;
+            var serviceNode = value;
+                angular.forEach(value.listRateScedules, function(value,key){
+                    if(value.rateSchedule.Id == selectedOption){
+                        serviceNode.selectedRateSchedule = value;
+                    }
+                });
+                    
+            });
+            $scope.ngRecalculatePrice(pw);
+            updateJson($scope.list, $scope.extList);
+      };
+     
+      $scope.selectOptions = [];
+      //option.value as option.label for option in selectOptions when you create array of key value pairs
+      $scope.ngPopulateRateScheduleSelectOptionFilter=function(pw, selectedBillingInterval, setDefaultFlag){
+            if(!setDefaultFlag){
+                /*var imgId='imgbank_'+pw.groupNo;
+                var obj = $j('#'+imgId);
+                var imgSrcVal = $j(obj).attr("src");
+                if(imgSrcVal.indexOf('banknote.png') > -1){
+                    return;
+                }*/
+            }
+      
+            var servicesNode = pw.node.services;
+            pw.rsList = [];
+            //$scope.rsList = [];
+            var uniqueIds = [];
+            var rateScheduleID ='';
+            $j.each(servicesNode, function(key,service){
+                $j.each(service.listRateScedules, function(key,val){
+                    if(uniqueIds.indexOf(val.rateSchedule.Id) == -1 && val.rateSchedule[nspre+'Recurring_Billing_Interval__c']==selectedBillingInterval){
+                        pw.rsList.push({value: val.rateSchedule.Id,label: val.rateSchedule.Name});
+                        if(rateScheduleID==''){
+                            rateScheduleID = val.rateSchedule.Id;
+                        }
+                        uniqueIds.push(val.rateSchedule.Id);
+                    }
+                });
+                return false;
+            });
+            
+            if(setDefaultFlag || pw.node.selectedRS==null){
+                pw.node.selectedRS = pw.rsList[0].value;
+            }
+            
+            
+            updateJson($scope.list, $scope.extList);
+            return rateScheduleID;            
+    }; 
+      
+     
+           
+      $scope.ngDisplaysubPlans = function(plan,obj,grpno,parentTdId,serviceDivId,subPlanDivId,serviceImgIconId){
+            displaysubPlans(obj,grpno,parentTdId,serviceDivId,subPlanDivId,serviceImgIconId);
+            plan.defSel='0';
+            //$scope.$apply();
+      };
+      
+        
+      $scope.count = 1;
+      function updateGroupNo(newMember){
+            newMember.groupNo = newMember.groupNo + '_inst_'+$scope.count;
+            $scope.count++;
+            if(typeof newMember.node != "undefined" && typeof newMember.children != "undefined"){
+                angular.forEach(newMember.children, function(value,key){
+                        updateGroupNo(value);
+                });
+            }
+            
+      }
+      
+      
+    });
+
+})();
+var sort_by = function(field, reverse, primer){
+
+   var key = primer ? 
+       function(x) {return primer(x[field])} : 
+       function(x) {return x[field]};
+
+   reverse = !reverse ? 1 : -1;
+
+   return function (a, b) {
+       return a = key(a), b = key(b), reverse * ((a > b) - (b > a));
+     } 
+}
+
+function ajaxResultPost(updatedJson) {
+    var scope = angular.element(document.getElementById("mainBlock")).scope();
+    if(typeof updatedJson != "undefined"){
+        scope.list = updatedJson;
+    }else{
+        scope.list = [];
+    }
+    
+    
+    //select plans from backup;
+    var newList=scope.list;
+	var i;	
+	var instances =[];
+	for(i=0;i<scope.list.length;i++){
+		var plan= scope.list[i];
+		
+		if(typeof oldSelectedMPs[plan.node.ariaClientPlanId] != "undefined"){
+			plan=oldSelectedMPs[plan.node.ariaClientPlanId];
+			delete oldSelectedMPs[plan.node.ariaClientPlanId];
+			scope.list[i]=plan;
+            //console.log('plan restored from backup - '+plan.leftName);
+		}
+		
+		if(typeof oldSelectedMPs[plan.node.ariaClientPlanId+'i'] != "undefined"){
+			instances = instances.concat(oldSelectedMPs[plan.node.ariaClientPlanId+'i']);
+			delete oldSelectedMPs[plan.node.ariaClientPlanId+'i'];
+            //console.log('instance restored from backup - '+plan.leftName);
+		}
+		
+	}
+	scope.list = scope.list.concat(instances);
+	
+	
+	scope.list.sort(sort_by('leftName', !sortDirPlanFlag, function(a){return a.toUpperCase()}));
+    updateClientInstanceNo(scope.list,scope.extList);
+    
+    updateNodeIdOnLoad(scope.list,scope.extList);
+      
+    updatePlanNoNameMapOnLoad(scope.list,scope.extList);
+    
+    //hideAlreadySelectedNewPlans(scope.list,scope.extList);
+    
+    scope.$apply();
+}
+
+
+var updatedList=[];
+var selectedPlans=[];
+var selectedPlansText='';
+
+var extUpdatedList=[];
+var extSelectedPlans=[];
+var extSelectedPlansText='';
+
+function getUniqueRandomNumber(){
+    var tmstmp = ''+new Date().getTime();
+    var rndm=''+parseInt(Math.random()*100000);
+    var uniqueRandom = tmstmp+rndm
+    return uniqueRandom;
+}
+
+function pushSelectedPlanFromMap(){
+        var selectedPlanKeys=Object.keys(oldSelectedMPs);
+        var flag=false;
+        var i,j,k;
+        
+     for(i=0;i<selectedPlanKeys.length;i++){
+        var key = selectedPlanKeys[i];
+        flag=true;
+        for(j=0;j<selectedPlans.length;j++){
+                var plan = selectedPlans[j];
+                if(plan.node.ariaClientPlanId == key){
+                        flag=false;
+                }
+        }
+        if(flag){
+            if(key.indexOf('i')==-1){
+                selectedPlans.push(oldSelectedMPs[key]);
+            }else{
+                for(k=0;k<oldSelectedMPs[key].length;k++){
+                    selectedPlans.push(oldSelectedMPs[key][k]);
+                }
+            }
+            
+        }
+     }
+}
+
+function updateJson(newJson, extJson){
+    //******************for new List*******************//
+    updatedListText = JSON.stringify(newJson, function (key, val) {
+         if (key == '$$hashKey') {
+           return undefined;
+         }
+         return val;
+      });
+    //console.log('Before Heap fix New Plan length='+updatedListText.length);
+    updatedList=JSON.parse(updatedListText);
+    updatedListText='';
+    selectedPlans=[];
+     for(i=0;i<updatedList.length;i++){
+        if(updatedList[i].isGroupSelected){
+            selectedPlans.push(updatedList[i]);
+        }
+     }
+     
+     pushSelectedPlanFromMap();
+     
+     if(selectedPlans.length!=0){
+         /////////++Heap fix//////////
+    
+         for(x=0;x<selectedPlans.length;x++){
+            selectedPlans[x] = removeUnsedDataFromPlan(selectedPlans[x]);
+         }
+         
+         /////////--Heap fix//////////
+       
+    
+         
+            selectedPlansText = JSON.stringify(selectedPlans, function (key, val) {
+             if (key == '$$hashKey') {
+               return undefined;
+             }
+             return val;
+        });
+        //selectedPlans=[];
+     }else{
+            selectedPlansText = '[]';
+     }
+     selectedPlans=[];
+     updatedList=[];
+     //console.log('After Heap fix New Plan length='+selectedPlansText.length);
+     //******************for existing List*******************//
+         extUpdatedListText = JSON.stringify(extJson, function (key, val) {
+         if (key == '$$hashKey') {
+           return undefined;
+         }
+         return val;
+      });
+    //console.log('Before Heap fix Existing Plan length='+extUpdatedListText.length);
+    extUpdatedList=JSON.parse(extUpdatedListText);
+    extUpdatedListText='';
+    
+    extSelectedPlans=[];
+     for(i=0;i<extUpdatedList.length;i++){
+        if(extUpdatedList[i].isGroupSelected){
+            extSelectedPlans.push(extUpdatedList[i]);
+        }
+     }
+     
+     if(extSelectedPlans.length!=0){
+         /////////++Heap fix//////////
+    
+         for(x=0;x<extSelectedPlans.length;x++){
+            extSelectedPlans[x] = removeUnsedDataFromPlan(extSelectedPlans[x]);
+         }
+         
+         /////////--Heap fix//////////
+        
+    
+            extSelectedPlansText = JSON.stringify(extSelectedPlans, function (key, val) {
+             if (key == '$$hashKey') {
+               return undefined;
+             }
+             return val;
+        });
+     }else{
+            extSelectedPlansText = '[]';
+     }
+     extSelectedPlans=[];
+     extUpdatedList=[];
+     //console.log('After Heap fix Existing Plan length='+extSelectedPlansText.length);
+     
+     
+}
+
+function updateExculsivePlansMapOnLoad(exculsivePlansMap, extJson){
+        //console.log('***************updateExculsivePlansMapOnLoad');
+        var x;
+        for(x=0;x<extJson.length;x++){
+        var pw = extJson[x];
+        extJson[x] = updateExculsivePlansMap(exculsivePlansMap, pw);
+     }
+}
+
+function updateExculsivePlansMap(exculsivePlansMap, plan){
+var i;
+    if(typeof(plan)=="undefined"){
+        return plan;
+    }
+    if(!plan.isGroupSelected){
+        return plan;
+    }
+    if(plan.node.planType == 'Supplemental' && plan.isGroupSelected){
+                var nodeID = plan.node.nodeId;
+                addNodeIdInExculsivePlansMap(exculsivePlansMap, plan.node.nodeId, plan.node.ariaClientPlanId)
+    }
+      
+    //for children
+    if(typeof(plan.children)!="undefined"){
+        for(i=0;typeof(plan.children)!="undefined" && i<plan.children.length;i++){
+            var childPlan = plan.children[i];
+            childPlan = updateExculsivePlansMap(exculsivePlansMap, childPlan)
+            plan.children[i]= childPlan;
+        }
+    }
+    return plan;
+}
+
+function addNodeIdInExculsivePlansMap(exculsivePlansMap, nodeID, ariaClientPlanId){
+		if(nodeID.indexOf('-') == -1){
+			return;
+        }
+		var masterNodeID = nodeID.substr(0, nodeID.indexOf('-'));
+	    var planNodeID = nodeID.substr(nodeID.lastIndexOf('-')+1,nodeID.length);
+	    
+	    if(typeof(exculsivePlansMap[masterNodeID])!="undefined"){
+	    	exculsivePlansMap[masterNodeID].push(planNodeID+'|'+ariaClientPlanId);
+	    }else{
+	    	exculsivePlansMap[masterNodeID]=[planNodeID+'|'+ariaClientPlanId];
+	    }
+}
+
+function removeNodeIdFromExculsivePlansMap(exculsivePlansMap, nodeID){
+		if(nodeID.indexOf('-') == -1){
+			return;
+        }
+		var masterNodeID = nodeID.substr(0, nodeID.indexOf('-'));
+	    var planNodeID = nodeID.substr(nodeID.lastIndexOf('-')+1,nodeID.length);
+	    
+	    if(typeof(exculsivePlansMap[masterNodeID]) !="undefined"){
+	    	
+	    	for(i=0;i<exculsivePlansMap[masterNodeID].length;i++){
+	    		var tempID = '';
+	    		if(exculsivePlansMap[masterNodeID][i].indexOf('|')>-1){
+	    			tempID = exculsivePlansMap[masterNodeID][i].substr(0,exculsivePlansMap[masterNodeID][i].indexOf('|'));
+	    		}
+	    		if(tempID==planNodeID){
+	    				exculsivePlansMap[masterNodeID].splice(i,1);
+	    				break;
+	    		}
+	    	}
+	    }
+}
+
+
+function updatePlanNoNameMapOnLoad(newJson, extJson){
+     var x;
+     for(x=0;x<newJson.length;x++){
+        updatePlanNoNameMap(newJson[x]);
+     }
+
+    for(x=0;x<extJson.length;x++){
+        updatePlanNoNameMap(extJson[x]);
+     }
+     
+}
+
+function updatePlanNoNameMap(plan){
+    var i;
+    if(typeof(plan)=="undefined"){
+        return plan;
+    }
+    
+    planNoNameMap[plan.node.ariaClientPlanId]=plan.leftName;
+      
+    //for children
+    if(typeof(plan.children)!="undefined"){
+        for(i=0;typeof(plan.children)!="undefined" && i<plan.children.length;i++){
+            var childPlan = plan.children[i];
+            updatePlanNoNameMap(childPlan);
+        }
+    }
+    return plan;
+}
+
+function updateClientInstanceNo(newJson, extJson){
+    
+    var x;
+    
+    //******************reset new List*******************//
+    //console.log('updateClientInstanceNo ...  resetInstanceToNull');
+    for(x=0;x<newJson.length;x++){
+        var pw = newJson[x];
+        pw.node.parentPlanInstanceNumber=null;
+        pw.node.clientPlanInstanceNumber=null;                
+        newJson[x] = resetInstanceToNull(pw);
+     }
+     //******************reset ext List*******************//
+    /*console.log('updateClientInstanceNo ...ext  resetInstanceToNull');
+    for(x=0;x<extJson.length;x++){
+        var pw = extJson[x];
+        pw.node.parentPlanInstanceNumber=null;
+        pw.node.clientPlanInstanceNumber=null;                
+        extJson[x] = resetInstanceToNull(pw);
+     }
+     */
+     //******************for new List*******************//
+     //console.log('updateClientInstanceNo ...  newJson');
+     for(x=0;x<newJson.length;x++){
+        var pw = newJson[x];
+        if(pw.node.clientPlanInstanceNumber==null || pw.node.clientPlanInstanceNumber==''){
+            //console.log('updateClientInstanceNo ... '+pw.leftName);
+            pw.node.clientPlanInstanceNumber = getUniqueRandomNumber();//parseInt(Math.random()*10000000000);
+        }               
+        newJson[x] = updateInstanceNo(pw);
+     }
+     
+     //******************for Ext List*******************//
+    var y;
+    //console.log('updateClientInstanceNo ...  extJson');
+     for(y=0;y<extJson.length;y++){
+        var pw = extJson[y];
+        if(pw.node.clientPlanInstanceNumber==null || pw.node.clientPlanInstanceNumber==''){
+        //console.log('updateClientInstanceNo ... '+pw.leftName);
+            pw.node.clientPlanInstanceNumber = getUniqueRandomNumber();//parseInt(Math.random()*10000000000);
+        }               
+        extJson[y] = updateInstanceNo(pw);
+     }
+     
+}
+function showGenericDialog(title,htmlBody,height,width){
+	 var ht=180;
+	 var wt=450;
+	 if(typeof(height)!="undefined"){
+	        ht=height;
+	 }
+	 if(typeof(width)!="undefined"){
+	        wt=width;
+	 }
+  		$j('#genericDialogBox').dialog({
+                        resizable: false,
+                        height:ht,
+                        width:wt,
+                        modal: true,
+                        open: function(e){
+                                $j(this).html(htmlBody);
+                        },
+                        buttons: [
+                                {
+                                        text: "Ok",
+                                        "class": 'rightFloatClass',
+                                        click: function() {
+                                                $j(this).dialog("close");
+                                        }
+                                }
+                        ],
+                        title: title
+                });  
+   }
+function genericDialog(title,htmlBody, buttons, actions){    
+  $j('<div></div>').dialog({
+            resizable: false,
+            height:180,
+            width:450,
+            modal: true,
+            open: function(e){
+                $j(this).html(htmlBody);
+            },
+            buttons: [
+                {
+                    text: "Ok",
+                    "class": 'rightFloatClass',
+                    click: function() {
+                        $j(this).dialog("close");
+                    }
+                }
+            ],
+            title: title
+        });  
+} 
+function updateNodeIdOnLoad(newJson, extJson){
+    //******************for new List*******************//
+     //console.log('updateNodeIdOnLoad ...  newJson');
+     for(var i=0;i<newJson.length;i++){
+        var plan = newJson[i];
+        plan.node.nodeId = plan.node.clientPlanInstanceNumber+'';
+        updateNodeID(plan);
+     }
+     
+     //******************for Ext List*******************//
+    //console.log('updateNodeIdOnLoad ...  extJson');
+     for(var i=0;i<extJson.length;i++){
+        var plan = extJson[i];
+        plan.node.nodeId = plan.node.clientPlanInstanceNumber+'';
+        updateNodeID(plan);
+     }
+}
+ 
+function updateNodeID(plan){
+    //console.log('updateNodeID ...  plan - '+plan.leftName);
+    if(typeof(plan)=="undefined"){
+        return plan;
+    }
+    for(var i=0;typeof(plan.children)!="undefined" && i<plan.children.length;i++){
+            var childPlan = plan.children[i];
+            childPlan.node.nodeId = plan.node.nodeId+'-'+childPlan.node.clientPlanInstanceNumber;
+            updateNodeID(childPlan);
+    }
+}     
+function updateInstanceNo(plan){
+    
+    var i;
+    if(typeof(plan)=="undefined"){
+        return plan;
+    }
+    //for children
+    if(typeof(plan.children)!="undefined"){
+        for(i=0;typeof(plan.children)!="undefined" && i<plan.children.length;i++){
+            var childPlan = plan.children[i];
+            
+            if(typeof(childPlan.node)!="undefined"){
+                //update parentNo
+                if(childPlan.node.parentPlanInstanceNumber==null || childPlan.node.parentPlanInstanceNumber=='' || childPlan.node.parentPlanInstanceNumber=='null'){
+                //console.log('updateInstanceNo ...parentPlanInstanceNumber.... '+plan.leftName);
+                    childPlan.node.parentPlanInstanceNumber = plan.node.clientPlanInstanceNumber;
+                }
+                //update instanceNo
+            
+                if(childPlan.node.clientPlanInstanceNumber==null || childPlan.node.clientPlanInstanceNumber=='' || childPlan.node.clientPlanInstanceNumber=='null'){
+                //console.log('updateInstanceNo ...clientPlanInstanceNumber.... '+plan.leftName);
+                    childPlan.node.clientPlanInstanceNumber = getUniqueRandomNumber();//parseInt(Math.random()*10000000000);
+                }
+            }
+            childPlan = updateInstanceNo(childPlan);
+            plan.children[i]= childPlan;
+        }
+    }
+    return plan;
+}
+
+function resetInstanceToNull(plan){
+    
+    var i;
+    if(typeof(plan)=="undefined"){
+        return plan;
+    }
+    //for children
+    if(typeof(plan.children)!="undefined"){
+        for(i=0;typeof(plan.children)!="undefined" && i<plan.children.length;i++){
+            var childPlan = plan.children[i];
+            
+            if(typeof(childPlan.node)!="undefined" ){
+                childPlan.node.parentPlanInstanceNumber=null;
+                childPlan.node.clientPlanInstanceNumber=null;
+            }
+            childPlan = resetInstanceToNull(childPlan);
+            plan.children[i]= childPlan;
+        }
+    }
+    return plan;
+}
+
+function removeUnsedDataFromPlan(plan){
+    if (typeof(plan) == "undefined"){
+        return {};
+    }
+    //console.log('removeUnsedDataFromPlan>>>>>>'+plan.leftName);
+    //children
+    var childFlag=true;
+    for(var i=0;typeof(plan.children) != "undefined" && i<plan.children.length;i++){
+        var pw=plan.children[i];
+        if(pw.isGroupSelected!=null && !pw.isGroupSelected){
+            pw={};
+        }else if(pw.isGroupSelected!=null && pw.isGroupSelected){
+            childFlag = false;
+            
+            pw=removeUnsedDataFromPlan(pw);
+            
+        }
+        plan.children[i]=pw;
+    }
+    if(childFlag){
+        plan.children=[];
+    }
+    
+    return plan;
+}
+
+
+var sortDirPlanFlag=true;
+function sortPlanJS(){
+        sortDirPlanFlag=!sortDirPlanFlag;
+        var planOrder='asc';
+        if(!sortDirPlanFlag){
+                planOrder='desc';
+        }
+        //alert(planOrder);
+        backupSelectedPlan();
+        sortPlans(planOrder);
+}
+function sortPlanComplete(){
+        if(!sortDirPlanFlag){
+                $j('#planSortDirID').attr("src","{!URLFOR($Resource.Sim_JS, 'images/order_desc.png')}");
+        }else{
+                $j('#planSortDirID').attr("src","{!URLFOR($Resource.Sim_JS, 'images/order_asc.png')}");
+        }
+}
+var oldSelectedMPs={};
+
+function backupSelectedPlan(){
+        var scope = angular.element(document.getElementById("mainBlock")).scope();
+        var newList=scope.list;
+        var i;
+        for(i=0;i<newList.length;i++){
+                var plan= newList[i];
+		if(plan.isGroupSelected!=null && plan.isGroupSelected==true && plan.isInstance!=null && plan.isInstance==false){
+			oldSelectedMPs[plan.node.ariaClientPlanId]=plan;
+		}
+		
+		if(plan.isGroupSelected!=null && plan.isGroupSelected==true && plan.isInstance!=null && plan.isInstance==true){
+			
+			if(typeof oldSelectedMPs[plan.node.ariaClientPlanId+'i'] != 'undefined'){
+				oldSelectedMPs[plan.node.ariaClientPlanId+'i'].push(plan);
+			}else{
+				oldSelectedMPs[plan.node.ariaClientPlanId+'i'] = [];
+				oldSelectedMPs[plan.node.ariaClientPlanId+'i'].push(plan);
+			}
+                }
+        }
+        //console.log('**********backupSelectedPlan*******');
+}
+
+function clearSearch(){
+        //backup selected plans
+        $j('input[id$=searchTextID]')[0].value='';
+        searchPlansJS();
+}
+
+        
+function searchPlansJS(){
+        /*if(containSpecialChar($j('input[id$=searchTextID]')[0].value)){
+		    alert('Search string contains speacial chars. Please try again.');
+		    //showGenericDialog('Alert !','Search string contains speacial chars. Please try again.');
+		    $j('input[id$=searchTextID]')[0].value='';
+		    $j('input[id$=searchTextID]')[0].focus();
+		    return;
+		}*/
+		//backup selected plans
+        backupSelectedPlan();
+        searchPlans();
+}
+
+function firstPlansJS(){
+        
+        if(!hasPrevious){
+                return;
+        }
+        
+        //backup selected plans
+        backupSelectedPlan();
+        firstPlans();
+}
+function previousPlansJS(){
+        
+        if(!hasPrevious){
+                return;
+        }
+        
+        //backup selected plans
+        backupSelectedPlan();
+        previousPlans();
+}
+
+function nextPlansJS(){
+        //backup selected plans
+        if(!hasNext){
+                return;
+        }
+        backupSelectedPlan();
+        nextPlans();
+}
+
+function lastPlansJS(){
+        if(!hasNext){
+                return;
+        }
+        //backup selected plans
+        backupSelectedPlan();
+        lastPlans();
+}
+
+
+	
+function displaysubPlans(imgId,grpno,parentTdId,serviceDivId,subPlanDivId,serviceImgIconId){
+//console.log(imgId+','+grpno+','+parentTdId+','+serviceDivId+','+subPlanDivId+''+serviceImgIconId);
+    var obj = $j('#'+imgId);
+    var imgSrcVal = $(obj).attr("src");
+    var parentTrId = 'sec_row_'+grpno;
+    var actionSelect = 'action_select_'+grpno;
+    if(imgSrcVal.indexOf('arrow.png') > -1 ){ 
+    
+        //Calculation for td width for child elements
+        var width = $j('#'+subPlanDivId).find("table").find('td:nth-child(2)').width();
+        $j('#'+subPlanDivId).find("table").find('td:nth-child(2)').attr('width',width-4.9+'%');
+        
+        var select = document.getElementById(actionSelect);
+        if(select)
+        {
+            //$j('#'+serviceImgIconId).attr("src","{!URLFOR($Resource.Sim_JS, 'images/banknote.png')}");
+            //select.value = 0;
+        }
+        document.getElementById(parentTrId).style.display='';
+        document.getElementById(parentTdId).style.display='';
+        document.getElementById(subPlanDivId).style.display = '';
+        document.getElementById(serviceDivId).style.display='none';
+        $j(obj).attr("src","{!URLFOR($Resource.Sim_JS, 'images/arrow2.png')}")
+        
+    }else{
+    	document.getElementById(parentTrId).style.display='none';
+        document.getElementById(parentTdId).style.display = 'none';
+        document.getElementById(subPlanDivId).style.display = 'none';
+        //document.getElementById(subcurtain_id).style.display = 'none';
+        $j(obj).attr("src","{!URLFOR($Resource.Sim_JS, 'images/arrow.png')}" );
+        var width = $j('#'+subPlanDivId).find("table").find('td:nth-child(2)').width();
+        $j('#'+subPlanDivId).find("table").find('td:nth-child(2)').attr('width',width+4.9+'%');
+    }
+
+}
+
+function planSelection(checkboxObj, recordno, optionList){
+    if(optionList){
+        if(Object.keys(optionList).length < $j('#lbl_billinginterval_'+recordno).siblings('select').find('option').length && $j('#lbl_billinginterval_'+recordno).siblings('select').find('option').length>0){
+            $j('#lbl_billinginterval_'+recordno).siblings('select').find('option')[0].remove();
+        } 
+    }
+    
+}
+
+function isNumberKey(evt, val)
+ {
+    var charCode = (evt.which) ? evt.which : evt.keyCode
+    if (charCode == 46) {
+       // Allow only 1 decimal point ('.')...
+       if((val) && (val.indexOf('.') >= 0))
+           return false;
+       else
+           return true;
+    }
+    
+    if (charCode > 31 && (charCode < 48 || charCode > 57))
+       return false;
+
+    return true;
+ }
+      
+ function getSelectedPlan(hiddenFieldId, hiddenFieldIdExt){
+      if((selectedPlansText!=null && (selectedPlansText.length==0 || selectedPlansText=='[]') ) && (extSelectedPlansText!=null && (extSelectedPlansText.length==0 || extSelectedPlansText=='[]')  )){
+            
+            showGenericDialog('Alert ','Please select a plan',180,300);
+            return false;
+      }
+      if(selectedPlansText!=null && selectedPlansText.length!=0 && document.getElementById(hiddenFieldId)){
+                    document.getElementById(hiddenFieldId).value = selectedPlansText;
+      }
+      
+      if(extSelectedPlansText!=null && extSelectedPlansText.length!=0 && document.getElementById(hiddenFieldIdExt)){
+                    document.getElementById(hiddenFieldIdExt).value = extSelectedPlansText;
+      }
+      saveAsDraftJS();
+      return false;        
+}     
+
+
+//currencyOnFocus currencyOnChange
+function currencyOnFocus(obj){
+    currencyPrevious = obj.value;
+}
+function currencyOnChange(obj){
+    var currConfrm = confirm('Changing Currency will remove existing plan selection.\nDo you want to continue?'); 
+    if(currConfrm){
+       changeCurrency();
+    }else{
+        obj.value = currencyPrevious;
+    }
+   // Make sure the previous value is updated
+   currencyPrevious = this.value;
+}  
+//var specialChars = "<>@!#$%^&*()_+[]{}?:;|'\"\\,./~`-=";
+var specialChars = "<>@!#$%^&*()+[]{}?:;|'\"\\,./~`=";
+function containSpecialChar(string){
+    for(i = 0; i < specialChars.length;i++){
+        if(string.indexOf(specialChars[i]) > -1){
+            return true
+        }
+    }
+    return false;
+}
+
+
+$j(document).ready(function() {
+
+      $j('input[id$=searchTextID]').keypress(function (e) {
+         if (e.keyCode == '13') {
+             e.preventDefault();
+             searchPlansJS();
+             return false;
+         }
+      });
+                    
+       
+});     
+     
+</script>
+<!-- <apex:sectionHeader title="Add/Modify Plans" subtitle="{!account.Name}" rendered="{!NOT(AND(isPersonAccountEnable,isPersonaAccount))}"/> -->
+<!-- <apex:sectionHeader title="Add/Modify Plans" subtitle="{!account['LastName'] +' ' +account['FirstName']}" rendered="{!AND(isPersonAccountEnable,isPersonaAccount)}"/> -->
+
+<apex:form id="theForm">
+<c:AriaPriceIndicatorComponent recid="{!$CurrentPage.parameters.id}" context="{!$CurrentPage.parameters.context}" selectedCurrency="{!$CurrentPage.parameters.accountCurrency}" accountName="{!accountName}" billingInterval="{!$CurrentPage.parameters.billingInterval}" />
+
+<h1>Add Plans</h1><br/>
+
+<div class="scrollDiv">
+	
+<div class="container-fluid" ng-app="demoApp" ng-controller="MainCtrl" id="mainBlock">
+<!-- *********************************************************New Plan Section Start**************************************************************** --> 
+   <apex:outputPanel id="thePageBlock">
+       		<apex:actionFunction name="saveAsDraftJS" action="{!saveNewPlans}" status="LoadingStatus" rerender=""/>
+            <apex:actionFunction name="cancel" action="{!actionRedirect}" status="LoadingStatus" rerender=""/>
+                
+       		<apex:actionFunction name="sortPlans" action="{!sortPlans}" oncomplete="ajaxResultPost({!JsonString});sortPlanComplete();" rerender="" status="LoadingStatus">
+                <apex:param id="sortDirPlan" name="sortDirPlan" assignTo="{!sortDirPlan}" value="" />
+	        </apex:actionFunction>
+       		<apex:actionFunction name="searchPlans" action="{!searchPlans}" oncomplete="ajaxResultPost({!JsonString});" rerender="mainBlock,paginationBlock1,clearSearchText" status="LoadingStatus"/>
+       		
+       		<apex:actionFunction name="nextPlans" action="{!nextPlans}" oncomplete="ajaxResultPost({!JsonString});" rerender="paginationBlock1" status="LoadingStatus"/>
+			<apex:actionFunction name="previousPlans" action="{!previousPlans}" oncomplete="ajaxResultPost({!JsonString});" rerender="paginationBlock1" status="LoadingStatus"/>
+			<apex:actionFunction name="firstPlans" action="{!firstPlans}" oncomplete="ajaxResultPost({!JsonString});" rerender="paginationBlock1" status="LoadingStatus"/>
+			<apex:actionFunction name="lastPlans" action="{!lastPlans}" oncomplete="ajaxResultPost({!JsonString});" rerender="paginationBlock1" status="LoadingStatus"/>
+			
+			<apex:actionFunction name="changeCurrency" action="{!changeCurrency}" status=""/>			       		
+            <apex:variable var="planTotal" value="{!0}" /> 
+            <apex:variable var="subplanTotal" value="{!0}" />
+            
+            <apex:variable var="planRow" value="{!0}" /> 
+            <apex:variable var="subplanRow" value="{!0}" /> 
+                           
+            
+            <table width="100%" class="altrowstable" id="alternatecolor">
+               
+                <tr>
+                        <td colspan="2" align="left" style="padding-bottom:10px;">
+                                <apex:inputText id="searchTextID" value="{!searchPlanText}" style="width: 50%;padding-top: 0px;padding-bottom: 0px;height: 25px;"/>
+                                <input type="button" value="search" style="width: 15%;height: 28px;padding-bottom: 0px;padding-top: 0px;border-radius: 4px;color: black;background: white;" onclick="searchPlansJS()"/>
+                                <apex:outputPanel id="clearSearchText">
+	                                <apex:outputPanel rendered="{!searchPlanText!=''}">
+	                                	<a onclick="clearSearch();" onmouseover="" style="cursor: pointer;"> &nbsp;<u>clear search</u></a>
+	                                </apex:outputPanel>
+                                </apex:outputPanel>
+                                
+                        </td>
+                        <td colspan="3" align="center"> 
+                                <apex:outputPanel id="paginationBlock1" layout="">
+                                		<script>
+                                			hasNext={!hasNext};
+											hasPrevious={!hasPrevious};
+                                		</script>
+                                		<table><tr>
+<!--                                        style="padding-left:0px !important;padding-right:0px !important;" -->
+													
+                                                <td style="padding-left:0px !important;padding-right:2px !important;"><a href="#" onclick="firstPlansJS()"><img id="firstPlanID1" src="{!if(hasPrevious,URLFOR($Resource.Sim_JS, 'images/first_0.png'),URLFOR($Resource.Sim_JS, 'images/first_1.png'))}" class="paggingIconExt" title="First"/></a></td>
+                                                <td style="padding-left:0px !important;padding-right:0px !important;"><a href="#" onclick="previousPlansJS()"><img id="prevPlanID1" src="{!if(hasPrevious,URLFOR($Resource.Sim_JS, 'images/previous_0.png'),URLFOR($Resource.Sim_JS, 'images/previous_1.png') )}" class="paggingIconExt" title="Previous"/></a></td>
+                                                <td style="padding-left:0px !important;padding-right:0px !important;"><span class="paggingText"> Showing {!fromRec} - {!toRec}  of {!totalNoOfPlans} Plans </span></td>
+                                                <td style="padding-left:0px !important;padding-right:0px !important;"><a href="#" onclick="nextPlansJS()"><img id="nextPlanID1" src="{!if(hasNext,URLFOR($Resource.Sim_JS, 'images/next_0.png'),URLFOR($Resource.Sim_JS, 'images/next_1.png'))}"  class="paggingIconExt" title="Next"/></a></td>
+                                                <td style="padding-left:0px !important;padding-right:0px !important;"><a href="#" onclick="lastPlansJS()"><img id="lastPlanID1" src="{!if(hasNext,URLFOR($Resource.Sim_JS, 'images/last_0.png'),URLFOR($Resource.Sim_JS, 'images/last_1.png'))}" class="paggingIconExt" title="Last"/></a></td>
+                                                
+                                        </tr></table>
+                                </apex:outputPanel>
+                                
+                        </td>
+                    <td colspan="3" align="right" >
+                        <apex:outputPanel >
+                             <apex:outputLabel ><b>Currency</b>&nbsp;&nbsp;</apex:outputLabel>
+                             <apex:selectList id="currencyOption" value="{!selectedCurrency}"  onfocus="currencyOnFocus(this)" onchange="currencyOnChange(this)"  style="width: 120px;height: 20px;font-size:12px;" size="1" disabled="{!isAcctHaveAriaId}" title="Currency cannot be changed in case of Mid term plan change">
+                                <apex:selectOptions value="{!currenciesOptions}"/>
+                                <!-- <apex:actionSupport event="onchange" action="{!changeCurrency}"  status="st1"/> --> 
+                             </apex:selectList>
+                        </apex:outputPanel>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="8"  width="100%" style="padding-bottom: 0px;">
+                        <apex:outputpanel >
+                            <div class="ng-scope"  width="100%">
+                           		<table width="100%" cellspacing="0" cellpadding="0" class="ng-scope">
+                           			
+					                <tr>
+					                    <td class="gradiantHeader" width="10" height="30" style="font-family: arial,sans-serif;text-align: left;padding-left:8px;"><b>Select</b></td>
+					                    <td class="gradiantHeader" width=""  style="font-family: arial,sans-serif;text-align: left;padding-left:8px;	">
+					                        <b><a href="#" onclick="sortPlanJS()">Master Plan <img id="planSortDirID" src="{!URLFOR($Resource.Sim_JS, 'images/order_asc.png')}" width="18" height="12"/></a></b>
+					                                
+					                    </td>
+					                    <td class="gradiantHeader" width="100" style="font-family: arial,sans-serif;text-align: left;padding-left:8px;"><b>Billing Interval</b></td>
+					                    <td class="gradiantHeader" width="100" style="font-family: arial,sans-serif;text-align: right;padding-right:8px !important;"><b>List Price</b></td>
+					                </tr>
+                				</table>
+                            </div>
+                        </apex:outputpanel>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="9"  width="100%" style="padding-top: 0px;">
+                        <apex:outputpanel rendered="{!JsonString!=null && len(JsonString)>2}">
+                            <div ng-repeat="pw in list" ng-include="'items_renderer.html'"  width="100%">
+                           
+                            </div>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!JsonString==null || (JsonString!=null && len(JsonString)<=2) || (JsonString!=null && JsonString=='undefined')}">
+                            No New Plans to choose.
+                        </apex:outputpanel>
+                        
+                    </td>
+                </tr>
+                
+           </table>
+                     
+                    
+   </apex:outputPanel>
+
+<div>
+                   
+                    <script type="text/ng-template" id="items_renderer.html">
+                    <table width="100%" cellspacing="0" cellpadding="0">
+		                <tr id ="plan_row_{{pw.groupNo}}" class="testClone {{$index%2 == 0 ?'evenrowcolor':'oddrowcolor'}} {{pw.isGroupSelected? 'selectedRow':''}}"
+                                                ng-class="{replacedrow: (pw.node.isReplaced||pw.node.isNewReplacement) && pw.groupNo.indexOf('ext')>-1}">        
+                        <td width="10" align="center" id="chk_{{pw.groupNo}}" style="padding-left:10px;">
+                            <input type="hidden" id="hdnisCustomRate_{{pw.groupNo}}" value="{{pw.node.isDiscount}}" />
+                            <input  type="checkbox" id="chkmain_{{pw.groupNo}}" class="chkmain" ng-checked="pw.isGroupSelected" ng-click="ngCheckBoxChangeHandler($event, pw);ngPlanSelection($event,pw.groupNo,pw.optionLabel);" 
+                                ng-hide="(pw.isInstance || pw.node.isReplaced || (pw.groupNo.indexOf('ext')>-1 && pw.node.planType==mRecType))">
+                            <input type="hidden" id="chkSelected_{{pw.groupNo}}" value="{{pw.isGroupSelected}}"/> 
+                            <input type="hidden" value="{{pw.node.noOfInstances}}" id="hdnnoOfInstancesL1"/>
+                            
+                        </td>
+                        <td width="">
+                            <img style="vertical-align:top;" id="arrow_{{pw.groupNo}}" src="{!URLFOR($Resource.Sim_JS, 'images/arrow.png')}" ng-click="ngDisplaysubPlans(pw,'arrow_'+pw.groupNo,pw.groupNo,'planServiceTD_'+pw.groupNo,'servdiv_'+pw.groupNo,'subPlanDiv_'+pw.groupNo,'imgbank_'+pw.groupNo);" width="18" height="12" ng-hide="pw.node.isReplaced || pw.children.length<=0"/>
+                                                        <span ng-show="pw.node.isReplaced || pw.children.length<=0">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                        <span class="wrap-text">
+						<!-- Plan Name -->
+                        <label class = "planName" ng-class="{strikedText: pw.node.isReplaced && pw.groupNo.indexOf('ext')>-1, normalText: !pw.node.isReplaced}">{{pw.node.planName}}</label>
+                        </span>
+                        </td>
+						<!-- Billing Interval -->
+                        <td width="100"  style="padding-left: 3px;">
+                            <label id="lbl_billinginterval_{{pw.groupNo}}" ng-class="{strikedText: pw.node.isReplaced && pw.groupNo.indexOf('ext')>-1, normalText: !pw.node.isReplaced}" 
+                                                                ng-hide="false">{{pw.optionLabel[pw.selectedBillingInterval]}}
+                                                                <label ng-show="pw.optionLabel[pw.selectedBillingInterval] == 'Custom'" >- ({{pw.selectedBillingInterval}})</label>
+                                                        </label>
+
+							
+                            <select id="select_billinginterval_{{pw.groupNo}}" ng-model="pw.selectedBillingInterval" ng-change="ngUpdateBillingFilter(pw);"
+                                                                ng-hide="true" style="width:100px">
+                                <option ng-repeat="(key, val) in pw.optionLabel" value="{{key}}" ng-selected="key==pw.selectedBillingInterval">
+                                         {{val}}
+                                </option>   
+                            </select>
+                        </td> 
+						
+						<!-- List Price -->
+                        <td width="100" id="planTotal_{{pw.groupNo}}" align="right" style="padding-right: 8px !important;">
+                             <span id="listcurrency_total_{{pw.groupNo}}" ng-model="pw.node.ListPrice" ng-bind="pw.node.ListPrice | number:2" ng-class="{strikedText: pw.node.isReplaced && pw.groupNo.indexOf('ext')>-1, normalText: !pw.node.isReplaced}" >
+                            </span>
+                        </td>
+                    </tr>
+                    
+                    <tr id="sec_row_{{pw.groupNo}}" style="display:none;">
+                    <td colspan="9" align="center" id="planServiceTD_{{pw.groupNo}}" style="padding-top: 0px;padding-left: 0px !important;">
+                        <!-- Service DIV -->
+                        <div id="servdiv_{{pw.groupNo}}" class="curtainCls" style="display:none;">
+							<table id="plan_services" width="98%" border="1" cellspacing="0" cellpadding="2" class="plan_services">
+								
+							</table>
+							
+                        </div>
+                        <!-- Child DIV -->
+                        <div id="subPlanDiv_{{pw.groupNo}}"  width="100%"  style="display:none; margin-left:5%;">
+                        <div ng-repeat="pw in pw.children" ng-include="'items_renderer.html'" width="100%">
+                       
+                        </div>
+                        </div>  
+                    </td>
+                    </tr>
+                   
+                </table>
+                </script>
+               </div> 
+
+</div>
+ 
+</div>
+<apex:actionstatus id="LoadingStatus">
+    <apex:facet name="start">
+        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 15%;opacity:.8;">
+            <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+            
+            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+        </div>
+    </apex:facet>
+</apex:actionstatus> 
+	<apex:inputHidden value="{!selectedPlanJson}" id="hdnSelectedPlan"/>
+	<apex:inputHidden value="{!selectedExtPlanJson}" id="hdnExtSelectedPlan"/>
+	
+	<div class="buttonPanel">
+	   <input type="button" name="Submit" value="Cancel" class="btn-Cancel" onclick="cancel();"/>
+	   <input type="submit" name="Submit" value="Add" class="btn-Save" onclick="return getSelectedPlan('{!$Component.hdnSelectedPlan}','{!$Component.hdnExtSelectedPlan}');"/>
+	</div>
+	</apex:form>
+	      <div id="replaceDialogBox"></div>
+        <div id="cancelDialogBox"></div>
+        <div id="confirmReplaceDialogBox"></div>
+        <div id="confirmCancelDialogBox"></div>
+        <div id="genericDialogBox"></div>
+</apex:page>

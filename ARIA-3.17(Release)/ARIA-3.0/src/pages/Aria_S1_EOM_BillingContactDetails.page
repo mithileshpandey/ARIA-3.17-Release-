@@ -1,0 +1,110 @@
+<apex:page sidebar="false" showHeader="false" standardController="Opportunity" extensions="Aria_S1_EOM_AccountPlanSelectionCtr" id="billingContacts">
+<apex:stylesheet value="{!URLFOR($Resource.sf_resources,'styles/main.css')}"/>
+<apex:includeScript value="{!URLFOR($Resource.sf_resources,'scripts/jquery.js')}"/>
+<div id="myCurtain" class="requiredLoaderBG" style="display:none;"></div>
+<apex:form id="contactList">
+<style>
+    #datePicker{
+        display:none;
+    }
+    .ct-detail {
+      padding: 10px;
+    }
+    
+    .ct-detail .title {
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .ct-detail .description {
+      padding-top: 5px;
+      font-weight: normal;
+      font-size: 14px;
+    }
+    
+    .ct-detail .gap-v {
+      margin: 0px !important;
+      margin-top: 35px !important;
+    }
+    
+    .ct-detail .fistitem {
+      margin: 0px !important;
+    }
+</style>
+<apex:outputPanel id="assignContact">
+<div class="blue-header" id="paymentHome" style="display:{!if(isPersonAccount==true,'block','none')}">
+    <div class="left-button" onclick="$('#myCurtain').show(); navigateToHome();">Cancel</div>
+</div>
+<div class="blue-header" style="display:{!if(isPersonAccount==false,'block','none')}">
+        <div class="left-button" onclick="$('#myCurtain').show();  cancelExistingContact();">Cancel</div>
+        <div class="right-button" id="assignBtn" onclick="assignContact();" style="display:block;">Assign</div>
+        <div class="right-button" id="doneBtn" onclick="$('#myCurtain').show();  doneExistingContact();"  style="display:none;">Done</div>
+</div>
+<div class="page-header context-account">
+        <h1 id="titleId">Contact Detail</h1>
+        <p class="title truncate">for {!selectedContact.Name}</p>
+</div> 
+</apex:outputPanel>
+<div class="ct-detail">
+    <div class="row">
+        <div class="col col-custom fistitem row">
+            <div class="span_12_of_12">
+                <div class="title"> Name</div>
+                <div class="description">{!selectedContact.Salutation} {!selectedContact.Name}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col col-custom gap-v row">
+        <div class="span_12_of_12">
+           <div class="title"> Title</div>
+             <div class="description">{!selectedContact.Title}</div>
+        </div>
+    </div>
+    <div class="row col col-custom gap-v">
+       <div class="span_12_of_12">
+          <div class="title">Address</div>
+          <div class="description"  style="display:{!if(selectedContact.MailingPostalCode != null || selectedContact.MailingStreet != null,'block','none')}">{!selectedContact.MailingPostalCode} {!selectedContact.MailingStreet} </div>
+          <div class="description" style="display:{!if(selectedContact.MailingCity != null || selectedContact.MailingState != null,'block','none')}"> {!selectedContact.MailingCity} {!selectedContact.MailingState}</div>
+          <div class="description" style="display:{!if(selectedContact.MailingCountry != null,'block','none')}">{!selectedContact.MailingCountry}</div>
+       </div>
+    </div>    
+</div>
+<script>
+    function assignContact(){        
+        document.getElementById('titleId').innerHTML = 'Billing Contact Detail';
+        document.getElementById('assignBtn').style.display = 'none';
+        document.getElementById('doneBtn').style.display = 'block'; 
+    }
+</script>
+<!--<apex:actionFunction name="assignContact" action="{!assignContact}" reRender="assignContact">
+</apex:actionFunction>-->
+<apex:actionFunction name="doneExistingContact" action="{!doneExistingContact}" >
+</apex:actionFunction>
+<apex:actionFunction name="cancelExistingContact" action="{!cancelExistingContact}" >
+</apex:actionFunction>
+<apex:actionFunction action="{!goHome}" name="navigateToHome"/>
+<style>
+    .requiredLoaderBG{
+        background-color: rgb(71,71,71);
+        opacity:0.7;
+        filter:alpha(opacity=70);
+        //background-image:url('/img/loading.gif');
+        background-image:url("{!URLFOR($Resource.sf_resources,'/images/icons/ajax-loader.gif')}");
+        background-position: center center;
+        background-repeat: no-repeat;
+        height: 100%;
+        left: 0;
+        position: fixed;
+        text-align: center;
+        top: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+    #curtainText{
+        position: relative;
+        top: 54%;
+        color: white;
+    }
+</style>
+</apex:form>
+</apex:page>

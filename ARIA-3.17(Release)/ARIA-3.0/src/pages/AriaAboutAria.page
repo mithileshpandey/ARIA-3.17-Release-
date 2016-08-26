@@ -1,0 +1,30 @@
+<apex:page title="About Aria">
+
+                <apex:sectionHeader title="{!$Label.ARIA_ABOUT_PAGE_HEADER}" />
+                <apex:pageBlock title="{!$Label.ARIA_ABOUT_PAGE_BLOCK_HEADER}" >
+        <style>
+            #main li {
+                padding-bottom: 5px;
+            }
+        </style>
+        
+        <ul id="main2">
+            <apex:outputLabel escape="false" value="{!$Label.ARIA_ABOUT_FEATURE_HEADLINE}"></apex:outputLabel>
+        <ul type="disc">    
+                <apex:outputLabel escape="false" value="{!$Label.ARIA_ABOUT_PART_ONE}"></apex:outputLabel>  
+                <apex:outputLabel escape="false" value="{!$Label.ARIA_ABOUT_PART_TWO}"></apex:outputLabel>
+            </ul>
+        </ul>
+        
+        <ul id="main2">
+                <apex:outputLabel escape="false" value="{!$Label.ARIA_ABOUT_PART_ALLOWS}"></apex:outputLabel>
+            <ul type="disc">
+                <apex:outputLabel escape="false" value="{!$Label.ARIA_ABOUT_ALLOWS_PART_ONE}"></apex:outputLabel>
+            <ul type="inside1">
+                <apex:outputLabel escape="false" value="{!$Label.ARIA_ABOUT_ALLOWS_PART_TWO}"></apex:outputLabel>
+                </ul>
+                <apex:outputLabel escape="false" value="{!$Label.ARIA_ABOUT_ALLOWS_PART_THREE}"></apex:outputLabel>
+            </ul>
+        </ul>
+    </apex:pageBlock>
+</apex:page>

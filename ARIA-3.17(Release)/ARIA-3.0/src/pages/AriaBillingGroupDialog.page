@@ -1,0 +1,205 @@
+<apex:page sidebar="false" showheader="false" controller="AriaBillingGroupDialogCtrl">
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css"/>
+<style>
+.scrollDiv {
+	//background: #f8f8f8;
+	min-height: 190px;
+    max-height: 190px; /* you will need to pass height from main page and this height will be less than 40px as pe main page dialog height*/
+    overflow-y: auto;
+}
+.buttonPanel { 
+    padding-top: 11px;
+    //background: #f8f8f8;
+    padding-bottom: 2px;
+}
+.button:hover {
+    text-decoration: none;
+}
+.button, .button:focus {
+    display: inline-block;
+    zoom: 1;
+    vertical-align: baseline;
+    outline: none;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    font: 14px/100% Arial, Helvetica, sans-serif; 
+    padding: .35em .5em .5em;
+    text-shadow: 0 1px 1px rgba(0,0,0,.3);
+    -webkit-border-radius: .5em;
+    -moz-border-radius: .5em;
+    border-radius: .3em;
+    -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    -moz-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    box-shadow: 0 1px 2px rgba(0,0,0,.2);
+}
+.blue, .blue:focus{
+	float:right;
+    color: #fff;
+    border: solid 1px #0076a3;
+    background: #428bca;
+    background: -webkit-gradient(linear, left top, left bottom, from(#00adee), to(#0078a5));
+    background: -moz-linear-gradient(top, #00adee, #0078a5);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#00adee', endColorstr='#0078a5');
+}
+.blue:hover {
+    background: #007ead;
+    background: -webkit-gradient(linear, left top, left bottom, from(#0095cc), to(#00678e));
+    background: -moz-linear-gradient(top, #0095cc, #00678e);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0095cc', endColorstr='#00678e');
+}
+body {
+    font-family: Arial,Helvetica,sans-serif;
+    color: #222;
+}
+select{   
+    height: 27px;
+    border-radius: 3px;
+    border: 1px solid #CCC;
+    font-weight: 200;
+    font-size: 13px;
+    font-family: Verdana;
+    box-shadow: 1px 1px 5px #CCC;
+}
+select: hover{
+    width: 245px; 
+    height: 24px;
+    border-radius: 3px;
+    border: 1px solid #CCC;
+    font-weight: 200;
+    font-size: 13px;
+    font-family: Verdana;
+    box-shadow: 1px 1px 5px #CCC;
+}
+input[type='text']{
+    width: 56px;
+    height: 10px;
+    border-radius: 3px;
+    border: 1px solid #CCC;
+    padding: 7px;
+    font-weight: 200;
+    font-size: 13px;
+    font-family: Verdana;
+    box-shadow: 1px 1px 5px #CCC;
+}
+input[type='text']:hover{
+    box-shadow: 1px 1px 5px #CCC;
+} 
+.message {
+	margin: 0px 0px; 
+}
+</style>
+<apex:form >
+<apex:actionstatus id="LoadingStatus">
+    <apex:facet name="start">
+        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 15%;opacity:.8;">
+            <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+        </div>
+    </apex:facet>
+</apex:actionstatus>
+ 
+<div class="scrollDiv">
+	<apex:pagemessages id="errorQuoteMessage"></apex:pagemessages>
+	<!-- Put your Code here -->
+	<div id="AccountStatusSection">
+		<div style="margin-top: 0px;margin-bottom: 5px;font-weight: bold;">Account Status</div>
+		<div style="margin-top: -5px;">
+			 <apex:selectList size="1" style="margin-top: 4px;margin-bottom:7px;width: 60%;" value="{!billAccount.Aria_Status__c}" styleClass="acct_status"> 
+                    <apex:selectOptions value="{!status_options}"></apex:selectOptions>
+             </apex:selectList>
+<!-- 			<apex:inputField style="margin-top: 4px;margin-bottom:7px;width: 60%;" value="{!billAccount.Aria_Status__c}" styleClass="acct_status"/> -->
+ 		</div>
+	</div>
+	<div id="AltBillingDaySection">
+		<div style="margin-top: 10px;font-weight: bold;">Alternate Billing Day</div>
+		<div style="margin-top: 0px;">
+			 <apex:selectList size="1" style="margin-top: 4px;width: 30%;" value="{!billAccount.Aria_Billing_Day__c}" styleClass="acct_bill_day"> 
+                    <apex:selectOptions value="{!bill_day_options}"></apex:selectOptions>
+             </apex:selectList>
+<!-- 			<apex:inputField style="margin-top: 4px;width: 30%;" value="{!billAccount.Aria_Billing_Day__c}" styleClass="acct_bill_day" />                       -->
+      	</div>
+	</div>
+	<div id="AltBillingStartDateSection">
+		<div style="margin-top: 15px;margin-bottom: 8px;font-weight: bold;">Alternate Billing Start Date</div>
+		<div style="margin-top: -5px;">
+			<apex:inputField id="contractStartDatetxt1" style="width: 30%;" value="{!billAccount.Aria_Account_Activation_Date__c}" styleclass="acct_bill_startdate" />
+		</div>
+	</div>
+</div>
+
+<!-- action function and button calling section -->
+
+<apex:actionFunction name="saveBillAccountOptions" action="{!saveBillAccountOptions}" status="LoadingStatus" reRender="errorQuoteMessage" oncomplete="if('{!hasErrorMessage}' == 'false'){redirectToPlanWizard('{!url}')}" ></apex:actionFunction>
+<div class="buttonPanel">
+	<apex:actionstatus id="status">
+    	<apex:facet name="start">
+        	<img src="../img/loading.gif" style="float:right;text-align: center;padding: .35em .5em .5em;"/>
+        </apex:facet> 
+    </apex:actionstatus>
+   	<input type="submit" name="Submit" value="Save" class="button blue" onClick="validateNSave('{!$Component.contractStartDatetxt1}'); return false;"/>
+   	<input type="button" id="close-dialog" value="Save"  style="display:none"/>
+</div> 
+<script>
+$j = jQuery.noConflict(); 
+function validateNSave(dateFieldID){
+	if(stopPreviousdate(dateFieldID)){
+		saveBillAccountOptions();
+	}
+}
+function stopPreviousdate(dateFieldID){
+	   var dateValue = new Date (document.getElementById(dateFieldID).value);
+	   var dateOnly = Date.parse(document.getElementById(dateFieldID).value); //Date.parse(dateValue.setHours(0,0,0,0));
+	   var todayDate = Date.parse('{!effectiveDate}'); 
+	   if(dateOnly < todayDate  ){
+	   	//showGenericDialog('Alert ','Please select today or future date',180,300);
+	   	alert('Please select today or future date');
+	    document.getElementById(dateFieldID).value = null;
+	    return false;
+	  }
+	  return true;
+}
+if('{!billAccount.Aria_Status__c}' =='Active'){
+  	$j("#AltBillingStartDateSection").hide();
+}
+function redirectToPlanWizard(url){ 
+    //alert(url); 
+    window.top.location.href = url;
+}
+function showCalender(id){
+	var element = document.getElementById(id);
+	DatePicker.pickDate(true, element, false);
+}
+function overRideCal(){
+	$j('.dateFormat a').each(function() {
+		var href = $j( this ).attr("href");
+		var elementId = href.split(",")[1];
+		//console.log(elementId+">>>>");
+		$j( this ).attr("href","javascript:showCalender("+elementId+");");
+		var span = $j(this).parent();
+		$j(span).html("");
+     	$j( this ).html('<img height="16" src="/img/func_icons/util/datePicker16.gif" width="16"	style="padding-left: 8px;" />');
+     	$j(this).css({"vertical-align": "middle"}); 
+     	$j(span).append(this);
+     	$j(span).attr('class','dateFormatCustom');
+ 	});
+}
+function hideshowdiv(val ){
+    if(val == 'Active' || val  == '' || val  == null){
+         $j("#AltBillingStartDateSection").hide();
+         $j(".acct_bill_startdate").val('');
+    }else{
+        $j("#AltBillingStartDateSection").show();
+        $j(".acct_bill_startdate").show();
+    }
+}
+$j(".acct_status").change(function(){
+    hideshowdiv($j(".acct_status").val());
+});  
+overRideCal();
+</script>
+</apex:form>
+<div id="genericDialogBox"></div>
+</apex:page>

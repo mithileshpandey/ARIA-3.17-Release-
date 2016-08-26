@@ -1,0 +1,73 @@
+<apex:page controller="CustomAccountLookupController"  title="Search" showHeader="false" sideBar="false" tabStyle="Account" id="pg">
+  <head>
+	<title>Search ~ Salesforce</title>
+</head>
+
+<style>
+.lookupTab{
+    background: #fff url(/img/alohaSkin/lookup_bg.png) repeat-x;
+    padding: 0;
+    
+ }
+ .bPageTitle{
+     margin: 0;
+    padding: 0;
+ }
+.pageTitleIcon{
+    background-image: url(/img/sprites/master.png);
+    background-position: 0 -1202px;
+    width: 32px;
+    height: 32px;
+    
+}
+body .bPageTitle .ptBody {
+    background-color: transparent;
+    color: #000;
+    padding: 0;
+}
+body.lookupTab .lookup {
+    padding: 0 0;
+}
+
+</style>
+<body class="lookupTab">
+  <apex:form >
+  <apex:outputPanel id="page" layout="block" style="margin:5px;padding:10px;padding-top:2px;">
+        <apex:actionRegion >  
+          <apex:outputPanel id="top" layout="block" styleclass="lookup" >
+		  	<apex:outputPanel layout="block" styleclass="bPageTitle">
+		  		<div class="ptBody secondaryPalette">
+		  			<div class="content"><img src="/s.gif" alt="" class="pageTitleIcon" title=""/><h1>Lookup</h1></div>
+		  		</div>
+		  	</apex:outputPanel>
+			<apex:outputPanel layout="block" styleclass="pBody">
+				 <b>Search : </b> <apex:inputText maxlength="80" id="txtSearch" value="{!searchString}" />
+				<apex:commandButton id="btnGo" value="Go!" title="Go!" action="{!Search}" rerender="searchResults"></apex:commandButton>
+			</apex:outputPanel>
+		  </apex:outputPanel>
+
+          <apex:outputPanel id="pnlSearchResults" style="margin:10px;height:350px;overflow-Y:auto;" layout="block">
+            <apex:pageBlock id="searchResults"> 
+              <apex:pageBlockTable value="{!results}" var="a" id="tblResults">
+                <apex:column >
+                  <apex:facet name="header">
+                    <apex:outputPanel >Name</apex:outputPanel>
+                  </apex:facet>
+                   <apex:outputLink value="javascript:top.window.opener.lookupPick2('{!FormTag}','{!TextBox}_lkid','{!TextBox}','{!a.Id}','{!a.Name}', false)" rendered="{!NOT(ISNULL(a.Id))}">{!a.Name}</apex:outputLink>     
+                </apex:column>
+                 <apex:column >
+                  <apex:facet name="header">
+                    <apex:outputPanel >Aria ID</apex:outputPanel>
+                  </apex:facet>
+                   {!a.Aria_Id__c}  
+                </apex:column>
+              </apex:pageBlockTable>
+            </apex:pageBlock>
+          </apex:outputPanel>
+        </apex:actionRegion>
+
+     
+  </apex:outputPanel>
+  </apex:form>
+ </body>
+</apex:page>

@@ -1,0 +1,422 @@
+<apex:page sidebar="false" showHeader="false" standardController="Opportunity" extensions="Aria_S1_EOM_AccountPlanSelectionCtr" action="{!setConfigLinksMap}">
+<apex:stylesheet value="{!URLFOR($Resource.sf_resources,'styles/main.css')}"/>
+<apex:includeScript value="{!URLFOR($Resource.sf_resources,'scripts/jquery.js')}"/>
+<div id="myCurtain" class="requiredLoaderBG" style="display:none;">
+    <div id="curtainText" style="display:none;">Initiating Commit</div>
+</div>
+<apex:form >
+    <apex:outputPanel layout="none" rendered="{!isValidQuote}">
+    <apex:actionFunction action="{!navigatetoPlans}" name="addPaln"/>
+    <apex:actionFunction action="{!navigatetoPayment}" name="addPayment"/>
+    <apex:actionFunction action="{!navigatetoPlans}" name="addCustom"/>
+    <apex:actionFunction action="{!navigatetoBillingContact}" name="addBillingContacts"/>
+    <apex:actionFunction action="{!navigatetoCouponDetails}" name="addPromoCode"/>
+    <div class="blue-header">
+        <div class="home-button" onclick="showAlert('home');"></div>
+        <apex:outputPanel layout="block" rendered="{!displayCommit}" styleclass="commit-button" style="position: relative;float: right;" onclick="showAlert('commit','{!Opportunity.Name}');">Commit</apex:outputPanel>
+        <apex:outputPanel layout="block" rendered="{!If(savedClientPlans.size>0,true,false)}" styleclass="commit-button" style="position: relative;float: right; width:115px;" onclick="showAlert('saveToDraft','{!Opportunity.Name}');">Save as Draft</apex:outputPanel>
+   </div> 
+  <div class="page-header context-account" id="newQuote">
+        <h1>Create a New Quote</h1>
+        <p class="title truncate">for {!Opportunity.Name} Opportunity</p>
+  </div>
+  <div class="commit-quote">
+        <div class="row {!If(savedClientPlans.size>0,'list-group-on','list-group-off')}">
+          <div class="span_2_of_2 {!If(savedClientPlans.size>0,'list-item-on','list-item-off')}" onclick="$('#myCurtain').show(); addPaln();">
+              <div class="image"></div>
+              <div class="title">Plans</div>
+              <div class="description title truncate">{!If(savedClientPlans.size>0,savedClientPlans[0].clientPlan.Name,'NOT YET STARTED')}</div>
+          </div>
+        </div>
+        
+        <apex:repeat value="{!configLinksMap['Payments Insert Up']}" var="paymentInsertUp">
+            <apex:outputPanel layout="block" styleclass="row list-group-off" rendered="{!paymentInsertUp.isVisible}">
+              <div class="span_2_of_2 list-item-off" >
+                  <div class="image"></div>
+                  <div class="title">{!paymentInsertUp.linkName}</div>
+                  <!-- <div class="description title truncate">NOT YET STARTED</div> -->
+                  <div class="description title truncate">
+                    <apex:outputLink value="#"  onclick="openNavigationLink('{!paymentInsertUp.linkURL}','{!paymentInsertUp.configLinkId}','{!paymentInsertUp.width}','{!paymentInsertUp.height}');">{!paymentInsertUp.linkURL}</apex:outputLink>
+                  </div>
+              </div>
+            </apex:outputPanel>
+        </apex:repeat>
+        <apex:outputPanel styleclass="row {!If(paymentObj.Payment_Method__c != null,'list-group-on','list-group-off')}" layout="block" rendered="{!displayControl['Payments']}">
+          <div class="span_2_of_2 {!If(paymentObj.Payment_Method__c != null,'list-item-on','list-item-off')}" onclick="addPaymentDetails('{!savedClientPlans.size}');" >
+              <div class="image"></div>
+              <div class="title">Payment Methods</div>
+              <div class="description title truncate">{!If(paymentObj.Payment_Method__c != null ,if(paymentObj.Payment_Method__c=='Electronic Check (ACH)','Bank Account' + paymentSuffix  ,paymentObj.Payment_Method__c + paymentSuffix),'NOT YET STARTED')}</div>
+          </div>
+        </apex:outputPanel>
+        <apex:repeat value="{!configLinksMap['Payments Insert Down']}" var="paymentInsertDown">
+            <apex:outputPanel layout="block" styleclass="row list-group-off" rendered="{!paymentInsertDown.isVisible}">
+              <div class="span_2_of_2 list-item-off" >
+                  <div class="image"></div>
+                  <div class="title">{!paymentInsertDown.linkName}</div>
+                  <!-- <div class="description title truncate">NOT YET STARTED</div> -->
+                  <div class="description title truncate">
+                    <apex:outputLink value="#"  onclick="openNavigationLink('{!paymentInsertDown.linkURL}','{!paymentInsertDown.configLinkId}','{!paymentInsertDown.width}','{!paymentInsertDown.height}');">{!paymentInsertDown.linkURL}</apex:outputLink>
+                  </div>
+              </div>
+            </apex:outputPanel>
+        </apex:repeat>
+        
+        <apex:repeat value="{!configLinksMap['Billing Contact Insert Up']}" var="billingContactUp">
+            <apex:outputPanel layout="block" styleclass="row list-group-off" rendered="{!billingContactUp.isVisible}">
+              <div class="span_2_of_2 list-item-off" >
+                  <div class="image"></div>
+                  <div class="title">{!billingContactUp.linkName}</div>
+                  <!-- <div class="description title truncate">NOT YET STARTED</div> -->
+                  <div class="description title truncate">
+                    <apex:outputLink value="#"  onclick="openNavigationLink('{!billingContactUp.linkURL}','{!billingContactUp.configLinkId}','{!billingContactUp.width}','{!billingContactUp.height}');">{!billingContactUp.linkURL}</apex:outputLink>
+                  </div>
+              </div>
+            </apex:outputPanel>
+        </apex:repeat>
+        
+        <apex:outputPanel styleclass="row {!If(billingContact != null ,'list-group-on','list-group-off')}" layout="block"   onclick="addContact( '{!savedClientPlans.size}','{!isPersonAccount}' );" rendered="{!displayControl['Billing Contact (S1)']}">
+          <div class="span_2_of_2 {!If(billingContact != null ,'list-item-on','list-item-off')}">
+          <!-- onclick="addContact( '{!savedClientPlans.size}' );" -->
+              <div class="image"></div>
+              <div class="title">Billing Contacts</div>
+              <div class="description title truncate">{!If(billingContact != null,billingContact.firstName+' ' + billingContact.lastName ,'NOT YET STARTED')}</div>
+          </div>
+        </apex:outputPanel>
+        
+        <apex:repeat value="{!configLinksMap['Billing Contact Insert Down']}" var="billingContactDown">
+            <apex:outputPanel layout="block" styleclass="row list-group-off" rendered="{!billingContactDown.isVisible}">
+              <div class="span_2_of_2 list-item-off" >
+                  <div class="image"></div>
+                  <div class="title">{!billingContactDown.linkName}</div>
+                  <!-- <div class="description title truncate">NOT YET STARTED</div> -->
+                  <div class="description title truncate">
+                    <apex:outputLink value="#"  onclick="openNavigationLink('{!billingContactDown.linkURL}','{!billingContactDown.configLinkId}','{!billingContactDown.width}','{!billingContactDown.height}');">{!billingContactDown.linkURL}</apex:outputLink>
+                  </div>
+              </div>
+            </apex:outputPanel>
+        </apex:repeat>
+        
+        <apex:repeat value="{!configLinksMap['Promotions Insert Up']}" var="promotionsUp">
+            <apex:outputPanel layout="block" styleclass="row list-group-off" rendered="{!promotionsUp.isVisible}">
+              <div class="span_2_of_2 list-item-off" >
+                  <div class="image"></div>
+                  <div class="title">{!promotionsUp.linkName}</div>
+                  <!-- <div class="description title truncate">NOT YET STARTED</div> -->
+                  <div class="description title truncate">
+                    <apex:outputLink value="#"  onclick="openNavigationLink('{!promotionsUp.linkURL}','{!promotionsUp.configLinkId}','{!promotionsUp.width}','{!promotionsUp.height}');">{!promotionsUp.linkURL}</apex:outputLink>
+                  </div>
+              </div>
+            </apex:outputPanel>
+        </apex:repeat>
+        
+        <apex:outPutPanel styleclass="row {!If(assignedCoupons.size>0 ,'list-group-on','list-group-off')}"  layout="block" rendered="{!displayControl['Promotions']}">
+        <!-- onclick="addPromoCode();" -->
+          <div class="span_2_of_2 {!If(assignedCoupons.size>0 ,'list-item-on','list-item-off')}"  onclick="addCouponCode('{!savedClientPlans.size}');">
+              <div class="image"></div>
+              <div class="title">Coupons </div>
+              <div class="description title truncate">{!If(assignedCoupons.size>0,assignedCoupons[0].Coupon_Code__c,'NOT YET STARTED')} 
+             </div>
+          </div>
+          
+          <div class="span_2_of_2 list-item-off" rendered="{!if(assignedCoupons.size>1,true,false)}"> 
+             <div id="couponDetails" style="display:none;">
+                 <apex:variable var="rowCount" value="{!1}"/>
+                 <apex:repeat value="{!assignedCoupons}" var="couponArray">
+                     <div class="description title truncate" style= "display : {!if(rowCount==1,'none','block')} " >{!couponArray.Coupon_Code__c}</div>
+                      <apex:variable var="rowCount" value="{!rowCount+1}"/>
+                 </apex:repeat>
+             </div>
+             <div id="showMoreCoupon" onclick="showMoreCoupon();" class="description title truncate" style="color:blue; cursor:pointer;"> {!if(assignedCoupons.size>1,'more...','')} </div>
+          </div>  
+        </apex:outPutPanel>
+        
+
+                    
+        <apex:repeat value="{!configLinksMap['Promotions Insert Down']}" var="promotionsDown">
+            <apex:outputPanel layout="block" styleclass="row list-group-off" rendered="{!promotionsDown.isVisible}">
+              <div class="span_2_of_2 list-item-off" >
+                  <div class="image"></div>
+                  <div class="title">{!promotionsDown.linkName}</div>
+                  <!-- <div class="description title truncate">NOT YET STARTED</div> -->
+                  <div class="description title truncate">
+                    <apex:outputLink value="#"  onclick="openNavigationLink('{!promotionsDown.linkURL}','{!promotionsDown.configLinkId}','{!promotionsDown.width}','{!promotionsDown.height}');">{!promotionsDown.linkURL}</apex:outputLink>
+                  </div>
+              </div>
+            </apex:outputPanel>
+        </apex:repeat>
+  </div>
+   
+   </apex:outputPanel>
+   <apex:outputPanel rendered="{!!isValidQuote}">
+        <div class="blue-header">
+            <div class="home-button" onclick="showAlert('home');"></div>
+       </div>
+       <div class="commit-quote" style="text-align:center;">
+        <h1 class="title" style="color:#c1192b">The account exist in Aria.</h1><br/>
+        <h1 style="color:#c1192b;"> Please create a quote for new account</h1>
+       </div>
+    </apex:outputPanel>
+    <apex:actionFunction name="SaveToDraft" action="{!SaveToDraft}" reRender="newQuote,scriptBlock" oncomplete="afterSaveDraft();">
+    </apex:actionFunction>  
+    <apex:actionFunction name="initiateCommit" action="{!initiateCommit}" reRender="newQuote,scriptBlock"   oncomplete="afterCommit();">
+    </apex:actionFunction>  
+    <apex:actionFunction action="{!fetchPlanExtraDetails}" name="fetchPlanExtraDetails" rerender="scriptBlock" oncomplete="callgetAcctDetailsAll();">
+    </apex:actionFunction>
+    <apex:actionFunction action="{!callgetAcctDetailsAll}" name="callgetAcctDetailsAll" rerender="scriptBlock" oncomplete="showAlert('refreshDone');">
+    </apex:actionFunction>
+    <apex:actionFunction action="{!updateNavigationLink}" name="updateNavigationLink" rerender="">
+        <apex:param name="q" value="" assignTo="{!selectedLinkId}"/>
+    </apex:actionFunction>
+    <apex:actionFunction action="{!fetchInvoiceLineItem}" name="fetchInvoiceLineItem" reRender="newQuote,ScriptBlock" oncomplete="afterFetchInvoiceLineItem();"/>
+</apex:form>
+        <div class="alert" id="alertBoxMine" style="display:none;">
+            <div class="row">
+                <div class="col alert-box span_12_of_12" style="height:170px !important;">
+                    <div class="close-icon" id="alertcloseIcon" onclick="$('#alertBoxMine').hide();"></div>
+                    <div class="title" id="alertMessage"></div>
+                    <div class="btn-full alert-btn" id="myCloseButton" onclick="$('#alertBoxMine').hide();">Close</div>
+                </div>
+            </div>
+        </div>
+        <div class="alert" id="confirmBoxMine" style="display:none;">
+            <div class="row">
+                <div class="col alert-box span_12_of_12">
+                    <div class="close-icon" id="closeIcon" onclick="$('#confirmBoxMine').hide();"></div>
+                    <div class="title" id="alertBoxdescription">Are you sure you want to go back to opportunity detail page?</div>
+                    <div class="btn-full alert-btn" id="myYesButton">Yes</div>
+                    <span class="btn-full alert-btn" id="myNoButton">No</span>
+                </div>
+            </div>
+        </div>
+<style>
+    .requiredLoaderBG{
+        background-color: rgb(71,71,71);
+        opacity:0.7;
+        filter:alpha(opacity=70);
+        //background-image:url('/img/loading.gif');
+        background-image:url("{!URLFOR($Resource.sf_resources,'/images/icons/ajax-loader.gif')}");
+        background-position: center center;
+        background-repeat: no-repeat;
+        height: 100%;
+        left: 0;
+        position: fixed;
+        text-align: center;
+        top: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+    .myError{
+        color:#c1192b !important;
+    }
+    #curtainText{
+        position: relative;
+        top: 54%;
+        color: white;
+    }
+    #datePicker{
+        display:none;
+    }
+</style>
+<script>
+    var doCommit = false;
+</script>
+<apex:outputPanel id="scriptBlock">
+<script>
+var errorEncountered = '{!errorEncountered}';
+var ariaApiErrorMsg = '{!ariaApiErrorMsg}';
+
+function showAlert(type,oppName){
+    if(type=='home'){
+        $('#alertBoxdescription').html("Your unsaved data will be lost. Do you want to continue?");
+        $('#myYesButton').text('Yes');
+        $('#myNoButton').text('No');
+        $('#closeIcon').show();
+        $('#myYesButton').attr("onclick","goBackToOpportunity();");
+        $('#myNoButton').attr("onclick","$('#confirmBoxMine').hide();");
+        $("#confirmBoxMine").show();
+    }else if(type == 'commit'){ 
+         if(('{!paymentObj.Payment_Method__c}'=='Credit card' || '{!paymentObj.Payment_Method__c}'=='Electronic Check (ACH)' ) && '{!paymentCreditCardNo}' == '' && '{!paymentAccountNo}'==''){
+            $('#alertMessage').text("Please fill payment methods details.");
+            $('#alertcloseIcon').show();
+            $('#myCloseButton').show();
+            $("#alertBoxMine").show();
+        }
+         else if('{!paymentObj.Payment_Method__c}' != '' && '{!billingContact}' == ''){
+            var msg = "Please fill Billing Contact Details.";
+            $('#alertMessage').text(msg);
+            $('#alertcloseIcon').show();
+            $('#myCloseButton').show();
+            $("#alertBoxMine").show();
+        }else if('{!billingContact}' != '' && '{!paymentObj.Payment_Method__c}' == ''){
+            var msg = "Payment Method is not selected yet<br/> Are you sure you want to commit your quote for '"+oppName+"'";
+            $('#alertBoxdescription').html(msg);
+            $('#myYesButton').text('Yes');
+            $('#myNoButton').text('No');
+            $('#closeIcon').show();
+            doCommit = true;
+            $('#myYesButton').attr("onclick","$('#confirmBoxMine').hide();$('#myCurtain').show();SaveToDraft();");
+            $('#myNoButton').attr("onclick","$('#confirmBoxMine').hide();");
+            $("#confirmBoxMine").show();
+        }else{
+            if('{!paymentObj.Payment_Method__c}' == '' || '{!billingContact}' == ''){
+                var msg = "";
+                if('{!paymentObj.Payment_Method__c}' == '')
+                    msg = "Payment Method ";
+                if('{!billingContact}' == ''){
+                    msg += msg== ""? "Billing contact ": "and Billing contact";
+                }
+                msg = msg+ " is not selected yet.<Br/>Are you sure you want to commit your quote for '"+oppName+"'";
+                $('#alertBoxdescription').html(msg);
+            }else{
+                $('#alertBoxdescription').html("Are you sure you want to commit your quote for '"+oppName+"'?");
+            }
+            $('#myYesButton').text('Yes');
+            $('#myNoButton').text('No');
+            $('#closeIcon').show();
+            doCommit = true;
+            $('#myYesButton').attr("onclick","$('#confirmBoxMine').hide();$('#myCurtain').show();SaveToDraft();");
+            $('#myNoButton').attr("onclick","$('#confirmBoxMine').hide();");
+            $("#confirmBoxMine").show();
+        }
+    }else if(type == 'commitDone'){
+        if(errorEncountered == 'true'){
+            $('#alertBoxdescription').html(ariaApiErrorMsg);
+            $('#alertBoxdescription').addClass('myError');
+            $('#myYesButton').text('Return to Opportunity');
+            $('#myNoButton').text('Return to Account');
+            $('#closeIcon').hide();
+            $('#myYesButton').attr("onclick","goBackToOpportunity();");
+            $('#myNoButton').attr("onclick","goBackToAccount();");
+            $('#myCurtain').hide();
+            $('#curtainText').hide();
+            $("#confirmBoxMine").show();
+        }else{
+            //callgetAcctDetailsAll();
+            fetchPlanExtraDetails();
+        }
+    }else if(type == 'refreshDone'){
+        if(errorEncountered == 'true'){
+            $('#alertBoxdescription').html(ariaApiErrorMsg);
+            $('#alertBoxdescription').addClass('myError');
+        }else{
+            $('#alertBoxdescription').html("Success! Your quote has been committed.");
+            $('#alertBoxdescription').removeClass('myError');
+        }
+        $('#myCurtain').hide();
+        $('#curtainText').hide();
+        $('#myYesButton').text('Return to Opportunity');
+        $('#myNoButton').text('Return to Account');
+        $('#closeIcon').hide();
+        $('#myYesButton').attr("onclick","$('#myCurtain').show();goBackToOpportunity();");
+        $('#myNoButton').attr("onclick","$('#myCurtain').show();goBackToAccount();");
+        $("#confirmBoxMine").show();
+    }else if(type == 'saveToDraft'){
+        if(('{!paymentObj.Payment_Method__c}'=='Credit card' || '{!paymentObj.Payment_Method__c}'=='Electronic Check (ACH)') && '{!paymentCreditCardNo}' == '' && '{!paymentAccountNo}'==''){
+            $('#alertMessage').text("Please fill payment methods details.");
+            $('#alertcloseIcon').show();
+            $('#myCloseButton').show();
+            $("#alertBoxMine").show();
+        }else{
+            $('#alertBoxdescription').html("Are you sure you want to save your quote for '"+oppName+"'?");
+            $('#myYesButton').text('Yes');
+            $('#myNoButton').text('No');
+            $('#closeIcon').show();
+            $('#myYesButton').attr("onclick","$('#confirmBoxMine').hide();$('#myCurtain').show();SaveToDraft();");
+            $('#myNoButton').attr("onclick","$('#confirmBoxMine').hide();");
+            $("#confirmBoxMine").show();
+            doCommit = false;
+        }
+    }
+}
+function afterSaveDraft(){
+    if(doCommit == true){
+        $('#curtainText').text("Initiating Commit");
+        $('#curtainText').show();
+        initiateCommit();
+    }else{
+        fetchInvoiceLineItem();
+    }
+}
+function afterFetchInvoiceLineItem(){
+    $('#myCurtain').hide();
+    $('#alertBoxdescription').html("Saved Successfully.");
+    $('#curtainText').hide();
+    $('#myYesButton').text('Return to Opportunity');
+    $('#myNoButton').text('Return to Account');
+    $('#closeIcon').hide();
+    $('#myYesButton').attr("onclick","$('#myCurtain').show();goBackToOpportunity();");
+    $('#myNoButton').attr("onclick","$('#myCurtain').show();goBackToAccount();");
+    $("#confirmBoxMine").show();
+}
+function afterCommit(){
+    $('#curtainText').text("Refreshing Account");
+    $('#curtainText').show();
+    showAlert('commitDone');
+}
+function goBackToOpportunity(){
+    var actId ='\''+'{!Opportunity.Id}';
+    if ( (typeof window.sforce != 'undefined') && (window.sforce!=null) ) {
+        sforce.one.navigateToSObject('{!Opportunity.Id}');
+    }else{
+        window.location.href = '/'+'{!Opportunity.Id}';
+    }
+}
+function goBackToAccount(){
+    var actId ='\''+'{!Opportunity.AccountId}';
+    if ( (typeof window.sforce != 'undefined') && (window.sforce!=null) ) {
+        sforce.one.navigateToSObject('{!Opportunity.AccountId}');
+    }else{
+        window.location.href = '/'+'{!Opportunity.AccountId}';
+    }
+}
+function addContact(objvalue,isPerson){
+    if(objvalue>0 || isPerson=='true'){
+        $('#myCurtain').show(); 
+        addBillingContacts();
+    }else{
+        $('#alertMessage').text("Please select the plan.");
+        $('#alertcloseIcon').show();
+        $('#myCloseButton').show();
+        $("#alertBoxMine").show();
+    }
+}
+function addPaymentDetails(objvalue){ 
+    if(objvalue>0){
+        $('#myCurtain').show(); 
+        addPayment(); 
+    }else{
+        $('#alertMessage').text("Please select the plan.");
+        $('#alertcloseIcon').show();
+        $('#myCloseButton').show();
+        $("#alertBoxMine").show();
+    }
+}
+function addCouponCode(objvalue){ 
+    if(objvalue>0){
+        $('#myCurtain').show(); 
+        addPromoCode(); 
+    }else{
+        $('#alertMessage').text("Please select the plan.");
+        $('#alertcloseIcon').show();
+        $('#myCloseButton').show();
+        $("#alertBoxMine").show();
+    }
+}
+function openNavigationLink(linkURL,linkId,width,height){
+    updateNavigationLink(linkId);
+    window.open(linkURL+'?recId='+linkId+'&Oppid={!Opportunity.Id}','name','width='+width+', height='+height+'},toolbar=yes, scrollbars=no, resizable=no');
+}
+
+function showMoreCoupon(){
+    var objValue = document.getElementById('showMoreCoupon').innerText;
+    if(objValue == 'more...' || objValue == 'MORE...' ){
+        document.getElementById('couponDetails').style.display = 'block';
+        document.getElementById('showMoreCoupon').innerText = 'less'
+    }else{
+        document.getElementById('couponDetails').style.display = 'none';
+        document.getElementById('showMoreCoupon').innerText = 'more...'
+    }
+}
+</script>
+</apex:outputPanel>
+</apex:page>

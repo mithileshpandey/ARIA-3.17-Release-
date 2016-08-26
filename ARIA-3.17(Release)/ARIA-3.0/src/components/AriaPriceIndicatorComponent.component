@@ -1,0 +1,392 @@
+<apex:component controller="AriaPriceIndicatorController" allowDML="true">
+    <apex:attribute name="recid" type="string" required="false" description="" assignTo="{!strId}"/>
+	<apex:attribute name="context" type="string" required="false" description="" assignTo="{!contextStr}"/>
+	
+	<apex:attribute name="selectedCurrency" type="string" required="true" description=""/>
+    <apex:attribute name="accountName" type="string" required="true" description=""/>
+    <apex:attribute name="billingInterval" type="string" required="false" description="" default="1"/>
+     
+<style>
+.accountTab .pageTitleIcon, .individualPalette .accountBlock .pageTitleIcon { 
+	background-image: url('{!URLFOR($Resource.QuoteIcon)}') !important;
+	background-position: 0 -3px; 
+	width: 51px;
+	height: 47px;
+}
+.currency-panel {
+    background: #000000;
+    float:right;
+    position:relative;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #fff;
+    padding: 7px 30px 7px 15px;
+    font-size: 13px;
+    font-weight: bold;
+    min-width: 140px;
+    box-sizing: border-box;
+    text-align: center;
+    border-radius: 30px;
+    margin-top:-50px;
+}
+.currency-panel:after {
+content: '';
+   position: absolute;
+   width: 0;
+   height: 0;
+   border-left: 7px solid transparent;
+   border-right: 7px solid transparent;
+   border-top: 7px solid #fff;
+   top: 11px;
+   right: 11px;	
+}
+.currency-panel .arrow {
+    position: absolute;
+	right: 0px;
+	top: 0px;
+	width: 100%;
+	height: 35px;
+	z-index: 999;	
+}
+.currency-panel .arrow:hover .dropdown-panel{
+	display: block;	
+}
+.dropdown-panel {
+    position: absolute;
+    right: 0px;
+    top: 34px;
+    border: 1px solid #ddd;
+    /*text-align: right;*/
+    padding: 10px;
+    box-sizing: border-box;
+    border-radius: 5px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11px;
+    min-width: 140px;
+    background: #fff;
+    color: #000;
+    min-height: 140px;
+    display:none;
+}
+.dropdown-panel ul {
+    margin: 0px;
+    padding: 0px;   
+}
+.dropdown-panel ul li {
+    margin: 0px;
+    padding: 0px;
+    list-style-type: none;
+    padding-bottom: 5px;
+}
+.dropdown-panel ul li div{
+    font-size: 10px;
+    color: #a1a1a1; 
+}
+.dropdown-panel:after, .dropdown-panel:before {
+    bottom: 100%;
+    /*left: 50%;*/
+    border: solid transparent;
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+}
+.dropdown-panel:after {
+    border-color: rgba(136, 183, 213, 0);
+    border-bottom-color: #fff;
+    border-width: 8px;
+    margin-left: -8px;
+    right: 9px;
+}
+.dropdown-panel:before {
+    border-color: rgba(194, 225, 245, 0);
+    border-bottom-color: #ddd;
+    border-width: 10px;
+    margin-left: -10px;
+    right: 7px;
+}
+.overrideFmt{
+}
+.accountTab .bPageTitle .ptBody .pageDescription {
+    font-size: 18px;
+    color: #222;
+}
+body .bPageTitle .ptBody .pageType {
+	font-size: 14px;
+    font-weight: normal;
+}
+.dropdown-panel input[type="radio"] {
+  margin: 0px 3px 0px -14px;
+  float: left;
+}
+.dropdown-panel input[type="radio"] + label {
+   display:inline-block;
+   height:auto;
+   vertical-align:middle;
+   cursor:pointer;
+}
+.overrideFmt{
+  margin: 0px 3px 0px 5px !important; 
+}
+</style>
+  <apex:outputText style="display:none" value="{!strId}"/>
+  <apex:sectionHeader title="Add/Modify Plans" subtitle="{!accountName}" />
+  <apex:outputPanel id="currencyPanel"> 
+        <div class="currency-panel">
+        	<div class="arrow" >
+        		<div class="dropdown-panel"  >
+        		<div id="dropdown-panel" style="text-align: right;">
+                 <ul>
+                    <li> 
+                        <div>EXISTING CHARGES</div>                        
+                        <span id="widget-existing-currency"></span>
+                        <span id="widget-existing-charges">
+                        <apex:outputText value="{0,number,##########0.00}">
+                    		<apex:param value="{!existingCharges}"/>
+                		</apex:outputText>
+                		</span>
+                    </li>
+                    <li>
+                        <div>NEW CHARGES</div>
+                        <span id="widget-new-currency"></span>
+                        <span id="widget-new-charges">
+                        <apex:outputText value="{0,number,##########0.00}">
+                    		<apex:param value="{!newCharges}"/>
+                		</apex:outputText></span>
+                		<span id="widget-discount-charges" style="color:#a1a1a1"></span>
+                    </li>
+                    <li>
+                        <div>CANCELLATIONS</div> 
+                        <span id="widget-cancellation-currency"></span>
+                        <span id="widget-cancellation-charges">
+                        <apex:outputText value="{0,number,##########0.00}">
+                    		<apex:param value="{!cancellationCharges}"/>
+                		</apex:outputText></span>
+                    </li>
+                    <li>
+                        <div>ONE-TIME CHARGES</div> 
+                        <span id="widget-cancellation-currency"></span>
+                        <span id="widget-cancellation-charges">
+                        <apex:outputText value="{0,number,##########0.00}">
+                    		<apex:param value="{!onetimeCharges}"/>
+                		</apex:outputText></span>
+                    </li>
+                    <li>
+                        <a id="change-int" href="javascript:showPanel('change-interval','dropdown-panel');" style="color: #1797c0;">Change Interval</a>
+                    </li>
+                </ul>
+                </div>
+                <div id="change-interval" style="text-align: left; display: none;">
+                	<apex:inputHidden value="{!billingInterval}" id="theBillIntHiddenInput" />
+	                <ul>
+	                    <li> 
+	                        <div style="color: #000; font-size: 11px; padding-bottom: 10px;">Change Interval</div>
+	                    </li>
+	                    
+	                    <li>
+	                       <input id="monthly" type="radio" name="interval" value="1" onclick="changeInterval(this.value);" class="overrideFmt"/><label id="monthly_label" for="monthly">Monthly</label>
+	                    </li>
+	                    <li>
+	                       <input id="quarterly"  type="radio" name="interval" value="3" onclick="changeInterval(this.value);" class="overrideFmt"/><label id="quarterly_label" for="annual">Quarterly</label>
+	                    </li>
+	                    <li>
+	                       <input id="semi-annual"  type="radio" name="interval" value="6" onclick="changeInterval(this.value);" class="overrideFmt"/><label id="semi-annual_label" for="semi-annual">Semi-Annual</label>
+	                    </li>
+	                     <li>
+	                       <input id="annual"  type="radio" name="interval" value="12" onclick="changeInterval(this.value);" class="overrideFmt"/><label id="annual_label" for="annual">Annual</label>
+	                    </li>
+	                    
+	                    <li style="padding-top: 10px;">
+	                       <a id="backId" href="javascript:showPanel('dropdown-panel','change-interval');" style="color: #1797c0;">Back</a>
+	                    </li>
+	                </ul>
+	            </div>
+            </div>
+            
+        	</div>
+            <span id="widget-total-charges" >
+                <apex:outputText value="{0,number,##########0.00}">
+                    <apex:param value="{!totalCharges}"/>
+                </apex:outputText>
+             </span>
+            <span id="widget-total-currency_2">{!UPPER(selectedCurrency)}</span>
+            <span id="widget-total-currency_3"></span>
+            
+        </div>
+        <script>
+        $j = jQuery.noConflict(); 
+        
+        function getElement(eId){
+            return document.getElementById(eId);
+        }
+        function selectedInterval(){
+        	var selsectedIntrvl = '{!billingInterval}'
+        	var billIntrvl = document.getElementsByName('interval');
+        	for(i=0;i<billIntrvl.length;i++){        	    
+        		if(billIntrvl[i].value==selsectedIntrvl){
+        			billIntrvl[i].checked=true;
+        			break;
+        		} 
+        	}
+        	changeInterval(selsectedIntrvl);
+        }
+        function calculateNewCharge(planJson, interval){
+        	// read key 2
+        	var amount = 0;
+        	if(planJson){
+        		var plans = planJson[2];
+        		if(plans){
+	        		for( i=0; i< plans.length; i++ ){
+	        			if(plans[i].interval == interval){
+	        				amount += plans[i].PriceTotal;
+	        			}
+	        			else if (plans[i].interval < interval ){
+	        				amount += plans[i].PriceTotal * (interval / plans[i].interval);
+	        			}
+	        			else if (plans[i].interval > interval ){
+	        				amount += plans[i].PriceTotal / (plans[i].interval / interval);
+	        			}
+	        		}
+        		}
+        	}
+        	return amount;
+        }
+        function calculateExistingCharge(planJson, interval){
+        	// read key 0
+        	var amount = 0;
+        	// ( 12 / bill_interval);
+        	// 12 , 6 price * 12/6      1 3 6 12
+        	if(planJson){
+        		var plans = planJson[0];
+        		if(plans){
+	        		for( i=0; i< plans.length; i++ ){
+	        			if(plans[i].interval == interval){
+	        				amount += plans[i].PriceTotal;
+	        			}
+	        			else if (plans[i].interval < interval ){
+	        				amount += plans[i].PriceTotal * (interval / plans[i].interval);
+	        			}
+	        			else if (plans[i].interval > interval ){
+	        				amount += plans[i].PriceTotal / (plans[i].interval / interval);
+	        			}
+	        		}
+	        	}
+        	}
+        	return amount;
+        }
+        function calculateCancellationCharge(planJson, interval){
+        	// read key 1
+        	var amount = 0;
+        	if(planJson){
+        		var plans = planJson[1];
+        		if(plans){
+	        		for( i=0; i< plans.length; i++ ){
+	        			if(plans[i].interval == interval){
+	        				amount += plans[i].PriceTotal;
+	        			}
+	        			else if (plans[i].interval < interval ){
+	        				amount += plans[i].PriceTotal * (interval / plans[i].interval);
+	        			}
+	        			else if (plans[i].interval > interval ){
+	        				amount += plans[i].PriceTotal / (plans[i].interval / interval);
+	        			}
+	        		}
+        		}
+        	}
+        	return amount;
+        }
+        /*
+            0 -> existing plan
+            1 -> cancelled plan
+            2 -> new plan
+        */
+        function changeInterval(radio){ 
+           
+            //alert(promoDiscountAmt);
+            // get all the values for new charges,existing charges and calculate the total charges
+            $j('[id$=theBillIntHiddenInput]').val(radio);
+            //alert(radio);
+            //console.log({!planJson});
+            var planJson = {!planJson}
+            var interval = parseInt('{!billingInterval}');  
+            var existingCharges = parseFloat('{!existingCharges}');
+            //alert(existingCharges);
+            var newCharges = parseFloat('{!newCharges}');
+            var cancellationCharges = parseFloat('{!cancellationCharges}');
+            var promoDiscountAmt = parseFloat('{!promoDiscountAmt}');
+            var onetimeCharges = parseFloat('{!onetimeCharges}');
+            var total = existingCharges + newCharges + onetimeCharges - promoDiscountAmt;
+            var billInterval = '';
+           
+            if(radio == '1'){
+            	billInterval = 'MO';
+              	//Nothing
+            }else if(radio == '3'){
+           		billInterval = 'QTR';
+           		existingCharges = calculateExistingCharge(planJson,3); // 3*existingCharges;
+              	newCharges = calculateNewCharge(planJson,3); // 3*newCharges;
+              	cancellationCharges = calculateCancellationCharge(planJson,3); // 3*cancellationCharges;
+              	
+              	promoDiscountAmt = 3*promoDiscountAmt;
+              	total = existingCharges + newCharges + onetimeCharges - promoDiscountAmt;
+            }
+            else if(radio == '12'){ 
+            	billInterval = 'YR';
+              	existingCharges = calculateExistingCharge(planJson,12); // 12*existingCharges;
+              	newCharges = calculateNewCharge(planJson,12); // 12*newCharges;
+              	cancellationCharges = calculateCancellationCharge(planJson,12); // 12*cancellationCharges;
+              	
+              	promoDiscountAmt = 12*promoDiscountAmt;
+              	total = existingCharges + newCharges + onetimeCharges - promoDiscountAmt;
+            }
+            else if(radio == '6'){
+            	billInterval = 'SA';
+            	existingCharges = calculateExistingCharge(planJson,6);//6*existingCharges;
+              	newCharges = calculateNewCharge(planJson,6);//6*newCharges;
+              	cancellationCharges = calculateCancellationCharge(planJson,12); //6*cancellationCharges;
+              	promoDiscountAmt = 6*promoDiscountAmt;
+              	total = existingCharges + newCharges + onetimeCharges - promoDiscountAmt;
+            }
+            if(total <= 0){
+            	billInterval = '';
+            }
+            $j('#widget-existing-charges').text(existingCharges.toFixed(2));
+           	$j('#widget-new-charges').text(newCharges.toFixed(2));
+            $j('#widget-cancellation-charges').text(cancellationCharges.toFixed(2));
+            $j('#widget-total-charges').text(total.toFixed(2));
+            $j('#widget-total-currency_3').text(billInterval);
+            if(promoDiscountAmt>0){
+            	$j('#widget-discount-charges').text(' (-'+promoDiscountAmt.toFixed(2)+')');
+            }
+        }
+        function setDecimalValue(eId,dValue){
+        
+        }
+        function showPanel(showId,hideId){
+            //alert("I am called..");
+            getElement(showId).style.display="block";
+            getElement(hideId).style.display="none";
+        }
+        function hidePanel(e){
+        	//function(a){getElement('dropdown-panel').style.display="none"; getElement('change-interval').style.display="none";}
+        	//alert("hello called");
+        	//console.log(e.target.id);
+        	/*if(e.target.id == '' && e.target.id != 'monthly_label' && e.target.id != 'annual_label' && e.target.id != 'semi-annual_label' && e.target.id != 'change-int' && e.target.id != 'backId'){
+        		//console.log('-------');
+        		getElement('dropdown-panel').style.display="none";
+        		getElement('change-interval').style.display="none";
+        	}*/
+        	/*
+        	if(e.target.id && e.target.id != ''){
+        		//console.log('within if');
+        		getElement('dropdown-panel').style.display="none";
+        		getElement('change-interval').style.display="none";
+        	}
+        	*/
+        }
+        //addEvent(document.body,"mousedown",function(e){hidePanel(e);},!0); 
+       
+        selectedInterval();
+    </script>
+    </apex:outputPanel>
+</apex:component>

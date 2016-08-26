@@ -1,0 +1,28 @@
+<apex:page title="Aria Supplemental Field Edit" standardController="Aria_Supplemental_Field_Mapping__c" extensions="AriaSupplementalFieldEditExt">
+
+<apex:form >
+    <apex:sectionHeader title="Aria Supplemental Field Edit" />
+    <apex:pageBlock title="Aria Supplemental Field Edit" mode="edit">
+        <apex:pageMessages />
+        <apex:pageBlockButtons >
+            <apex:commandButton action="{!doSave}" value="Save" />
+            <apex:commandButton action="{!cancel}" value="Cancel" />
+        </apex:pageBlockButtons>
+        
+        <apex:pageBlockSection title="Field Information">
+            <apex:inputField value="{!record.Aria_API_Configuration__c}" />
+            <apex:pageBlockSectionItem />
+            
+            <apex:inputField required="true" value="{!record.Aria_Supplemental_Field_Name__c}" />
+            
+            <apex:pageBlockSectionItem >
+                <apex:outputLabel value="Account Field" for="accountFieldSelect" />
+                <apex:selectList value="{!record.Account_Field_Dev_Name__c}" size="1">
+                    <apex:selectOptions value="{!accountFieldOptions}" />
+                </apex:selectList>
+            </apex:pageBlockSectionItem>
+        </apex:pageBlockSection>
+    </apex:pageBlock>
+</apex:form>
+
+</apex:page>

@@ -1,0 +1,36 @@
+<apex:component controller="AriaMetadataServices">
+    <apex:outputPanel layout="none" rendered="{!isRssPresent}">
+        <!-- when Remote Site Setting is present, show contents -->
+        <apex:componentBody />
+    </apex:outputPanel>
+    
+    <apex:outputPanel layout="none" rendered="{!NOT(isRssPresent)}">
+        <!-- when Remote Site Setting is absent, deploy it! -->
+        <script type="text/javascript">var __sfdcSessionId = '{!GETSESSIONID()}';</script>
+        <script src="/soap/ajax/32.0/connection.js" type="text/javascript"></script>
+        <script>
+            //calls the Metadata API from JavaScript to create the Remote Site Setting to permit Apex callouts
+            sforce.connection.remoteFunction({
+                url: 'https://' + window.location.host + '/services/Soap/m/32.0',
+                onSuccess: function(response, xhr) {
+                    //force reload with no cache
+                    window.location.reload(true);
+                },
+                onFailure: function(response, xhr) {
+                    //show bad output
+                    alert(response);
+                },
+                method: 'POST',
+                async: false,
+                requestHeaders: {
+                    'Content-Type': 'text/xml',
+                    'SOAPAction': '""'
+                },
+                requestData: '{!JSENCODE(RssDeployXml)}',
+                cache: false,
+                timeout: 10000
+            });
+        </script>
+    </apex:outputPanel>
+    
+</apex:component>

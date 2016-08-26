@@ -1,0 +1,78 @@
+<apex:page standardController="Account" extensions="AriaAccountHierarchyCtrl" sidebar="false" showHeader="false">
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/tooltip.css')}"/>
+<style>
+	.not-active {
+	   pointer-events: none;
+	   cursor: default;
+	   color:grey;
+	}
+	.taxTotal.disable-link:after {
+		position: absolute;
+		content:"";
+		width: 100%;
+		height: 100%;
+		left: 0;
+		right: 0;
+		top: 0;
+		z-index: 999;
+		pointer-events: none;
+        cursor: default;
+	}
+</style>
+    <apex:form >
+        <apex:pageBlock id="planHierarchy" title="Aria Account Hierarchy">
+          	<apex:pageBlockTable value="{!lstAccountHierarchy}" var="ac">
+          		<apex:column >
+          			<apex:facet name="header">Type</apex:facet>
+          			<b>{!ac.relationType}</b>
+          		</apex:column>
+          		<apex:column >
+          			<apex:facet name="header">Parent Account Number</apex:facet>
+          			<a href="/{!ac.objAcc.ParentId}" target="_blank"><apex:outputField value="{!ac.objAcc.Parent.Aria_Id__c}"/></a>
+          		</apex:column>
+          		<apex:column >
+          			<apex:facet name="header">Account Number</apex:facet>
+          			<a href="/{!ac.objAcc.Id}" target="_blank"><apex:outputText value="{!ac.objAcc.Aria_Id__c}"/></a>
+          		</apex:column>
+          		<apex:column >
+          			<apex:facet name="header">Account Status</apex:facet>
+          			<apex:outputField value="{!ac.objAcc.Aria_Status__c}"/>
+          		</apex:column>
+          		<apex:column >
+          			<apex:facet name="header">Created Date</apex:facet>
+          			<apex:outputField value="{!ac.objAcc.CreatedDate}"/>
+          		</apex:column>
+          		<apex:column >
+          			<apex:facet name="header">Created By</apex:facet>
+          			<apex:outputField value="{!ac.objAcc.CreatedById}"/>
+          		</apex:column>
+          		<apex:column >
+          			<apex:facet name="header">Responsibility Level</apex:facet>
+          			<apex:outputText value="{!ac.billingResponsibility}"/>
+          		</apex:column>
+          		<apex:column >
+          			<apex:facet name="header">Assignment</apex:facet>
+          			<apex:outputPanel >
+          			<div class="{!if(ac.disableUnassignLink,'taxTotal','')}">
+          				<apex:commandButton value="Unassign" action="{!UnassignAccount}" onclick="return confirm('Are you sure?')" rerender="planHierarchy" status="planstatus" disabled="{!if(ac.disableUnassignLink,true,false)}" styleClass=" {!if(ac.disableUnassignLink,'taxTotal','')}">
+          				<!-- <apex:commandLink value="Unassign" action="{!UnassignAccount}" onclick="return confirm('Are you sure?')" rerender="planHierarchy" status="planstatus" styleClass=" {!if(ac.disableUnassignLink,'taxTotal disable-link','')}"> -->
+          					<apex:param name="actId" value="{!ac.objAcc.Id}" assignTo="{!AssignedAccountId}"/>
+          					<apex:param name="relType" value="{!ac.relationType}" assignTo="{!RelType}"/>
+          					
+          				<!-- </apex:commandLink> -->
+          				</apex:commandButton>
+          				<div class="taxdetails-tooltip" style="margin-left:-200px;min-width:120px"><b>Account can't be unassigned if the Billing Responsibility of any plan is Parent Pay or Parent Usage &amp; Pay.</b></div>
+          			</div>
+          				<!-- <apex:actionstatus id="planstatus">
+	                       	<apex:facet name="start"> 
+                    			<img src="../img/loading.gif" style="padding-left:10px;"/>
+                 			</apex:facet> 
+                		</apex:actionstatus>
+          			 -->
+          			</apex:outputPanel>
+          		</apex:column>
+          		
+          	</apex:pageBlockTable>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

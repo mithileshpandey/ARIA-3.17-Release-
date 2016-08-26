@@ -1,0 +1,2611 @@
+<apex:page controller="AriaAccountPlanWizardPlanSelectionCtrl" docType="html-5.0" sidebar="false"  tabStyle="Account" id="thePage" action="{!initExistingPlan}">
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/> 
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css"/> 
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/AriaAccountPlanWizard.css')}"/> 
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/tooltip.css')}"/>
+<style>
+a{
+	color:blue;
+}
+.ui-dialog-buttonset{
+	width:100%;
+}
+.leftFloatClass{
+	background: #999 !important;
+    color: #fff !important;
+}
+.rightFloatClass{
+	float: right !important;
+	background: #428BCA !important;
+    color: #fff !important;
+    border-color: #428BCA !important;
+}
+.buttonPanel {
+    padding-top: 25px;
+    /*background: #f8f8f8;*/
+    padding-bottom: 2px; 
+}
+.overlayDialog .topLeft {
+    background: #f8f8f8;
+    display: none !important;
+}
+.scrollDiv {
+	max-height: 330px !important;
+}
+.configField { 
+    width: 43% !important; 
+}
+.btn-Save{
+	background: #428bca;
+	padding: 6px 15px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    margin: 7px 0px 7px 20px;
+    border: 1px solid #428bca;
+    float: right;
+    font: 13px Arial, Helvetica, sans-serif;
+    font-family: arial;
+    cursor: pointer;
+}
+</style>
+
+<script>
+function setFocusOnLoad() {}
+    var __sfdcSessionId = '{!GETSESSIONID()}'; 
+   $j = jQuery.noConflict();
+   
+   //Added By Sanjeev STARTS here
+
+var hasNextExt={!hasNextExt};
+var hasPreviousExt={!hasPreviousExt};
+var billingInt = {"1":"Monthly","3":"Quaterly","6":"Half-Yearly","12":"Yearly"} 
+var planNoNameMap={}; 
+var nspre = 'ASF3__'; 
+var replacedPlansNoToBeDeletedJS=[];
+var newPlansNoToBeDeletedJS=[];
+ (function() {
+  'use strict';  
+  
+  var demoApp = angular.module('demoApp', []);
+  
+    demoApp.controller('MainCtrl', function($scope, $timeout ,$http) {
+    $scope.nspre='ASF3__';
+    $scope.mRecType='{!MRType}';
+      $scope.list = {!JsonString};
+      $scope.extList = {!extJsonString};
+      $scope.newPlanNoVsOldPlanNoMap={};
+      $scope.planExclusionStr= {!planExclusionStr};
+      $scope.replacedPlansMap={};
+      $scope.replacedPlansBackupMap={};
+      $scope.replacedPlan = {};
+      $scope.newPlan = {};
+      $scope.replacedPlansNoToBeDeleted = [];
+      $scope.exculsivePlansMap={}; 
+      $scope.isAcctHaveAriaId={!isAcctHaveAriaId};
+      
+      $scope.acctCurr='{!accountCurrency}';
+      updateClientInstanceNo($scope.list,$scope.extList);
+      
+      updateNodeIdOnLoad($scope.list,$scope.extList);
+      
+      updateExculsivePlansMapOnLoad($scope.exculsivePlansMap, $scope.extList);
+      
+      updatePlanNoNameMapOnLoad($scope.list,$scope.extList);
+      
+      
+       $scope.extList.sort(function(a,b){
+            //return ((a.leftName < b.leftName) ? -1 : ((a.leftName > b.leftName) ? 1 : 0));
+            return a.node.planInstanceNumber - b.node.planInstanceNumber || ((a.leftName < b.leftName) ? -1 : ((a.leftName > b.leftName) ? 1 : 0));
+        
+    });
+      
+    $scope.ngSetFocus = function(e){
+    	var obj = e.target;
+    	if($j(obj).is('td')){
+    		obj = $j(obj).children('input')[0];
+    	}else if($j(obj).is('span')){
+    		obj = $j(obj).siblings('input')[0];
+    	}else{
+    		return;
+    	}
+    	
+    	if(typeof obj != "undefined"){
+    		$j(obj).removeClass('ng-hide');
+    		obj.focus();
+    	}
+    }
+      
+      
+    $scope.ListPriceVal = 0;
+    $scope.PriceVal = 0;
+    $scope.ngRecalculatePrice = function(pw, prevUnit){
+    
+    		var newVal = pw.node.Unit;
+    		console.log('calling ngRecalculatePrice ::: newVal='+newVal+' ::: prevUnit='+prevUnit);
+    		if(newVal!=null && (newVal.toString().trim()=='' || newVal.toString().trim()=='0' || newVal.toString().trim()=='.')){
+    			showGenericDialog('Alert !','Unit can not be less than 1.');
+    			$j('#planUnit_'+pw.groupNo).focus();
+    			pw.node.Unit=prevUnit;
+	            return;
+	        }
+       
+        if(newVal==prevUnit){
+        	return;
+        }
+        // flag 1 for unit
+        updatePlanOnOppJS(pw, pw.node.clientPlanInstanceNumber, 1);
+    };
+    
+    
+    $scope.ngAdjustCustomRate = function(pw,prevDiscount){
+    	var newVal = pw.node.Discount;
+    	if(newVal!=null && (newVal.toString().trim()=='' || newVal.toString().trim()=='.')){
+   			showGenericDialog('Alert !','Discount can not be less than 0.');
+    		$j('#planDiscount_'+pw.groupNo).focus();
+    		pw.node.Discount = prevDiscount;
+            return;
+        }
+       	if(newVal==prevDiscount){
+        	return;
+        }
+        //flag 2 for discount
+        updatePlanOnOppJS(pw, pw.node.clientPlanInstanceNumber, 2);         
+    };
+    function isInTier(unit,fromUnit,toUnit ){
+        if( unit >= fromUnit && ( unit <= toUnit || toUnit == null) ){
+            return true;
+        }
+        return false;       
+    }
+    $scope.ngcalculateData = function(service,selectedNode,loopFlag, rateTier){
+        var units = selectedNode.Unit;
+        selectedNode.isCustomRate=true;
+        if(rateTier){
+            rateTier[nspre+'Build_Custom_Rate_Call__c']=true;
+        }
+        //$scope.ListPriceVal = 0;
+        //$scope.PriceVal = 0;
+        var unit;
+        //console.log(' inside ngcalculate data method' + service.cps[nspre+'Service__r'][nspre+'Service_Type__c']);
+        
+        if(service.cps[nspre+'Service__r'][nspre+'Service_Type__c'] == "Recurring"){
+            //console.log('service type is Recurring');
+            var accountRateTiers = service.selectedRateSchedule.accountRateTiers;
+            //console.log('service.cps[nspre+'Tiered_Pricing_Rule__c'] : '+service.cps[nspre+'Tiered_Pricing_Rule__c']);
+            if(service.cps[nspre+'Tiered_Pricing_Rule__c'] == "Standard"){
+                //console.log('pricing rule standard');
+                service.listPrice = 0;
+                service.netPrice = 0;
+                angular.forEach(accountRateTiers, function(accountRateTier,accountRateTierIndex){
+                    //console.log('inside loop account rate tiers standard');
+                    if(!isInTier(units, accountRateTier[nspre+'FromUnit__c'], accountRateTier[nspre+'ToUnit__c'] )) {
+                      //console.log('inside inTier');
+                      if(units >= accountRateTier[nspre+'FromUnit__c']){
+                          unit = (null != accountRateTier[nspre+'ToUnit__c']) ? (accountRateTier[nspre+'ToUnit__c'] - accountRateTier[nspre+'FromUnit__c'] + 1) : 1.0 ;
+                          service.listPrice += accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] * unit;
+                          service.netPrice += accountRateTier[nspre+'Rate_per_Unit__c']  * unit;
+                          $scope.ListPriceVal += accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] * unit;
+                          $scope.PriceVal += accountRateTier[nspre+'Rate_per_Unit__c']  * unit;
+                      }
+                  } else {
+                        //console.log('not in tier');
+                       var remainingUnitsInHighestTier = units - accountRateTier[nspre+'FromUnit__c'] + 1.0;
+                       service.listPrice  += accountRateTier[nspre+'Orig_Rate_Per_Unit__c']  * remainingUnitsInHighestTier;
+                       service.netPrice  += accountRateTier[nspre+'Rate_per_Unit__c']  * remainingUnitsInHighestTier;
+                       $scope.ListPriceVal += accountRateTier[nspre+'Orig_Rate_Per_Unit__c']  * remainingUnitsInHighestTier;
+                       $scope.PriceVal += accountRateTier[nspre+'Rate_per_Unit__c']  * remainingUnitsInHighestTier;
+                  }
+                });
+            }
+            else if (service.cps[nspre+'Tiered_Pricing_Rule__c'] == "Volume Discount") {
+                 service.listPrice = 0;
+                 service.netPrice = 0;
+                 angular.forEach(accountRateTiers, function(accountRateTier,accountRateTierIndex){
+                     if(isInTier( units, accountRateTier[nspre+'FromUnit__c'], accountRateTier[nspre+'ToUnit__c'] )) { 
+                         service.listPrice += units * accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] ;
+                         service.netPrice += units * accountRateTier[nspre+'Rate_per_Unit__c'] ;
+                         $scope.ListPriceVal += units * accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] ;
+                         $scope.PriceVal += units * accountRateTier[nspre+'Rate_per_Unit__c'] ;
+                     }
+                 });
+             }
+             else{
+                 service.listPrice = 0;
+                 service.netPrice = 0;
+                 angular.forEach(accountRateTiers, function(accountRateTier,accountRateTierIndex){
+                     if(isInTier(units, accountRateTier[nspre+'FromUnit__c'], accountRateTier[nspre+'ToUnit__c'])) {
+                         service.listPrice += accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] ;
+                         service.netPrice += accountRateTier[nspre+'Rate_per_Unit__c'] ;
+                         $scope.ListPriceVal += accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] ;
+                         $scope.PriceVal += accountRateTier[nspre+'Rate_per_Unit__c'] ;
+                     }                                       
+                 });
+             }
+        }
+        //listPriceForPlan += listPriceForService;
+        //netPriceForPlan += netPriceForService;
+        if(loopFlag){
+            updateJson($scope.list, $scope.extList);
+        }
+     };
+    
+    function editPlan(plan,showFlag){
+            var parentTrId = 'sec_row_'+plan.groupNo;
+            var parentTdId = 'planServiceTD_'+plan.groupNo;
+            var serviceDivId = 'servdiv_'+plan.groupNo;
+            var subPlanDivId = 'subPlanDiv_'+plan.groupNo;
+            var actionSelect = 'action_select_'+plan.groupNo;
+            var arrowImgIconId = 'arrow_'+plan.groupNo;
+            if(showFlag){
+                document.getElementById(parentTdId).style.display = '';
+                document.getElementById(serviceDivId).style.display = '';
+                document.getElementById(parentTrId).style.display = '';
+                var planDiv = document.getElementById(subPlanDivId);
+                if(planDiv){
+                        planDiv.style.display = 'none';
+                }
+                $j('#'+arrowImgIconId).attr("src","{!URLFOR($Resource.Sim_JS, 'images/arrow.png')}");
+            }else{
+                document.getElementById(parentTdId).style.display = 'none';
+                document.getElementById(serviceDivId).style.display = 'none';
+                //document.getElementById(parentTrId).style.display = 'none';
+            }
+            
+    }
+    
+    $scope.ngHandleAction = function(plan){
+        editPlan(plan,false);
+        if(plan.defSel==1){
+            //Undo Replace
+            //$scope.ngUndoReplace(plan);
+            undoReplacePlan(plan.node.clientPlanInstanceNumber);
+        }else if(plan.defSel==2){
+            //Edit Plan 
+            $j('#arrow_'+plan.groupNo).attr("src","{!URLFOR($Resource.Sim_JS, 'images/arrow.png')}")
+            $scope.ngEditService(plan);
+            
+        }else if(plan.defSel==3){
+            //Replace Plan
+            $scope.ngPlanSwap(plan);
+        }else if(plan.defSel==4){
+            //Cancel Plan
+            $scope.ngCancelPlan(plan, 2);
+        }else if(plan.defSel==5){
+            //Duplicate Plan
+            $scope.ngAddRow(plan.groupNo);
+        }else if(plan.defSel==6){
+            // Plan Configuration
+            $j('#arrow_'+plan.groupNo).attr("src","{!URLFOR($Resource.Sim_JS, 'images/arrow.png')}")
+            $scope.ngOpenPlanConfigOnGear(plan);
+        }else{
+            //alert("000000");
+        }
+        plan.defSel='0';    
+    };
+    
+    
+        $scope.preventPaste = function(e){
+                        e.preventDefault();
+                        showGenericDialog('Alert !','You can not paste in here. Please try again');
+                        return false;
+                };
+    
+     $scope.ngCancelPlan = function (plan, delFlag){    
+           
+           var type="remove";
+           
+           if(delFlag==2){
+           		type="cancel";
+           }
+     		var htmlContent = "<p align='left'>Are you sure you want to "+type+" this plan? All related supplemental plans will be lost.</p>";
+     			                                   
+                $j('#cancelDialogBox').dialog({
+                        resizable: false,
+                        height:180,
+                        width:450,
+                        modal: true,
+                        open: function(e){
+                                $j(this).html(htmlContent);
+                        },
+                        buttons: [
+                                {
+                                        text: "Cancel",
+                                        click: function() {
+                                                plan.defSel='0';
+                                                $j(this).dialog("close");
+                                                $scope.$apply();
+                                        }
+                                },
+                                {
+                                        text: "Ok",
+                                        "class": 'rightFloatClass',
+                                        click: function () {
+                                                $j(this).dialog("close");
+                                                
+                                                deletePlan(plan, delFlag);
+                                        } 
+                                }
+                        ],
+                        title: 'Confirmation'
+                });
+              
+         };
+         
+         function deletePlan(plan, delFlag){
+            
+           	unCheckChildren(plan);
+            console.log('--------planNoToBeDeleted='+planNoToBeDeleted);
+            var planNoToBeDeletedTemp=[];
+            if(delFlag==2){
+            	var i=0;
+            	for(i=0;i<planNoToBeDeleted.length;i++){
+            		var currID = planNoToBeDeleted[i];
+            		if(currID != plan.node.clientPlanInstanceNumber){
+            			currID='A'+currID;
+            		}
+            		planNoToBeDeletedTemp.push(currID);
+            	}
+            }else{
+            	planNoToBeDeletedTemp = planNoToBeDeletedTemp.concat(planNoToBeDeleted);
+            }
+            console.log('--------planNoToBeDeletedTemp='+planNoToBeDeletedTemp);
+            if(planNoToBeDeletedTemp.length>0){
+            	deleteAccountPlan(planNoToBeDeletedTemp.toString(),delFlag);
+            }
+            planNoToBeDeletedTemp=[];
+            planNoToBeDeleted =[];
+         }
+         
+         function getSelectedPlanCount(list, extList){
+                var cnt=0;
+                var i=0;
+                for(i=0;i<list.length;i++){
+                        if(list[i].isGroupSelected){
+                                cnt++;
+                        }
+                }
+                for(i=0;i<extList.length;i++){
+                        if(extList[i].isGroupSelected){
+                                cnt++;
+                        }
+                }
+                return cnt;
+         }
+        
+         $scope.replacePlanNew = function(){
+                console.log('----replacePlanNew ');
+                
+                $scope.newPlan.node.retainSuppPlan = true;
+                
+                var replacedPlanNo=$scope.replacedPlan.node.ariaClientPlanId+'_'+$scope.replacedPlan.node.clientPlanInstanceNumber;
+                
+                var newPlanNo = $scope.newPlan.node.ariaClientPlanId+'_'+$scope.newPlan.node.clientPlanInstanceNumber;
+                
+                retainSuppPlan($scope.replacedPlan, $scope.newPlan);                  
+                
+                hideSubPlanAndService($scope.replacedPlan.groupNo, true);
+                
+                $scope.replacedPlan.defSel='0';
+                
+                $scope.replacedPlansBackupMap[replacedPlanNo] = encodeURIComponent(JSON.stringify($scope.replacedPlan));
+                
+                $scope.replacedPlan.node.isReplaced = true;
+                
+                $scope.newPlan.node.replaced = $scope.replacedPlan.node.clientPlanInstanceNumber;
+                
+                unCheckChildren($scope.replacedPlan);
+                
+                console.log('--------planNoToBeDeleted='+planNoToBeDeleted);
+                
+                // keep planNoToBeDeleted in separate var and delete on commit/save as draft
+                
+                $scope.replacedPlansNoToBeDeleted = $scope.replacedPlansNoToBeDeleted.concat(planNoToBeDeleted);
+                replacedPlansNoToBeDeletedJS = $scope.replacedPlansNoToBeDeleted;
+                planNoToBeDeleted =[];
+                console.log('-------replacedPlansNoToBeDeleted='+$scope.replacedPlansNoToBeDeleted);
+                
+                $scope.newPlan.node.isNewReplacement = true;
+                $scope.newPlan.node.isReplaced = false;
+                $scope.newPlan.isGroupSelected = true;
+                
+                updateGroupNoExt($scope.newPlan);
+                
+                $scope.replacedPlansMap[replacedPlanNo]=newPlanNo;
+                
+                
+                updateJson($scope.list, $scope.extList);
+                
+        
+         };
+         
+         function retainSuppPlan(plan, newPlan){
+                var x;
+                for(x=0;x<plan.children.length;x++){
+                        if(plan.children[x].isGroupSelected){
+                                var y;
+                                for(y=0;y<newPlan.children.length;y++){
+                                        if(plan.children[x].node.ariaClientPlanId == newPlan.children[y].node.ariaClientPlanId){
+                                                newPlan.children[y].isGroupSelected=true;
+                                                newPlan.children[y].node.isNewReplacement=true;
+                                                newPlan.children[y].node.replaced = plan.children[x].node.clientPlanInstanceNumber;
+                                        }
+                                }
+                        }
+                }
+         }
+         function hideSubPlanAndService(grpNo, planImgHideFlag){
+                var imgId ='arrow_'+grpNo;
+                var obj = $j('#'+imgId);
+                var parentTrId = 'sec_row_'+grpNo;
+                var parentTdId = 'planServiceTD_'+grpNo;
+                var serviceDivId = 'servdiv_'+grpNo;
+                var subPlanDivId = 'subPlanDiv_'+grpNo;
+                
+                //hideSubPlanDiv
+                document.getElementById(parentTdId).style.display = 'none';
+                document.getElementById(parentTrId).style.display = 'none';
+                document.getElementById(subPlanDivId).style.display = 'none';
+                $j(obj).attr("src","{!URLFOR($Resource.Sim_JS, 'images/arrow.png')}" );
+                var width = $j('#'+subPlanDivId).find("table").find('td:nth-child(2)').width();
+                $j('#'+subPlanDivId).find("table").find('td:nth-child(2)').attr('width',width+4.9+'%');
+                
+                if(planImgHideFlag){
+                        document.getElementById(imgId).style.display = 'none';
+                }
+                
+                //hide service curtain
+                imgId ='imgbank_'+grpNo;
+                obj = $j('#'+imgId);
+                document.getElementById(parentTdId).style.display = 'none';
+                document.getElementById(serviceDivId).style.display = 'none';
+                document.getElementById(parentTrId).style.display = 'none';
+                $j(obj).attr("src","{!URLFOR($Resource.Sim_JS, 'images/banknote.png')}" );
+        }   
+         $scope.ngUndoReplace = function(plan) {
+                //console.log('ngUndoReplace '+plan.leftName);
+                var planNo=plan.node.ariaClientPlanId+'_'+plan.node.clientPlanInstanceNumber;
+                //console.log('ngUndoReplace :planNo='+planNo);
+                var oldPlanNo=$scope.replacedPlansMap[planNo];
+                //console.log('ngUndoReplace :oldPlanNo='+oldPlanNo);
+                var oldPlan = JSON.parse(decodeURIComponent($scope.replacedPlansBackupMap[planNo]));
+                var tempIndex = -1;
+                for (i = 0; i < $scope.extList.length; i++) { 
+                    var tempPlan = $scope.extList[i];
+        
+                    if(tempPlan.node.ariaClientPlanId+'_'+tempPlan.node.clientPlanInstanceNumber == planNo){
+                        tempPlan.node.isReplaced = false;
+                        tempPlan.isGroupSelected=true;
+                        tempPlan = oldPlan;
+                        var imgId ='arrow_'+tempPlan.groupNo;
+                        document.getElementById(imgId).style.display = '';
+                        
+                        //remove planNo from list replacedPlansNoToBeDeleted
+                        updateReplanNums(tempPlan);
+                        
+                    }
+                    
+                    if(tempPlan.node.ariaClientPlanId+'_'+tempPlan.node.clientPlanInstanceNumber == oldPlanNo){
+                        tempPlan.node.isNewReplacement = false;
+                        //tempPlan.isGroupSelected=false;
+                        tempIndex=i;
+                    }
+        
+                    $scope.extList[i]= tempPlan;
+                }
+                //console.log('tempIndex :'+tempIndex);
+                if(tempIndex!=-1){
+                        unCheckChildren($scope.extList[tempIndex]);
+                        console.log('--------planNoToBeDeleted='+planNoToBeDeleted);
+                        deleteAccountPlan(planNoToBeDeleted.toString(),0);
+                        planNoToBeDeleted =[];
+                        $scope.extList.splice(tempIndex,1);
+                        
+                }
+                
+                
+                //$scope.$apply();
+                updateJson($scope.list, $scope.extList);
+                uncheckRadio();
+     };   
+     
+     function updateReplanNums(plan){
+            
+            if(plan.isGroupSelected){
+                console.log('updateReplanNums::replacedPlansNoToBeDeleted:::'+$scope.replacedPlansNoToBeDeleted);
+                //var index = $scope.replacedPlansNoToBeDeleted.indexOf(plan.node.clientPlanInstanceNumber);
+                var index=0;
+                var found=false;
+                while(index<$scope.replacedPlansNoToBeDeleted.length){
+                    if($scope.replacedPlansNoToBeDeleted[index]==plan.node.clientPlanInstanceNumber){
+                        found=true;
+                        break;
+                    }
+                    index++;
+                }
+                if(found){
+                    console.log('removing planNo from replacedPlansNoToBeDeleted');
+                    $scope.replacedPlansNoToBeDeleted.splice(index,1);
+                    
+                }
+                for(var idx=plan.children.length-1 ; idx>=0 ; idx--){
+                    var value=plan.children[idx];
+                    updateReplanNums(value);
+                }
+                console.log('updateReplanNums::replacedPlansNoToBeDeleted:::'+$scope.replacedPlansNoToBeDeleted);
+            }
+            
+     }
+     
+     
+        function uncheckRadio(){
+                var objList = $j("input[type='radio'][name='planRadio']:checked");
+                var i;
+                for(i=0;i<objList.length;i++){
+                        objList[i].checked=false;
+                }
+                //console.log('uncheckedRadios'+$j("input[type='radio'][name='planRadio']:checked"));
+        }
+        
+        
+        var tempExculsivePlans = [];
+        var tempPlanGrpID = []; 
+        function checkPlanExclusion(nodeID, planAriaID){
+                var result = false;
+                if(nodeID.indexOf('-')>-1){
+                        
+	                   var currPlanExclusionList =[];
+	                   if( typeof $scope.planExclusionStr[planAriaID] == "undefined"){
+	                                currPlanExclusionList=[];
+	                   }else{
+	                                currPlanExclusionList = $scope.planExclusionStr[planAriaID];
+	                   }
+					
+						               
+                        //iterate over list -> x
+                        var i=0; 
+                        var j=0;
+                        for(i=0; i< currPlanExclusionList.length && !result; i++){
+                                var tempPlan1 = currPlanExclusionList[i];
+                        		for(j=0; j< tempExculsivePlans.length && !result; j++){
+                                		var tempPlan2 = tempExculsivePlans[j].split('|')[1];
+                                		if(tempPlan1==tempPlan2){
+                                			var newPlanName=getPlanName(planAriaID);
+                                			var oldPlanName=getPlanName(tempPlan1);
+			                        		showGenericDialog('Alert','You cannot purchase '+newPlanName+' along with '+oldPlanName+'. Please change your selection');
+                                			result = true;
+                                		}
+                                
+                                }
+			            }
+                }
+                return result;
+        }
+        
+        function getPlanName(planNo){
+                var planName='New Plan';
+                if(typeof planNoNameMap[planNo] != "undefined"){
+                        planName=planNoNameMap[planNo];
+                }
+                return planName;
+        }
+        var tempAriaID =0;
+        function getPlanAriaID(cpInstID){
+        	var i=0;
+        	for(i=0;i<$scope.extList.length && tempAriaID==0;i++){
+        		var plan = $scope.extList[i];
+        		getPlanAriaIDRec(plan, cpInstID);
+        		
+        	}
+        }
+        
+        function getPlanAriaIDRec(plan, cpInstID){
+        	var i=0;
+        	if(plan.node.clientPlanInstanceNumber == cpInstID){
+       			tempAriaID = plan.node.ariaClientPlanId;
+       		}
+        	for(i=0;i<plan.children.length && tempAriaID==0;i++){
+        		var child = plan.children[i];
+        		getPlanAriaIDRec(child, cpInstID);
+        	}
+        }
+        
+        
+        
+     var planExclusionFlag=true;                 
+     $scope.ngCheckBoxChangeHandler = function(e, pw) {
+        //console.log(value.target.checked);
+        //console.log($scope.list);
+        planExclusionFlag=true;
+        if(!e.target.checked){
+            if(!confirm('Removing any plan will also remove the children. Are you sure ?')){
+                e.target.checked=true;
+                return false;
+            }
+        }
+       
+		 tempExculsivePlans = [];
+         tempPlanGrpID = [];
+         planToBeAdded =[];
+         planNoToBeDeleted =[];        
+         
+        if(e.target.checked){
+        		var grpNo=pw.groupNo;
+                var nodeId = pw.node.nodeId+'';
+                var arr = nodeId.split('-');
+                var idtobePassed = "";
+                
+                var key = nodeId.substr(0,nodeId.indexOf('-'));
+				if(typeof $scope.exculsivePlansMap[key] != "undefined"){    
+					tempExculsivePlans = $scope.exculsivePlansMap[key];
+				}
+				
+                for(var i=0;i<arr.length && planExclusionFlag;i++){
+                    idtobePassed = idtobePassed +(idtobePassed.length >0? "-":"")+ arr[i];
+                    tempAriaID = 0;
+                    getPlanAriaID(arr[i]);
+                    if(checkPlanExclusion(idtobePassed, tempAriaID)){
+                    	planExclusionFlag = false;
+                    }else{
+                    	if(grpNo.indexOf('_ext')>-1){
+	                        $scope.checkNode($scope.extList,idtobePassed,i,grpNo);
+	                    }else{
+	                        $scope.checkNode($scope.list,idtobePassed,i,grpNo);
+	                    }
+                    }
+                }
+                if(planExclusionFlag){
+                	console.log('planExclusionFlag='+planExclusionFlag+', updating scope.exculsivePlansMap for key '+key);
+                	if(typeof $scope.exculsivePlansMap[key] != "undefined"){    
+						$scope.exculsivePlansMap[key].concat(tempExculsivePlans);
+					}else{
+						$scope.exculsivePlansMap[key]=tempExculsivePlans;
+					}
+                	addNewAccountPlanJS(false);
+                }else{
+                	//uncheck plans in tempPlanGrpID
+                	e.target.checked=false;
+                	var i=0; 
+                	for(i=0;i<$scope.extList.length;i++){
+                		var plan = $scope.extList[i];
+                		plan = unCheckPlan(plan);
+                		
+                	}
+                	tempPlanGrpID = [];
+                    //return false;
+                }
+        }else{
+            unCheckChildren(pw);
+            console.log('--------planNoToBeDeleted='+planNoToBeDeleted);
+            deleteAccountPlan(planNoToBeDeleted.toString(),0);
+            planNoToBeDeleted =[];
+        }
+        //$scope.$apply();
+     };
+     
+     
+     var planNoToBeDeleted =[];
+     var planToBeAdded =[];
+     
+     function addNewAccountPlanJS(isInstance){
+     
+        console.log('--------planToBeAdded='+planToBeAdded);
+        
+        var planToBeAddedText = JSON.stringify(planToBeAdded, function (key, val) {
+             if (key == '$$hashKey') {
+               return undefined;
+             }
+             return val;
+        });
+        
+        planToBeAdded = JSON.parse(planToBeAddedText);
+        
+        for(x=0;x<planToBeAdded.length;x++){
+            if(isInstance){
+                planToBeAdded[x] = removeUnsedDataFromPlan(planToBeAdded[x]);
+            }else{
+                planToBeAdded[x].children = [];
+            }
+         }
+        
+        var plansText ='';
+        plansText = JSON.stringify(planToBeAdded, function (key, val) {
+             if (key == '$$hashKey') {
+               return undefined;
+             }
+             return val;
+        });
+        //console.log('--------plansText='+plansText);
+        planToBeAdded =[];
+        var newPlanNoVsOldPlanNoJson='{}'; 
+        
+        if(isInstance){
+        	newPlanNoVsOldPlanNoJson = JSON.stringify($scope.newPlanNoVsOldPlanNoMap);
+        }
+        addNewAccountPlan(plansText, newPlanNoVsOldPlanNoJson);
+     }
+     
+     
+     $scope.checkNode = function(list1, currentNodeId,index){
+        //console.log('current node id ' +currentNodeId + ' node index : '+ index);
+        angular.forEach(list1, function(plan,key){
+            if(index == 0){
+                if(plan.node.nodeId == currentNodeId)
+                {
+                    //console.log('setting group selected true for node id  level '+index);
+                    //console.log("check box id : chkmain_"+plan.groupNo);
+                    var checkboxObj = document.getElementById("chkmain_"+plan.groupNo);
+                        
+                    if(!plan.isGroupSelected){
+                    	checkboxObj.checked = true;
+                        planToBeAdded.push(plan);
+                        plan.isGroupSelected = true;
+                    	//planSelection(checkboxObj, plan.groupNo, plan.optionLabel);
+                    	tempPlanGrpID.push(plan.groupNo);
+                    }
+	                    
+                    
+                }
+            }else if(index >= 1){
+                angular.forEach(plan.children,function(childPlan,key){
+                    if(index ==1){
+                        if(childPlan.node.nodeId == currentNodeId){
+                            //console.log("check box id : chkmain_"+childPlan.groupNo);
+                            var checkboxObj2 = document.getElementById("chkmain_"+childPlan.groupNo);
+                            if(!childPlan.isGroupSelected){
+                            	checkboxObj2.checked = true;
+                                planToBeAdded.push(childPlan);
+                                childPlan.isGroupSelected = true;
+	                            //planSelection(checkboxObj2, childPlan.groupNo, childPlan.optionLabel);
+	                            var planNodeID = currentNodeId.substr(currentNodeId.lastIndexOf('-')+1,currentNodeId.length);
+                        		tempExculsivePlans.push(planNodeID+'|'+childPlan.node.ariaClientPlanId);
+                        		tempPlanGrpID.push(childPlan.groupNo);
+                            }
+                        }
+                    }else if(index >=2){
+                        angular.forEach(childPlan.children,function(childPlan2,key){
+                            if(index == 2){
+                                if(childPlan2.node.nodeId == currentNodeId){
+                                    var checkbox3 = document.getElementById("chkmain_"+childPlan2.groupNo);
+                                    if(!childPlan2.isGroupSelected){
+                                    	checkbox3.checked = true;
+                                        planToBeAdded.push(childPlan2);
+                                        childPlan2.isGroupSelected = true;
+	                                    //planSelection(checkbox3, childPlan2.groupNo, childPlan2.optionLabel);
+	                                    var planNodeID = currentNodeId.substr(currentNodeId.lastIndexOf('-')+1,currentNodeId.length);
+                        				tempExculsivePlans.push(planNodeID+'|'+childPlan2.node.ariaClientPlanId);
+                        				tempPlanGrpID.push(childPlan2.groupNo);
+                                    }
+                                }
+                            }else if(index >=3){
+                                angular.forEach(childPlan2.children,function(childPlan3,key){
+                                    if(index == 3){
+                                        if(childPlan3.node.nodeId == currentNodeId){
+                                            var checkbox4 = document.getElementById("chkmain_"+childPlan3.groupNo);
+                                            if(!childPlan3.isGroupSelected){
+                                            	checkbox4.checked = true;
+                                                planToBeAdded.push(childPlan3);
+                                                childPlan3.isGroupSelected = true;
+	                                            //planSelection(checkbox4, childPlan3.groupNo, childPlan3.optionLabel);
+	                                            var planNodeID = currentNodeId.substr(currentNodeId.lastIndexOf('-')+1,currentNodeId.length);
+                        						tempExculsivePlans.push(planNodeID+'|'+childPlan3.node.ariaClientPlanId);
+                        						tempPlanGrpID.push(childPlan3.groupNo);
+                                            }
+                                        }
+                                    }else {
+                                        console.log('node not found');
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+         });
+         
+     };
+     
+     function unCheckPlan(plan){
+
+     	if(tempPlanGrpID.indexOf(plan.groupNo)>-1){
+     		var checkboxObj = document.getElementById("chkmain_"+plan.groupNo);
+     		checkboxObj.checked=false;
+     		plan.isGroupSelected=false;
+     		//return plan;
+     	}
+     		
+     	for(var idx=0;idx< plan.children.length; idx++){
+	        var child = plan.children[idx];
+	        child = unCheckPlan(child);
+	    }
+	    return plan;
+     }
+     
+     function unCheckChildren(plan, parent){
+        if(plan.isGroupSelected){
+             plan.isGroupSelected=false;
+             var checkboxObjID = 'chkmain_'+plan.groupNo;
+             var checkboxObj = $j('#'+checkboxObjID);
+             checkboxObj[0].checked=false;
+             
+             if(plan.node.planType == 'Supplemental'){
+                var nodeID = plan.node.nodeId;
+                removeNodeIdFromExculsivePlansMap($scope.exculsivePlansMap, nodeID);
+             }
+             
+             //planSelection(checkboxObj, plan.groupNo, plan.optionLabel);
+             
+             planNoToBeDeleted.push(plan.node.clientPlanInstanceNumber);
+             
+             for(var idx=plan.children.length-1 ; idx>=0 ; idx--){
+                var value=plan.children[idx];
+                unCheckChildren(value, plan);
+             }
+            
+            if(typeof parent != "undefined" && typeof parent.children != "undefined" && plan.isInstance){
+                deleteFromParent(parent, plan);
+            }
+         }
+         
+     }
+     
+     function deleteFromParent(parent, plan){
+        //console.log('---------callign deleteFromParent-------------');
+        var idx=0;
+        for(idx=0;idx<parent.children.length;idx++){
+            if(plan.node.clientPlanInstanceNumber == parent.children[idx].node.clientPlanInstanceNumber){
+                //console.log('---------callign deleteFromParent-------------Match found');     
+                parent.children.splice(idx,1);
+                break;
+            }
+        }
+     }
+     
+     
+     $scope.ngUpdateBillingFilter = function (pw, oldvalue){
+                var selectedBillingInterval = pw.selectedBillingInterval;
+                var services = pw.node.services;
+                //alert(selectedBillingInterval);
+                var rateScheduleID = '';
+                /*
+                rateScheduleID = $scope.ngPopulateRateScheduleSelectOptionFilter(pw, selectedBillingInterval, true);
+                $scope.ngSetSelectedRateSchedule(rateScheduleID, pw);
+                */
+                // flag 3 for billing Interval
+				var msg='Changing billing interval will delete all associated account rate tiers. Are you sure you want to continue?';
+        		if(confirm(msg)){
+        			updatePlanOnOppJS(pw, pw.node.clientPlanInstanceNumber, 3);
+        			$scope.scope = '';
+        		}else{
+        			//revert to old billing interval
+        			if(oldvalue!=''){
+        				pw.selectedBillingInterval = oldvalue;
+        			}
+        			oldvalue=''; 
+        		}
+                
+     };
+     $scope.ngSetSelectedRateSchedule = function (selectedOption,pw){
+                var services = pw.node.services;
+            angular.forEach(services, function(value,key){
+            var serviceKey = key;
+            var serviceNode = value;
+                angular.forEach(value.listRateScedules, function(value,key){
+                    if(value.rateSchedule.Id == selectedOption){
+                        serviceNode.selectedRateSchedule = value;
+                    }
+                });
+                    
+            });
+            //TODO
+            updateJson($scope.list, $scope.extList);
+      };
+      $scope.ngOpenPlanConfigOnGear= function (plan){
+      			var num = plan.node.clientPlanInstanceNumber;
+      			var name = plan.node.planName + ' Settings'; 
+      			openOverlayDialog('Configure '+name,'/apex/AriaAccountPlanWizardPlanConfig?planName='+name+'&planType='+plan.node.planType+'&context={!context}&contextId={!contextId}&acctId={!accountId}&clientPlanInstanceNumber='+num,'95%','370px','rerenderPlansConfigPanel');
+      };
+      
+      $scope.ngEditService= function (plan){
+      			var num = plan.node.clientPlanInstanceNumber;
+      			var name = plan.node.planName + ' Settings'; 
+      			var clientPlanSFID = plan.node.sfClientPlanId;
+      			openOverlayDialog('Rate','/apex/AriaAccountPlanWizardPlanService?{!contextVarStr}&accountCurrency={!accountCurrency}&clientPlanInstanceNumber='+num+'&clientPlanSFID='+clientPlanSFID,'95%','370px','rerenderPlansForSwap');
+      };
+      
+      $scope.ngPlanSwap= function (plan){
+      			$scope.replacedPlan = plan;
+      			var num = plan.node.clientPlanInstanceNumber;
+      			var name = plan.node.planName + ' Settings'; 
+      			var clientPlanSFID = plan.node.sfClientPlanId;
+      			openOverlayDialog('Rate','/apex/AriaAccountPlanWizardPlanSwap?{!contextVarStr}&accountCurrency={!accountCurrency}&clientPlanInstanceNumber='+num+'&clientPlanSFID='+clientPlanSFID,'95%','370px','rerenderPlansForSwap');
+      };
+      
+      function doNotReload(){}
+      
+      $scope.selectOptions = [];
+      //option.value as option.label for option in selectOptions when you create array of key value pairs
+      $scope.ngPopulateRateScheduleSelectOptionFilter=function(pw, selectedBillingInterval, setDefaultFlag){
+            if(!setDefaultFlag){
+                /*var imgId='imgbank_'+pw.groupNo;
+                var obj = $j('#'+imgId);
+                var imgSrcVal = $j(obj).attr("src");
+                if(imgSrcVal.indexOf('banknote.png') > -1){
+                    return;
+                }*/
+            }
+      
+            var servicesNode = pw.node.services;
+            pw.rsList = [];
+            //$scope.rsList = [];
+            var uniqueIds = [];
+            var rateScheduleID ='';
+            $j.each(servicesNode, function(key,service){
+                $j.each(service.listRateScedules, function(key,val){
+                    if(uniqueIds.indexOf(val.rateSchedule.Id) == -1 && val.rateSchedule[nspre+'Recurring_Billing_Interval__c']==selectedBillingInterval){
+                        pw.rsList.push({value: val.rateSchedule.Id,label: val.rateSchedule.Name});
+                        if(rateScheduleID==''){
+                            rateScheduleID = val.rateSchedule.Id;
+                        }
+                        uniqueIds.push(val.rateSchedule.Id);
+                    }
+                });
+                return false;
+            });
+            
+            if(setDefaultFlag || pw.node.selectedRS==null){
+                pw.node.selectedRS = pw.rsList[0].value;
+            }
+            
+            
+            updateJson($scope.list, $scope.extList);
+            return rateScheduleID;            
+    }; 
+      
+     
+           
+      $scope.ngDisplaysubPlans = function(plan,obj,grpno,parentTdId,serviceDivId,subPlanDivId,serviceImgIconId){
+            displaysubPlans(obj,grpno,parentTdId,serviceDivId,subPlanDivId,serviceImgIconId);
+            plan.defSel='0';
+            //$scope.$apply();
+      };
+      
+      $scope.ngDisplayServiceCurtain = function(obj,grpno,parentTdId,serviceDivId,subPlanDivId,arrowImgIconId){
+            //console.log('ngdisplaycurtain called');
+            displayServiceCurtain(obj,grpno,parentTdId,serviceDivId,subPlanDivId,arrowImgIconId);
+      };
+      $scope.ngEditInline = function(obj,rate_tier_id,text_box_id){
+            EditInline(obj,rate_tier_id,text_box_id);
+            updateJson($scope.list, $scope.extList);
+      };
+    
+     
+      $scope.ngBeforeRecalculate = function(modifiedRatePlanId, rateTierId, rateCalType, toupleId){
+        beforeRecalculate(modifiedRatePlanId, rateTierId, rateCalType, toupleId);
+        updateJson($scope.list, $scope.extList);
+      };    
+      
+        var keepGoingRemoveFlag=true;
+       $scope.ngRemoveRow = function(grpNo) {
+           //alert('remove');
+           keepGoingRemoveFlag=true;
+           if(grpNo.indexOf('_ext')>-1){
+                removeInstanceUpdated($scope.extList, grpNo);
+           }else{
+                removeInstanceUpdated($scope.list, grpNo);
+           }
+           updateJson($scope.list, $scope.extList);
+      };
+      
+      function removeInstanceUpdated(list, grpNo){
+            var removeIndex=-1;
+            angular.forEach(list, function(value, key) {
+                removeIndex++;
+                if(value.isGroupSelected && keepGoingRemoveFlag){
+                    //console.log('removeInstanceUpdated - plan Name ='+value.leftName);
+                    
+                    if(value.groupNo == grpNo){
+                           //console.log('removeInstanceUpdated ********************matched***********- Insta Name ='+value.leftName);
+                           //value.planInstances.splice(ke,1);
+                           list.splice(removeIndex,1);
+                           value.idx=value.idx-1;
+                           keepGoingRemoveFlag=false;
+                           
+                           return;
+                      }
+                    if(keepGoingRemoveFlag){
+                        //console.log('removeInstanceNew - child of plan Name ='+value.leftName);
+                        removeInstanceUpdated(value.children,grpNo);
+                    }
+                    
+                }
+            });
+      }
+      
+       var keepGoing1,keepGoing2,keepGoing3,keepGoing4;
+       $scope.ngAddRow = function(planId) {
+            //console.log('plan id ' + planId);
+            keepGoing1 = true;
+            if(planId.indexOf('_ext')>-1){
+                 addInstanceUpdated($scope.extList,planId);
+            }else{
+                 addInstanceUpdated($scope.list,planId);
+            }
+            updateJson($scope.list, $scope.extList);
+                        
+            keepGoing1 = true;
+            keepGoing2 = true;
+            keepGoing3 = true;
+            keepGoing4 = true;
+            
+            $timeout(function(){
+            }); 
+        
+      };
+      
+      
+      
+     function addInstanceUpdated(list,planId){
+            if(!keepGoing1){
+                return;
+            }
+            var addIndex=-1;
+            angular.forEach(list, function(value, key) {
+                addIndex++;
+                //console.log('calling addInstanceUpdated - In loop - planName-'+value.leftName);
+                if(keepGoing1){
+                    if(value.groupNo === planId){
+                        //console.log('found exact grpNo in - planName-'+value.leftName);
+                        
+                         value.maxCnt=value.maxCnt+1;
+                         value.idx=value.idx+1;
+                         var newPlanMember = angular.copy(value);
+                         var instSuffix = '';
+                         if(newPlanMember.maxCnt < 10){
+                            instSuffix  = '0'+newPlanMember.maxCnt;
+                         }else{
+                            instSuffix  = newPlanMember.maxCnt;
+                         }
+                         //alert('instSuffix='+instSuffix);
+                         newPlanMember.leftName = newPlanMember.leftName + ' ('+instSuffix+')';
+                         newPlanMember.node.planName = newPlanMember.node.planName + ' ('+instSuffix+')';
+                         updateGroupNo(newPlanMember);
+                         newPlanMember.isGroupSelected=true;
+                         newPlanMember.isInstance=true;
+                         //newPlanMember.planInstances = [];
+                         newPlanMember.node.isNewReplacement=false;
+                         newPlanMember.node.replaced = null;
+                         newPlanMember.node.planInstanceNumber = null;
+                         newPlanMember.defSel='0';
+                         //newPlanMember.node.parentPlanInstanceNumber = value.node.clientPlanInstanceNumber;
+                         //newPlanMember.node.clientPlanInstanceNumber = parseInt(Math.random()*10000000000);
+                         newPlanMember.node.clientPlanInstanceNumber = getUniqueRandomNumber();//parseInt(Math.random()*10000000000);
+                 		 resetInstanceToNull(newPlanMember);
+                         updateInstanceNo(newPlanMember);
+                         
+                         //prepare Map newPlanNoVsOldPlanNoMap
+                         $scope.newPlanNoVsOldPlanNoMap={};
+						 prepareNewVsOldPlanNoMap(value, newPlanMember);
+						 
+						 
+                         var currNodeId=newPlanMember.node.nodeId+'';
+                         if(currNodeId!=null && currNodeId.indexOf(value.node.clientPlanInstanceNumber)>-1){
+                            currNodeId=currNodeId.replace(value.node.clientPlanInstanceNumber, newPlanMember.node.clientPlanInstanceNumber);
+                         }
+                         
+                         newPlanMember.node.nodeId=currNodeId;
+                         updateNodeID(newPlanMember);
+                         updateExculsivePlansMap($scope.exculsivePlansMap, newPlanMember);
+                         
+                         list.splice(addIndex+value.idx,0,newPlanMember);
+                         list.sort(function(a,b){
+                            //return ((a.leftName < b.leftName) ? -1 : ((a.leftName > b.leftName) ? 1 : 0));
+                            return a.node.planInstanceNumber - b.node.planInstanceNumber || ((a.leftName < b.leftName) ? -1 : ((a.leftName > b.leftName) ? 1 : 0));
+                         });
+                         //Call Remote Function to Add/Update Account Plan on Opportunity
+                         planToBeAdded.push(newPlanMember);
+                         addNewAccountPlanJS(true); 
+
+                         keepGoing1 = false;
+                    }else{
+                        addInstanceUpdated(value.children,planId);
+                    }
+                }//end of keepGoing
+            }); //end of forEach
+      } //end of addInstanceUpdated
+      
+      $scope.count = 1;
+      function updateGroupNo(newMember){
+            newMember.groupNo = newMember.groupNo + '_inst_'+$scope.count;
+            $scope.count++;
+            if(typeof newMember.node != "undefined" && typeof newMember.children != "undefined"){
+                angular.forEach(newMember.children, function(value,key){
+                        updateGroupNo(value);
+                });
+            }
+            
+      }
+      
+      function prepareNewVsOldPlanNoMap(oldPlan, newPlan){
+			if(typeof oldPlan == "undefined" || typeof newPlan == "undefined"){
+				return;
+			}
+      		$scope.newPlanNoVsOldPlanNoMap[newPlan.node.clientPlanInstanceNumber]=oldPlan.node.clientPlanInstanceNumber;
+      		var i=0;var j=0;
+      		for(i=0;i<oldPlan.children.length;i++){
+      			var oldChild = oldPlan.children[i];
+      			if(oldChild.isGroupSelected){
+      				for(j=0;j<newPlan.children.length;j++){
+      					var newChild = newPlan.children[j];
+      					if(newChild.isGroupSelected && newChild.node.nodeId == oldChild.node.nodeId){
+      						prepareNewVsOldPlanNoMap(oldChild,newChild);
+      					}
+      				}
+      			}
+      		}
+      
+      }
+      
+      function updateGroupNoExt(newMember){
+            newMember.groupNo = newMember.groupNo + '_ext_'+$scope.count;
+            $scope.count++;
+            if(typeof newMember.node != "undefined" && typeof newMember.children != "undefined"){
+                angular.forEach(newMember.children, function(value,key){
+                        updateGroupNoExt(value);
+                });
+            }
+      }
+      
+      
+      
+    });
+
+})();
+
+
+function updatePlanOnOppJS(plan,oldCpNo, flag){
+        
+        //alert('Updating Plan - '+plan.leftName+'...');
+        var plans = [];
+        plans.push(plan);
+        var planText ='';
+        planText = JSON.stringify(plans, function (key, val) {
+             if (key == '$$hashKey') {
+               return undefined;
+             }
+             return val;
+        });
+        plans = [];
+        updatePlanOnOpp(planText,oldCpNo, flag);
+}
+      
+function deleteReplacedPlan(hdnID){
+
+    /*var scope = angular.element(document.getElementById("mainBlock")).scope();
+    console.log('scope.replacedPlansNoToBeDeleted :::'+scope.replacedPlansNoToBeDeleted);
+    if(typeof scope.replacedPlansNoToBeDeleted != "undefined" && scope.replacedPlansNoToBeDeleted.length>0){
+        deleteAccountPlan(scope.replacedPlansNoToBeDeleted.toString(), 1); // keep planNoToBeDeleted in separate var and delete on commit/save as draft
+        document.getElementById(hdnID).value=scope.replacedPlansNoToBeDeleted.toString();
+    }
+    */
+    cancel();
+    return true;    
+}
+
+function deleteNewlyAddedPlan(){
+
+    
+    /*console.log('newPlansNoToBeDeletedJS :::'+newPlansNoToBeDeletedJS);
+    if(newPlansNoToBeDeletedJS.length>0){
+        deleteAccountPlan(newPlansNoToBeDeletedJS.toString(),0); 
+    }*/
+    cancel();
+    
+    return true;    
+}
+
+function reloadPage(){
+	$j("[id$='hdn-redirect-button']").click();
+}
+function ajaxResultPostForReplace(updatedJson) {
+            //console.log('replacedPlan : '+replacedPlan);
+            console.log('updatedJson : '+updatedJson);
+            var scope = angular.element(document.getElementById("mainBlock")).scope();
+            if(typeof updatedJson != "undefined" && updatedJson.length>0){
+                 console.log('newPlan : '+updatedJson[0]);
+                 //scope.extList.concat(updatedJson);
+                 
+                 scope.extList.push(updatedJson[0]);
+                 scope.extList.sort(function(a,b){
+                        //return ((a.leftName < b.leftName) ? -1 : ((a.leftName > b.leftName) ? 1 : 0));
+                        return a.node.planInstanceNumber - b.node.planInstanceNumber || ((a.leftName < b.leftName) ? -1 : ((a.leftName > b.leftName) ? 1 : 0));
+                        
+                 });
+                 
+                updateClientInstanceNo(scope.list,scope.extList);
+                //store newPlan cpInstNo separately // to be deleted in case of cancel.
+                 //newPlansNoToBeDeletedJS.push(updatedJson[0].node.clientPlanInstanceNumber);
+
+                scope.newPlan = updatedJson[0];
+                scope.replacePlanNew();
+                
+                var plansText ='';
+                plansText = JSON.stringify(updatedJson, function (key, val) {
+                     if (key == '$$hashKey') {
+                       return undefined;
+                     }
+                     return val;
+                });
+		     	addNewAccountPlanForReplace(plansText);
+            }else{
+                showGenericDialog('Alert ','Plan details not found.',180,300);
+                scope.replacedPlan.defSel='0';
+            }
+            scope.$apply();
+        } 
+        
+                
+function ajaxResultPost(updatedJson,acctCurrency) {
+
+    
+    var scope = angular.element(document.getElementById("mainBlock")).scope();
+    if(typeof acctCurrency != "undefined"){
+        scope.acctCurr = acctCurrency;
+    }
+    
+    if(typeof updatedJson != "undefined" && updatedJson.length > 0){
+        scope.extList = updatedJson;
+        hasExtPlan = 'true';
+    }else{
+        scope.extList = [];
+        hasExtPlan = 'false';
+    }
+    
+    scope.extList.sort(function(a,b){
+            //return ((a.leftName < b.leftName) ? -1 : ((a.leftName > b.leftName) ? 1 : 0));
+            return a.node.planInstanceNumber - b.node.planInstanceNumber || ((a.leftName < b.leftName) ? -1 : ((a.leftName > b.leftName) ? 1 : 0));
+        
+    });
+    updateClientInstanceNo(scope.list,scope.extList);
+    
+    updateNodeIdOnLoad(scope.list,scope.extList);
+    
+    updateExculsivePlansMapOnLoad(scope.exculsivePlansMap, scope.extList);
+      
+    updatePlanNoNameMapOnLoad(scope.list,scope.extList);
+    
+    
+    
+    scope.$apply();
+    showHidePlanSection(hasExtPlan);
+}
+
+var updateFlag=true;
+function ajaxResultPostUpdate(updatedJson) {
+	
+    var scope = angular.element(document.getElementById("mainBlock")).scope();
+   	updateFlag =true;
+    if(typeof updatedJson != "undefined" && updatedJson !=''){
+    	var x=0;
+    	for(x=0;x<scope.extList.length;x++){
+	        var pw = scope.extList[x];
+	        if(updateFlag){
+	        	updateUnitAndPrice(pw, updatedJson);
+	       	}
+	     }
+	    scope.$apply();
+    }
+}
+
+function updateUnitAndPrice(OldPlan, newPlan){
+
+	if(OldPlan.node.clientPlanInstanceNumber == newPlan.node.clientPlanInstanceNumber){
+    	OldPlan.node.Unit = newPlan.node.Unit;
+    	OldPlan.node.Discount = newPlan.node.Discount;
+    	OldPlan.node.Price = newPlan.node.Price;
+    	OldPlan.node.ListPrice = newPlan.node.ListPrice;
+    	OldPlan.node.ListPricePerUnit = newPlan.node.ListPricePerUnit;
+    	OldPlan.node.PricePerUnit = newPlan.node.PricePerUnit;
+    	
+    	updateFlag = false;
+    	return;
+    }
+    var y=0;
+	for(y=0;y<OldPlan.children.length;y++){
+		var child = OldPlan.children[y];
+		updateUnitAndPrice(child, newPlan);
+	}
+	        
+
+}
+
+function showHidePlanSection(hasPlans){
+     if(hasPlans!='false'){
+        $j('.noPlanSection').hide();
+        $j('.PlanSection').show();
+      }else{
+        $j('.noPlanSection').show();
+        $j('.PlanSection').hide();
+      }
+}
+
+var updatedList=[];
+var selectedPlans=[];
+var selectedPlansText='';
+
+var extUpdatedList=[];
+var extSelectedPlans=[];
+var extSelectedPlansText='';
+
+function getUniqueRandomNumber(){
+    var tmstmp = ''+new Date().getTime();
+    var rndm=''+parseInt(Math.random()*100000);
+    var uniqueRandom = tmstmp+rndm
+    return uniqueRandom;
+}
+
+function pushSelectedPlanFromMap(){
+        var selectedPlanKeys=Object.keys(oldSelectedMPs);
+        var flag=false;
+        var i,j,k;
+        
+     for(i=0;i<selectedPlanKeys.length;i++){
+        var key = selectedPlanKeys[i];
+        flag=true;
+        for(j=0;j<selectedPlans.length;j++){
+                var plan = selectedPlans[j];
+                if(plan.node.ariaClientPlanId == key){
+                        flag=false;
+                }
+        }
+        if(flag){
+            if(key.indexOf('i')==-1){
+                selectedPlans.push(oldSelectedMPs[key]);
+            }else{
+                for(k=0;k<oldSelectedMPs[key].length;k++){
+                    selectedPlans.push(oldSelectedMPs[key][k]);
+                }
+            }
+            
+        }
+     }
+}
+
+function updateJson(newJson, extJson){
+    //******************for new List*******************//
+    updatedListText = JSON.stringify(newJson, function (key, val) {
+         if (key == '$$hashKey') {
+           return undefined;
+         }
+         return val;
+      });
+    //console.log('Before Heap fix New Plan length='+updatedListText.length);
+    updatedList=JSON.parse(updatedListText);
+    updatedListText='';
+    selectedPlans=[];
+     for(i=0;i<updatedList.length;i++){
+        if(updatedList[i].isGroupSelected){
+            selectedPlans.push(updatedList[i]);
+        }
+     }
+     
+     pushSelectedPlanFromMap();
+     
+     if(selectedPlans.length!=0){
+         /////////++Heap fix//////////
+    
+         for(x=0;x<selectedPlans.length;x++){
+            selectedPlans[x] = removeUnsedDataFromPlan(selectedPlans[x]);
+         }
+         
+         /////////--Heap fix//////////
+       
+    
+         
+            selectedPlansText = JSON.stringify(selectedPlans, function (key, val) {
+             if (key == '$$hashKey') {
+               return undefined;
+             }
+             return val;
+        });
+        //selectedPlans=[];
+     }else{
+            selectedPlansText = '[]';
+     }
+     selectedPlans=[];
+     updatedList=[];
+     //console.log('After Heap fix New Plan length='+selectedPlansText.length);
+     //******************for existing List*******************//
+         extUpdatedListText = JSON.stringify(extJson, function (key, val) {
+         if (key == '$$hashKey') {
+           return undefined;
+         }
+         return val;
+      });
+    //console.log('Before Heap fix Existing Plan length='+extUpdatedListText.length);
+    extUpdatedList=JSON.parse(extUpdatedListText);
+    extUpdatedListText='';
+    
+    extSelectedPlans=[];
+     for(i=0;i<extUpdatedList.length;i++){
+        if(extUpdatedList[i].isGroupSelected){
+            extSelectedPlans.push(extUpdatedList[i]);
+        }
+     }
+     
+     if(extSelectedPlans.length!=0){
+         /////////++Heap fix//////////
+    
+         for(x=0;x<extSelectedPlans.length;x++){
+            extSelectedPlans[x] = removeUnsedDataFromPlan(extSelectedPlans[x]);
+         }
+         
+         /////////--Heap fix//////////
+        
+    
+            extSelectedPlansText = JSON.stringify(extSelectedPlans, function (key, val) {
+             if (key == '$$hashKey') {
+               return undefined;
+             }
+             return val;
+        });
+     }else{
+            extSelectedPlansText = '[]';
+     }
+     extSelectedPlans=[];
+     extUpdatedList=[];
+     //console.log('After Heap fix Existing Plan length='+extSelectedPlansText.length);
+     
+     
+}
+
+function updateExculsivePlansMapOnLoad(exculsivePlansMap, extJson){
+        //console.log('***************updateExculsivePlansMapOnLoad');
+        var x;
+        for(x=0;x<extJson.length;x++){
+        var pw = extJson[x];
+        extJson[x] = updateExculsivePlansMap(exculsivePlansMap, pw);
+     }
+}
+
+function updateExculsivePlansMap(exculsivePlansMap, plan){
+var i;
+    if(typeof(plan)=="undefined"){
+        return plan;
+    }
+    if(!plan.isGroupSelected){
+        return plan;
+    }
+    if(plan.node.planType == 'Supplemental' && plan.isGroupSelected){
+                var nodeID = plan.node.nodeId;
+                addNodeIdInExculsivePlansMap(exculsivePlansMap, plan.node.nodeId, plan.node.ariaClientPlanId)
+    }
+      
+    //for children
+    if(typeof(plan.children)!="undefined"){
+        for(i=0;typeof(plan.children)!="undefined" && i<plan.children.length;i++){
+            var childPlan = plan.children[i];
+            childPlan = updateExculsivePlansMap(exculsivePlansMap, childPlan)
+            plan.children[i]= childPlan;
+        }
+    }
+    return plan;
+}
+
+function addNodeIdInExculsivePlansMap(exculsivePlansMap, nodeID, ariaClientPlanId){
+		if(nodeID.indexOf('-') == -1){
+			return;
+        }
+		var masterNodeID = nodeID.substr(0, nodeID.indexOf('-'));
+	    var planNodeID = nodeID.substr(nodeID.lastIndexOf('-')+1,nodeID.length);
+	    
+	    if(typeof(exculsivePlansMap[masterNodeID])!="undefined"){
+	    	exculsivePlansMap[masterNodeID].push(planNodeID+'|'+ariaClientPlanId);
+	    }else{
+	    	exculsivePlansMap[masterNodeID]=[planNodeID+'|'+ariaClientPlanId];
+	    }
+}
+
+function removeNodeIdFromExculsivePlansMap(exculsivePlansMap, nodeID){
+		if(nodeID.indexOf('-') == -1){
+			return;
+        }
+		var masterNodeID = nodeID.substr(0, nodeID.indexOf('-'));
+	    var planNodeID = nodeID.substr(nodeID.lastIndexOf('-')+1,nodeID.length);
+	    
+	    if(typeof(exculsivePlansMap[masterNodeID]) !="undefined"){
+	    	
+	    	for(i=0;i<exculsivePlansMap[masterNodeID].length;i++){
+	    		var tempID = '';
+	    		if(exculsivePlansMap[masterNodeID][i].indexOf('|')>-1){
+	    			tempID = exculsivePlansMap[masterNodeID][i].substr(0,exculsivePlansMap[masterNodeID][i].indexOf('|'));
+	    		}
+	    		if(tempID==planNodeID){
+	    				exculsivePlansMap[masterNodeID].splice(i,1);
+	    				break;
+	    		}
+	    	}
+	    }
+}
+
+
+function updatePlanNoNameMapOnLoad(newJson, extJson){
+     var x;
+     for(x=0;x<newJson.length;x++){
+        updatePlanNoNameMap(newJson[x]);
+     }
+
+    for(x=0;x<extJson.length;x++){
+        updatePlanNoNameMap(extJson[x]);
+     }
+     
+}
+
+function updatePlanNoNameMap(plan){
+    var i;
+    if(typeof(plan)=="undefined"){
+        return plan;
+    }
+    
+    planNoNameMap[plan.node.ariaClientPlanId]=plan.leftName;
+      
+    //for children
+    if(typeof(plan.children)!="undefined"){
+        for(i=0;typeof(plan.children)!="undefined" && i<plan.children.length;i++){
+            var childPlan = plan.children[i];
+            updatePlanNoNameMap(childPlan);
+        }
+    }
+    return plan;
+}
+
+function updateClientInstanceNo(newJson, extJson){
+    
+    var x;
+    
+    //******************reset new List*******************//
+    //console.log('updateClientInstanceNo ...  resetInstanceToNull');
+    for(x=0;x<newJson.length;x++){
+        var pw = newJson[x];
+        pw.node.parentPlanInstanceNumber=null;
+        pw.node.clientPlanInstanceNumber=null;                
+        newJson[x] = resetInstanceToNull(pw);
+     }
+     //******************reset ext List*******************//
+    /*console.log('updateClientInstanceNo ...ext  resetInstanceToNull');
+    for(x=0;x<extJson.length;x++){
+        var pw = extJson[x];
+        pw.node.parentPlanInstanceNumber=null;
+        pw.node.clientPlanInstanceNumber=null;                
+        extJson[x] = resetInstanceToNull(pw);
+     }
+     */
+     //******************for new List*******************//
+     //console.log('updateClientInstanceNo ...  newJson');
+     for(x=0;x<newJson.length;x++){
+        var pw = newJson[x];
+        if(pw.node.clientPlanInstanceNumber==null || pw.node.clientPlanInstanceNumber==''){
+            //console.log('updateClientInstanceNo ... '+pw.leftName);
+            pw.node.clientPlanInstanceNumber = getUniqueRandomNumber();//parseInt(Math.random()*10000000000);
+        }               
+        newJson[x] = updateInstanceNo(pw);
+     }
+     
+     //******************for Ext List*******************//
+    var y;
+    //console.log('updateClientInstanceNo ...  extJson');
+     for(y=0;y<extJson.length;y++){
+        var pw = extJson[y];
+        if(pw.node.clientPlanInstanceNumber==null || pw.node.clientPlanInstanceNumber==''){
+        //console.log('updateClientInstanceNo ... '+pw.leftName);
+            pw.node.clientPlanInstanceNumber = getUniqueRandomNumber();//parseInt(Math.random()*10000000000);
+        }               
+        extJson[y] = updateInstanceNo(pw);
+     }
+     
+}
+function genericDialog(title,htmlBody, buttons, actions){    
+  $j('<div></div>').dialog({
+            resizable: false,
+            height:180,
+            width:450,
+            modal: true,
+            open: function(e){
+                $j(this).html(htmlBody);
+            },
+            buttons: [
+                {
+                    text: "Ok",
+                    "class": 'rightFloatClass',
+                    click: function() {
+                        $j(this).dialog("close");
+                    }
+                }
+            ],
+            title: title
+        });  
+} 
+function updateNodeIdOnLoad(newJson, extJson){
+    //******************for new List*******************//
+     //console.log('updateNodeIdOnLoad ...  newJson');
+     for(var i=0;i<newJson.length;i++){
+        var plan = newJson[i];
+        plan.node.nodeId = plan.node.clientPlanInstanceNumber+'';
+        updateNodeID(plan);
+     }
+     
+     //******************for Ext List*******************//
+    //console.log('updateNodeIdOnLoad ...  extJson');
+     for(var i=0;i<extJson.length;i++){
+        var plan = extJson[i];
+        plan.node.nodeId = plan.node.clientPlanInstanceNumber+'';
+        updateNodeID(plan);
+     }
+}
+ 
+function updateNodeID(plan){
+    //console.log('updateNodeID ...  plan - '+plan.leftName);
+    if(typeof(plan)=="undefined"){
+        return plan;
+    }
+    for(var i=0;typeof(plan.children)!="undefined" && i<plan.children.length;i++){
+            var childPlan = plan.children[i];
+            childPlan.node.nodeId = plan.node.nodeId+'-'+childPlan.node.clientPlanInstanceNumber;
+            updateNodeID(childPlan);
+    }
+}     
+function updateInstanceNo(plan){
+    
+    var i;
+    if(typeof(plan)=="undefined"){
+        return plan;
+    }
+    //for children
+    if(typeof(plan.children)!="undefined"){
+        for(i=0;typeof(plan.children)!="undefined" && i<plan.children.length;i++){
+            var childPlan = plan.children[i];
+            
+            if(typeof(childPlan.node)!="undefined"){
+                //update parentNo
+                if(childPlan.node.parentPlanInstanceNumber==null || childPlan.node.parentPlanInstanceNumber=='' || childPlan.node.parentPlanInstanceNumber=='null'){
+                //console.log('updateInstanceNo ...parentPlanInstanceNumber.... '+plan.leftName);
+                    childPlan.node.parentPlanInstanceNumber = plan.node.clientPlanInstanceNumber;
+                }
+                //update instanceNo
+            
+                if(childPlan.node.clientPlanInstanceNumber==null || childPlan.node.clientPlanInstanceNumber=='' || childPlan.node.clientPlanInstanceNumber=='null'){
+                //console.log('updateInstanceNo ...clientPlanInstanceNumber.... '+plan.leftName);
+                    childPlan.node.clientPlanInstanceNumber = getUniqueRandomNumber();//parseInt(Math.random()*10000000000);
+                }
+            }
+            childPlan = updateInstanceNo(childPlan);
+            plan.children[i]= childPlan;
+        }
+    }
+    return plan;
+}
+
+function resetInstanceToNull(plan){
+    
+    var i;
+    if(typeof(plan)=="undefined"){
+        return plan;
+    }
+    //for children
+    if(typeof(plan.children)!="undefined"){
+        for(i=0;typeof(plan.children)!="undefined" && i<plan.children.length;i++){
+            var childPlan = plan.children[i];
+            
+            if(typeof(childPlan.node)!="undefined" ){
+                childPlan.node.parentPlanInstanceNumber=null;
+                childPlan.node.clientPlanInstanceNumber=null;
+            }
+            childPlan = resetInstanceToNull(childPlan);
+            plan.children[i]= childPlan;
+        }
+    }
+    return plan;
+}
+
+function removeUnsedDataFromPlan(plan){
+    if (typeof(plan) == "undefined"){
+        return {};
+    }
+    //console.log('removeUnsedDataFromPlan>>>>>>'+plan.leftName);
+    //children
+    var childFlag=true;
+    for(var i=0;typeof(plan.children) != "undefined" && i<plan.children.length;i++){
+        var pw=plan.children[i];
+        if(pw.isGroupSelected!=null && !pw.isGroupSelected){
+            pw={};
+        }else if(pw.isGroupSelected!=null && pw.isGroupSelected){
+            childFlag = false;
+            
+            pw=removeUnsedDataFromPlan(pw);
+            
+        }
+        plan.children[i]=pw;
+    }
+    if(childFlag){
+        plan.children=[];
+    }
+    
+    return plan;
+}
+
+
+var oldSelectedMPs={};
+
+
+    
+     
+     
+
+function displaysubPlans(imgId,grpno,parentTdId,serviceDivId,subPlanDivId,serviceImgIconId){
+//console.log(imgId+','+grpno+','+parentTdId+','+serviceDivId+','+subPlanDivId+''+serviceImgIconId);
+    var obj = $j('#'+imgId);
+    var imgSrcVal = $j(obj).attr("src");
+    var parentTrId = 'sec_row_'+grpno;
+    var actionSelect = 'action_select_'+grpno;
+    if(imgSrcVal.indexOf('arrow.png') > -1 ){ 
+    
+        //Calculation for td width for child elements
+        var width = $j('#'+subPlanDivId).find("table").find('td:nth-child(2)').width();
+        $j('#'+subPlanDivId).find("table").find('td:nth-child(2)').attr('width',width-4.9+'%');
+        
+        var select = document.getElementById(actionSelect);
+        if(select)
+        {
+            //$j('#'+serviceImgIconId).attr("src","{!URLFOR($Resource.Sim_JS, 'images/banknote.png')}");
+            //select.value = 0;
+        }
+        document.getElementById(parentTrId).style.display='';
+        document.getElementById(parentTdId).style.display='';
+        document.getElementById(subPlanDivId).style.display = '';
+        document.getElementById(serviceDivId).style.display='none';
+        $j(obj).attr("src","{!URLFOR($Resource.Sim_JS, 'images/arrow2.png')}")
+        
+    }else{
+        document.getElementById(parentTrId).style.display='none';
+        document.getElementById(parentTdId).style.display = 'none';
+        document.getElementById(subPlanDivId).style.display = 'none';
+        //document.getElementById(subcurtain_id).style.display = 'none';
+        $j(obj).attr("src","{!URLFOR($Resource.Sim_JS, 'images/arrow.png')}" );
+        var width = $j('#'+subPlanDivId).find("table").find('td:nth-child(2)').width();
+        $j('#'+subPlanDivId).find("table").find('td:nth-child(2)').attr('width',width+4.9+'%');
+    }
+
+}
+
+function planSelection(checkboxObj, recordno, optionList){
+    if(optionList){
+        if(Object.keys(optionList).length < $j('#lbl_billinginterval_'+recordno).siblings('select').find('option').length && $j('#lbl_billinginterval_'+recordno).siblings('select').find('option').length>0){
+            $j('#lbl_billinginterval_'+recordno).siblings('select').find('option')[0].remove();
+        } 
+    }
+    
+}
+
+function isNumberKey(evt, val, noDecimal, uptoDecimal, el)
+ {
+    var charCode = (evt.which) ? evt.which : evt.keyCode
+    if (charCode == 46) {
+       // Allow only 1 decimal point ('.')...
+       if(!noDecimal){
+       		return false;
+       }
+       if((val) && (val.indexOf('.') >= 0))
+           return false;
+       else
+           return true;
+    }
+    
+    if (charCode > 31 && (charCode < 48 || charCode > 57))
+       return false;
+       
+    // for deciding decimal position 
+    var caratPos = getSelectionStart(el);
+    var dotPos = val.indexOf(".");
+    //alert(caratPos+'---dotPos---'+dotPos);
+    var number = val.split('.');
+    if( caratPos > dotPos && dotPos>-1 && (number[1].length > (uptoDecimal -1))){
+        return false;
+    }  
+    return true;
+ }
+ 
+function getSelectionStart(o) {
+	if (o.createTextRange) {
+		var r = document.selection.createRange().duplicate()
+		r.moveEnd('character', o.value.length)
+		if (r.text == '') return o.value.length
+		return o.value.lastIndexOf(r.text)
+	} else return o.selectionStart
+}
+      
+ function getSelectedPlan(hiddenFieldId, hiddenFieldIdExt){
+    if({!!isAcctHaveAriaId}){
+          if((selectedPlansText!=null && (selectedPlansText.length==0 || selectedPlansText=='[]') ) && (extSelectedPlansText!=null && (extSelectedPlansText.length==0 || extSelectedPlansText=='[]')  )){
+                //alert('Please select a plan');
+                showGenericDialog('Alert ','Please select a plan',180,300);
+                return false;
+          }
+      }
+      //if(!validatePaymentSelectionOnSave()){
+        //  return false;
+      //}
+      
+      if(selectedPlansText!=null && selectedPlansText.length!=0 && document.getElementById(hiddenFieldId)){
+                    document.getElementById(hiddenFieldId).value = selectedPlansText;
+      }
+      
+      if(extSelectedPlansText!=null && extSelectedPlansText.length!=0 && document.getElementById(hiddenFieldIdExt)){
+                    document.getElementById(hiddenFieldIdExt).value = extSelectedPlansText;
+      }
+      
+        return true;        
+}     
+
+$j(document).ready(function() {
+
+      showHidePlanSection('{!hasExistingPlans}');
+      
+      $j('input').keypress(function (e) {
+         if (e.keyCode == '13') {
+            event.preventDefault();
+         }
+      });
+      
+      $j(".acct_status").change(function(){
+               hideshowdiv($j(".acct_status").val());
+       });        
+});     
+
+
+   //Added By Sanjeev ENDS here
+   //Added by Hemant Starts here
+   function handleBillThrough(selectedValue){
+	
+	if(selectedValue == 'Sync Master Plan Instance'){
+		getActivePlans();
+		document.getElementsByClassName('billThroughClass')[0].style.display = 'none';
+		document.getElementsByClassName('masterBillingClass')[0].style.display = 'block';
+		document.getElementById('thePage:formId:billThroughId').style.display = 'none';
+		document.getElementById('thePage:formId:selectMasterPlan').style.display = 'block';
+	}
+	if(selectedValue == 'Use Bill Through Date'){
+		document.getElementsByClassName('billThroughClass')[0].style.display = 'block';
+		document.getElementsByClassName('masterBillingClass')[0].style.display = 'none';
+		document.getElementById('thePage:formId:selectMasterPlan').style.display = 'none';
+		document.getElementById('thePage:formId:billThroughId').style.display = 'block';
+		
+	}
+	if(selectedValue == '--None--'){
+		document.getElementsByClassName('billThroughClass')[0].style.display = 'none';
+		document.getElementsByClassName('masterBillingClass')[0].style.display = 'none';
+		document.getElementById('thePage:formId:selectMasterPlan').style.display = 'none';
+		document.getElementById('thePage:formId:billThroughId').style.display = 'none';
+	}
+  }
+  
+  function stopPreviousdate(dateFieldID){
+                        
+                var dateValue = new Date (document.getElementById(dateFieldID).value);
+                var dateOnly = Date.parse(document.getElementById(dateFieldID).value); //Date.parse(dateValue.setHours(0,0,0,0));
+
+                var todayDate = Date.parse('{!effectiveDate}'); 
+
+                if(dateOnly < todayDate  ){
+
+                        showGenericDialog('Alert ','Please select today or future date',180,300);
+                        document.getElementById(dateFieldID).value = null;
+                }
+        }
+   function jsOnCompleteSaveDraft(hasError){
+       console.log('hasError ='+hasError);     
+       if(hasError == 'true'){
+           var url = window.location.href;
+           document.getElementById('thePage:formId:errorQuoteMessage').scrollIntoView();
+          /* window.location.href = url+'#scrollUp';
+           var index = url.indexOf('#scrollUp');
+           if(index > -1){
+               window.location.href = url;
+           }else{
+              
+           }*/
+           
+       }
+   } 
+</script>
+<script src="/soap/ajax/28.0/connection.js" type="text/javascript"></script>
+<script src="/soap/ajax/28.0/apex.js" type="text/javascript"></script>
+<script>
+var hasExtPlan = '{!hasExistingPlans}';
+
+function openPageURL(title, pageUrl){
+    
+    location.href = pageUrl;
+}
+
+function openOverlayDialog(title, pageUrl, ifrWidth, ifrHeight, callingFunc){
+    console.log('-pageUrl--'+pageUrl);
+    
+    var sd = sfdcPage.dialogs['OverlayDialog'], close;
+    if (!sd) {
+        sd = sfdcPage.dialogs['OverlayDialog'] = new SimpleDialog('OverlayDialog', true);
+     
+        sd.createDialog();
+    }
+       if(title!='Rate'){
+            sd.setTitle(title);
+        }else{
+            sd.setTitle('');
+        }
+    
+    sd.setWidth(ifrWidth);
+
+    //Specify the iFrame and give URL of VF page or give the content
+    var htmlCont ='<iframe src="'+pageUrl+'" width="100%" height="'+ifrHeight+'" frameborder="0" scrolling="no" style="min-width: 100%;height:'+ifrHeight+';"/>';
+    $j(sd.dialog).find('#OverlayDialogInner').html(htmlCont);
+    
+    $j(sd.dialog).find('#OverlayDialogInner iframe').on('load', function() {
+        // find the input boxes within the iframe and attach a click handler
+        $j(this).contents().find('input[type="button"]').on('click', function() {
+            // if it is a cancel button close the dialog
+            if ($j(this).val() == 'Save') {
+                var bg_sf_id;
+	      		var newPlanNum;
+	      		if('rerenderPlansPanel' == callingFunc){
+	      			bg_sf_id = $j(this).attr('data-bg-sf-id');
+	      			bg_sf_id = $j(this).attr('data-bg-sf-id');
+	      			//console.log(bg_sf_id);
+	      			$j("[id$='hdn-bgsfid']").val(bg_sf_id);
+	      			$j("[id$='hdn-redirect-button']").click();
+	      		}else if('rerenderPlansForSwap'==callingFunc){
+					/*var oldPlanNum = -1;
+	      			for(i=0;i<pageUrl.split('&').length;i++){
+	      				var temp = pageUrl.split('&')[i];
+	      				if(temp.indexOf('clientPlanInstanceNumber') != -1){
+	      					oldPlanNum = temp.split('=')[1];
+	      				}
+	      			}	
+	      		
+	      			newPlanNum = $j(this).attr('data-newPlanNo');
+	      			console.log('newPlanNum :: '+newPlanNum);
+	      			rerenderPlansForSwap(newPlanNum, oldPlanNum);
+	      			
+	      			*/
+	      			$j("[id$='hdn-redirect-button']").click();
+	      		}
+                else{
+                    window[callingFunc]();
+                }
+                sd.hide();
+                showParentScroll();
+            }
+            if($j(this).val() == 'Cancel'){
+                sd.hide();
+                //window[callingFunc]();
+                showParentScroll();
+            }
+            //return false;
+        });
+    });
+    if ($j(sd.dialog).find('#InlineEditDialogX').size() == 0) {
+        var close = $j("<a id='InlineEditDialogX' title='Close' tabindex='0' href='javascript:void(0)' class='dialogClose'>Close</a>");
+        close.mouseover(function() {
+            this.className = 'dialogCloseOn';
+        }).mouseout(function() {
+            this.className = 'dialogClose';
+        }).click(function(){
+            // finally our on click handler which closes the dialog
+            //window[callingFunc]();
+            sd.hide();
+            // scroll fixed
+            showParentScroll();
+            //This is to refresh the page once the modal is closed.If you dont want to refresh comment the code
+            //window.location.reload(true);
+        });
+        // insert the new generated close button before the h2 tag so it'll show up on the top right corner
+        close.insertBefore($j(sd.dialog).find('.topLeft h2'));  
+    } 
+    sd.show();
+    hideParentScroll();
+}
+function hideParentScroll(){
+    $j('html, body').css({
+    'overflow': 'hidden'//,'height': '100%'
+    });
+}
+function showParentScroll(){
+    $j('html, body').css({
+        'overflow': 'auto',
+        'height': 'auto'
+    });
+}
+
+function showGenericDialog(title,htmlBody,height,width){
+     var ht=180;
+     var wt=450;
+     
+     if(typeof(height)!="undefined"){
+            ht=height;
+     }
+     if(typeof(width)!="undefined"){
+            wt=width;
+     }
+         
+      $j('#genericDialogBox').dialog({
+            resizable: false,
+            height:ht,
+            width:wt,
+            modal: true,
+            open: function(e){
+                    $j(this).html(htmlBody);
+            },
+            buttons: [
+                    {
+                            text: "Ok",
+                            "class": 'rightFloatClass',
+                            click: function() {
+                                    $j(this).dialog("close");
+                            }
+                    }
+            ],
+            title: title
+    });  
+} 
+ 
+ ////ER-1338 starts here ////
+ function showCalender(id){
+                var element = document.getElementById(id);
+                DatePicker.pickDate(true, element, false);
+        }
+        
+        function overRideCal(){
+                $j('.dateFormat a').each(function() {
+                        var href = $j( this ).attr("href");
+                        var elementId = href.split(",")[1];
+                        //console.log(elementId+">>>>");
+                        $j( this ).attr("href","javascript:showCalender("+elementId+");");
+                        var span = $j(this).parent();
+                        $j(span).html("");
+                    $j( this ).html('<img height="16" src="/img/func_icons/util/datePicker16.gif" width="16" style="padding-left: 8px;" />');
+                    $j(this).css({"vertical-align": "middle"}); 
+                    $j(span).append(this);
+                    $j(span).attr('class','dateFormatCustom');
+                });
+        }
+        function stopPreviousdate(dateFieldID){
+                        
+                var dateValue = new Date (document.getElementById(dateFieldID).value);
+                var dateOnly = Date.parse(document.getElementById(dateFieldID).value); //Date.parse(dateValue.setHours(0,0,0,0));
+
+                var todayDate = Date.parse('{!effectiveDate}');  
+
+                if(dateOnly < todayDate  ){
+
+                        showGenericDialog('Alert ','Please select today or future date',180,300);
+                        document.getElementById(dateFieldID).value = null;
+                }
+        }
+        
+        function toggleBilling(val){
+           if(val == 'Anniversary Date'){
+               $j(".billOpt").hide();
+               $j(".annBillOpt").show();
+           }else{
+               $j(".billOpt").show();
+	   	$j(".annBillOpt").hide();
+           }
+        }
+        
+        function togglePRC(val){
+           if(val == 'Yes'){
+               $j(".PRS").show();
+           }else{ 
+               $j(".PRS").hide();
+           }
+        }
+        
+        function showProRateInput(val){
+             //alert(val);
+             if(val == 'Offset Days'){
+                 $j(".OffDays").show();
+                 $j(".OffDate").hide();
+             }else{
+                 $j(".OffDays").hide();
+                 $j(".OffDate").show();
+             }
+          }
+          
+ ////////////////////////       
+ 
+</script>
+<apex:form id="formId">
+<apex:pagemessages id="errorQuoteMessage"></apex:pagemessages>
+<apex:actionstatus id="LoadingStatus">
+    <apex:facet name="start">
+        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 15%;opacity:.8;">
+            <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+            
+            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+        </div>
+    </apex:facet>
+</apex:actionstatus>
+<apex:outputPanel id="priceIndPanel">
+    <c:AriaPriceIndicatorComponent recid="{!$CurrentPage.parameters.id}" context="{!$CurrentPage.parameters.context}" selectedCurrency="{!$CurrentPage.parameters.accountCurrency}" accountName="{!accountName}" billingInterval="{!$CurrentPage.parameters.billingInterval}" />
+</apex:outputPanel> 
+
+<apex:actionFunction name="rerenderPlansPanel" >
+
+    <apex:param name="bgsfid" value="" assignTo="{!bgsfid}" />
+</apex:actionFunction>
+<!-- 
+<apex:actionFunction name="rerenderPlansForSwap"  action="{!getNewPlanReplacement}" oncomplete="ajaxResultPostForReplace({!replacementPlan});" status="LoadingStatus">
+	<apex:param name="newPlanNum" value="" assignTo="{!replacementPlanNo}" />
+	<apex:param name="oldPlanNum" value="" assignTo="{!replacedPlanNo}" />
+</apex:actionFunction>
+ -->
+ <apex:actionFunction name="undoReplacePlan"  action="{!undoReplacePlan}" oncomplete="reloadPage();" status="LoadingStatus">
+		<apex:param name="oldPlanNum" value="" assignTo="{!replacedPlanNo}" />
+	</apex:actionFunction>
+<apex:actionFunction name="rerenderPlansConfigPanel" rerender="">
+</apex:actionFunction>
+<apex:actionFunction name="getActivePlans" action="{!retrieveActivePlans}" rerender="selectMasterPlanList" status="LoadingStatus" />
+<apex:inputHidden id="hdn-bgsfid" value="{!bgsfid}"/>
+<apex:commandButton value="Reload" id="hdn-redirect-button" action="{!reloadExistingPlans}" style="display:none" oncomplete="ajaxResultPost({!extJsonString},'{!accountCurrency}');" status="LoadingStatus" rerender="totalRow,currencyPanel,priceIndPanel,paginationBlock1"/>
+
+<br/>
+<!-- Plans Section -->
+
+<apex:outputPanel id="Plans" styleClass="page-section" layout="block" >
+    <a href="javascript:;" onclick="openPageURL('Add Plans','/apex/AriaAccountPlanWizardPlanSelection?retURL=AriaAccountPlanWizardSelectedPlan&{!contextVarStr}'+'&billingInterval='+$j('[id$=theBillIntHiddenInput]').val());" class="btn-get-started">+ Add</a>
+    
+    <h3>Selected Plans</h3>
+    <p>Add, remove or configure plan and custom rates.</p>
+    <apex:actionstatus id="loadStatus">
+        <apex:facet name="start">
+            <img src="../img/loading.gif" style="padding-left: 57px; padding-right: 5px; margin-top: 5px;"/>
+            <div style="position:fixed; top:0; left:0; background:rgba(0,0,0,0.6); z-index:5; width:100%; height:100%;"></div>
+        </apex:facet> 
+    </apex:actionstatus>
+                        
+    <apex:outputPanel styleClass="noPlanSection" style="display:none;">
+        <!--<p>There are current no plans. You must <a href="javascript:;" onclick="openPageURL('Add Plans','/apex/AriaAccountPlanWizardPlanSelection?retURL=AriaAccountPlanWizardSelectedPlan&{!contextVarStr}'+'&billingInterval='+$j('[id$=theBillIntHiddenInput]').val());" >add plans</a> to continue.</p>   -->
+    </apex:outputPanel>
+
+    
+        <div class="container-fluid" ng-app="demoApp" ng-controller="MainCtrl" id="mainBlock">
+<!-- *********************************************************Existing Plan Section Start**************************************************************** --> 
+   <apex:outputPanel id="extThePageBlock" styleClass="PlanSection" style="display:none;">
+            <apex:actionFunction name="cancel" action="{!actionRedirect}" status="LoadingStatus" rerender=""/>
+            <apex:actionFunction name="saveBillingOptions" action="{!saveBillingOptions}" status="LoadingStatus" rerender="errorQuoteMessage" oncomplete="jsOnCompleteSaveDraft('{!hasErrorMessage}');"/>
+       		<apex:actionFunction name="updatePlanOnOpp" action="{!updatePlanOnOpp}" oncomplete="ajaxResultPostUpdate({!selectedPlanJson})" rerender="priceIndPanel"  status="LoadingStatus"> 
+                <apex:param id="selectedPlanJson" name="selectedPlanJson" assignTo="{!selectedPlanJson}" value="" />
+                <apex:param id="oldCpNo" name="oldCpNo" assignTo="{!oldCpNo}" value=""/>
+                <apex:param id="updateFlag" name="updateFlag" assignTo="{!updateFlag}" value="" />
+            </apex:actionFunction>
+            
+        	<apex:actionFunction name="deleteAccountPlan" action="{!deleteAccountPlan}" oncomplete="ajaxResultPost({!extJsonString});" rerender="priceIndPanel,paginationBlock1"  status="LoadingStatus"> 
+                <apex:param id="oldCpNo1" name="oldCpNo1" assignTo="{!oldCpNo}" value=""/>
+                <apex:param id="delFlag" name="delFlag" assignTo="{!delFlag}" value=""/>
+            </apex:actionFunction>
+            
+        	<apex:actionFunction name="addNewAccountPlan" action="{!addNewAccountPlan}" oncomplete="ajaxResultPost({!extJsonString});" rerender="priceIndPanel,paginationBlock1"  status="LoadingStatus"> 
+                <apex:param id="selectedPlanJson1" name="selectedPlanJson1" assignTo="{!selectedPlanJson}" value="" />
+                <apex:param id="newPlanNoVsOldPlanNoJson" name="newPlanNoVsOldPlanNoJson" assignTo="{!newPlanNoVsOldPlanNoJson}" value="" />
+            </apex:actionFunction>
+            
+        	<apex:actionFunction name="addNewAccountPlanForReplace" action="{!addNewAccountPlan}" oncomplete="" rerender="priceIndPanel,paginationBlock1"  status="LoadingStatus"> 
+                <apex:param id="selectedPlanJson2" name="selectedPlanJson2" assignTo="{!selectedPlanJson}" value="" />
+        	</apex:actionFunction>
+            <!-- 
+            <apex:actionFunction name="getNewPlanReplacement" action="{!getNewPlanReplacement}" oncomplete="ajaxResultPostForReplace({!replacementPlan});" status="LoadingStatus"> 
+                <apex:param id="replacementPlanNo" name="replacementPlanNo" assignTo="{!replacementPlanNo}" value="" />
+                <apex:param id="replacementRS" name="replacementRS" assignTo="{!replacementRS}" value=""/>
+            </apex:actionFunction>
+             -->
+             
+            <apex:actionFunction name="nextPlans" action="{!nextExtPlans}" oncomplete="ajaxResultPost({!extJsonString});" rerender="paginationBlock1" status="LoadingStatus"/>
+            <apex:actionFunction name="previousPlans" action="{!previousExtPlans}" oncomplete="ajaxResultPost({!extJsonString});" rerender="paginationBlock1" status="LoadingStatus"/>
+            <apex:actionFunction name="firstPlans" action="{!firstExtPlans}" oncomplete="ajaxResultPost({!extJsonString});" rerender="paginationBlock1" status="LoadingStatus"/>
+            <apex:actionFunction name="lastPlans" action="{!lastExtPlans}" oncomplete="ajaxResultPost({!extJsonString});" rerender="paginationBlock1" status="LoadingStatus"/>
+            
+            
+            <apex:variable var="extPlanTotal" value="{!0}" /> 
+            <apex:variable var="extSubplanTotal" value="{!0}" />
+            
+            <apex:variable var="extPlanRow" value="{!0}" /> 
+            <apex:variable var="extSubplanRow" value="{!0}" /> 
+                           
+             
+            <table width="100%" class="altrowstable" id="alternatecolor">
+                
+                <tr>
+                        <td colspan="2" align="left" style="padding-bottom:10px;">
+                                
+                        </td>
+                        <td colspan="3" align="center"> 
+                                <apex:outputPanel id="paginationBlock1" layout="">
+                                        <script>
+                                            hasNextExt={!hasNextExt};
+                                            hasPreviousExt={!hasPreviousExt};
+                                        </script>
+                                        <table><tr>
+<!--                                        style="padding-left:0px !important;padding-right:0px !important;" -->
+                                                    
+                                                <td style="padding-left:0px !important;padding-right:2px !important;"><a href="#" onclick="if(!hasPreviousExt) return false; firstPlans();"><img id="firstPlanID1" src="{!if(hasPreviousExt,URLFOR($Resource.Sim_JS, 'images/first_0.png'),URLFOR($Resource.Sim_JS, 'images/first_1.png'))}" class="paggingIconExt" title="First"/></a></td>
+                                                <td style="padding-left:0px !important;padding-right:0px !important;"><a href="#" onclick="if(!hasPreviousExt) return false; previousPlans();"><img id="prevPlanID1" src="{!if(hasPreviousExt,URLFOR($Resource.Sim_JS, 'images/previous_0.png'),URLFOR($Resource.Sim_JS, 'images/previous_1.png') )}" class="paggingIconExt" title="Previous"/></a></td>
+                                                <td style="padding-left:0px !important;padding-right:0px !important;"><span class="paggingText"> Showing {!fromRecExt} - {!toRecExt}  of {!totalNoOfPlansExt} Plans </span></td>
+                                                <td style="padding-left:0px !important;padding-right:0px !important;"><a href="#" onclick="if(!hasNextExt) return false; nextPlans();"><img id="nextPlanID1" src="{!if(hasNextExt,URLFOR($Resource.Sim_JS, 'images/next_0.png'),URLFOR($Resource.Sim_JS, 'images/next_1.png'))}"  class="paggingIconExt" title="Next"/></a></td>
+                                                <td style="padding-left:0px !important;padding-right:0px !important;"><a href="#" onclick="if(!hasNextExt) return false; lastPlans();"><img id="lastPlanID1" src="{!if(hasNextExt,URLFOR($Resource.Sim_JS, 'images/last_0.png'),URLFOR($Resource.Sim_JS, 'images/last_1.png'))}" class="paggingIconExt" title="Last"/></a></td>
+                                                
+                                        </tr></table>
+                                </apex:outputPanel>
+                                
+                        </td>
+                    <td colspan="3" align="right" >
+                        
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="9"  width="100%" style="padding-bottom: 0px;">
+                        <apex:outputpanel >
+                            <div class="ng-scope"  width="100%">
+                                <table width="100%" cellspacing="0" cellpadding="0" class="ng-scope">
+                                    
+                                    <tr>
+                                        <td class="gradiantHeader" width="25" height="30">&nbsp;</td>
+                                        <td class="gradiantHeader" width=""  style="font-family: arial,sans-serif;text-align: left;padding-left:0px !important;"><b>Master Plan</b></td>
+                                        <td class="gradiantHeader" width="50" style="font-family: arial,sans-serif;text-align: left;padding-left:8px;"><b>Status</b></td>
+                                        <td class="gradiantHeader" width="100" style="font-family: arial,sans-serif;text-align: left;padding-left:8px;"><b>Billing Interval</b></td>
+                                        <td class="gradiantHeader" width="60" style="font-family: arial,sans-serif;text-align: left;padding-left:8px;"><b>Unit</b></td>
+                                        <td class="gradiantHeader" width="100" style="font-family: arial,sans-serif;text-align: right;padding-right:8px;"><b>List Price</b></td>
+                                        <td class="gradiantHeader" width="100" style="font-family: arial,sans-serif;text-align: left;padding-left:8px;"><b>Discount (%)</b></td>
+                                        <td class="gradiantHeader" width="100" style="font-family: arial,sans-serif;text-align: right;padding-right:8px;" ><b>Net Price</b></td>
+                                        <td class="gradiantHeader" width="100" style="font-family: arial,sans-serif;text-align: right;padding-right:8px;" ><b>Total</b></td>
+                                        <td class="gradiantHeader" width="150" style="font-family: arial,sans-serif;text-align: left;padding-left:8px;"><b>Action</b></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </apex:outputpanel>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="10"  width="100%" style="padding-top: 0px;">
+                        <apex:outputpanel >
+                            <div ng-repeat="pw in extList" ng-include="'items_renderer.html'"  width="100%">
+                           
+                            </div>
+                        </apex:outputpanel>
+                    </td>
+                </tr>
+                
+             </table>
+                    
+                    
+            </apex:outputPanel>
+
+            <div>
+                    <script type="text/ng-template" id="items_renderer.html">
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                <!-- <tr id ="plan_row_{{pw.groupNo}}" class="testClone"> -->
+                <tr id ="plan_row_{{pw.groupNo}}" class="testClone {{$index%2 == 0 ?'evenrowcolor':'oddrowcolor'}} {{pw.isGroupSelected &&  pw.node.planType!= mRecType? 'selectedRow':''}}"
+                                                ng-class="{replacedrow: (pw.node.isReplaced||pw.node.isNewReplacement) && pw.groupNo.indexOf('ext')>-1}">        
+                        <td width="25" align="center" id="chk_{{pw.groupNo}}" style="padding-left:0px !important;">
+                            <!-- CheckBox -->
+                            <input  type="checkbox" id="chkmain_{{pw.groupNo}}" class="chkmain" ng-checked="pw.isGroupSelected" ng-click="ngCheckBoxChangeHandler($event, pw);" 
+                                ng-hide="(pw.isInstance || pw.node.isReplaced || (pw.groupNo.indexOf('ext')>-1 && pw.node.planType== mRecType))">
+                            <input type="hidden" id="pwInstNo_{{pw.groupNo}}" value="{{pw.node.planInstanceNumber}}"/>
+                        <!-- Add Image -->
+                        <!--
+                            <img style="margin-top:5px"  id="addIconID_{{pw.groupNo}}" class="add" src="{!URLFOR($Resource.Sim_JS, 'images/icon_addinstance.png')}"  width="16" height="16" ng-click = "ngAddRow(pw.groupNo)" 
+                                    ng-hide="!pw.isGroupSelected || pw.isInstance || pw.node.isNewReplacement"/>
+                        -->
+                        <!-- Remove Image -->
+                        <!--
+                            <img class="add" src="{!URLFOR($Resource.Sim_JS, 'images/icon_removeinstance.png')}"  width="16" height="16" ng-click = "ngRemoveRow(pw.groupNo)" 
+                                ng-show="(pw.groupNo.indexOf('ext')==-1 && pw.node.planType==mRecType && pw.isInstance) || (pw.node.planType!=mRecType && pw.isInstance)"/>
+                        -->
+                        </td>
+                        <!-- Plan Name -->
+                        <td width=""> 
+                            <img style="vertical-align:top;" id="arrow_{{pw.groupNo}}" src="{!URLFOR($Resource.Sim_JS, 'images/arrow.png')}" ng-click="ngDisplaysubPlans(pw,'arrow_'+pw.groupNo,pw.groupNo,'planServiceTD_'+pw.groupNo,'servdiv_'+pw.groupNo,'subPlanDiv_'+pw.groupNo,'imgbank_'+pw.groupNo);" width="18" height="12" ng-hide="pw.node.isReplaced || pw.children.length<=0"/>
+                                                        <span ng-show="pw.node.isReplaced || pw.children.length<=0">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                        <span class="wrap-text">
+                        <label class = "planName" ng-class="{strikedText: pw.node.isReplaced && pw.groupNo.indexOf('ext')>-1, normalText: !pw.node.isReplaced}">{{pw.node.planName}}</label>
+                        </span>
+                        </td>
+                        <!-- Status -->
+                        <td width="50"  style="padding-left: 3px;">{{pw.node.planInstanceNumber==null?'New':'Existing'}} </td>
+                        <!-- Billing Interval -->
+
+                        <td width="100"  style="padding-left: 3px;">
+                            <label id="lbl_billinginterval_{{pw.groupNo}}" ng-class="{strikedText: pw.node.isReplaced && pw.groupNo.indexOf('ext')>-1, normalText: !pw.node.isReplaced}" 
+                                                                ng-show="pw.billingIntCnt==1  || !pw.isGroupSelected ">{{pw.optionLabel[pw.selectedBillingInterval]}}
+                                                                <label ng-show="pw.optionLabel[pw.selectedBillingInterval] == 'Custom'" >- ({{pw.selectedBillingInterval}})</label>
+                                                        </label>
+
+
+                            <select id="select_billinginterval_{{pw.groupNo}}" ng-model="pw.selectedBillingInterval" ng-change="ngUpdateBillingFilter(pw, oldvalue);"
+                                                      ng-show="pw.isGroupSelected && pw.billingIntCnt > 1" style="width:100px" ng-focus="oldvalue=pw.selectedBillingInterval;">
+                                <option ng-repeat="(key, val) in pw.optionLabel" value="{{key}}" ng-selected="key==pw.selectedBillingInterval">
+                                         {{val}}
+                                </option>   
+                            </select>
+                        </td> 
+                        <!-- Unit -->
+                        <td width="60"  id="{{pw.node.tuppleId}}" >
+                        <label ng-show="{!cantEditUnit} || !pw.isGroupSelected" id="lbl_unit_{{pw.groupNo}}" ng-class="{strikedText: pw.node.isReplaced && pw.groupNo.indexOf('ext')>-1, normalText: !pw.node.isReplaced}" style="padding-left: 9px;">{{pw.node.Unit}}</label>  
+                        
+                        <input id="planUnit_{{pw.groupNo}}" maxlength="5" type="text" ng-show="{!!cantEditUnit} && pw.isGroupSelected" onkeypress="return isNumberKey(event, this.value, false,2,this);" ng-paste="preventPaste($event)" ng-model="pw.node.Unit" ng-focus="prevUnit=pw.node.Unit;console.log('hello')" ng-blur="ngRecalculatePrice(pw, prevUnit);"  style="width: 40px;text-align:left;" /> 
+                        </td>
+                        <!-- ListPrice -->
+                        <td width="100" id="planTotal_{{pw.groupNo}}" align="right" style="padding-right: 3px;">
+                             <span id="listcurrency_total_{{pw.groupNo}}" ng-model="pw.node.ListPricePerUnit" ng-bind="pw.node.ListPricePerUnit | number:2" ng-class="{strikedText: pw.node.isReplaced && pw.groupNo.indexOf('ext')>-1, normalText: !pw.node.isReplaced}" >
+                            </span>
+                        </td>
+                        <!-- Discount -->
+                        <td width="100" id="{{pw.node.tuppleId}}" >
+                        <label ng-show="{!cantEditPrice} || !pw.isGroupSelected" id="lbl_discount_{{pw.groupNo}}" ng-class="{strikedText: pw.node.isReplaced && pw.groupNo.indexOf('ext')>-1, normalText: !pw.node.isReplaced}" style="padding-left: 9px;">{{pw.node.Discount}}</label>  <!-- {!planVsUnit[plan.tuppleId]}-->
+                        
+                        <input id="planDiscount_{{pw.groupNo}}" maxlength="5" type="text" ng-show="{!!cantEditPrice} && pw.isGroupSelected"  onkeypress="return isNumberKey(event, this.value, true,2,this);" ng-paste="preventPaste($event)" ng-model="pw.node.Discount" ng-focus="prevDiscount=pw.node.Discount;" ng-blur="ngAdjustCustomRate(pw,prevDiscount);"  style="text-align:left;" />
+                        </td>
+                        <!-- Price -->
+                        <td width="100" id="planTotal_{{pw.groupNo}}" align="right" style="padding-right: 3px;">
+                             <span id="tmp_currency_total_{{pw.groupNo}}" ng-model="pw.node.PricePerUnit" ng-bind="pw.node.PricePerUnit | number:2" ng-class="{strikedText: pw.node.isReplaced && pw.groupNo.indexOf('ext')>-1, normalText: !pw.node.isReplaced}" >
+                            </span>
+                           
+                            
+                        </td>
+                        <!--TaxVal-->
+                        <td width="100" id="planTotal_{{pw.groupNo}}" align="right" style="padding-right: 3px;">
+                             <span id="currency_total_{{pw.groupNo}}" ng-bind="pw.node.Price+(pw.node.Price*pw.node.tax/100) | number:2" ng-class="{strikedText: pw.node.isReplaced && pw.groupNo.indexOf('ext')>-1, normalText: !pw.node.isReplaced}" >
+                                <!--{{pw.node.Price+(pw.node.Price*pw.node.tax/100)}}-->
+                            </span>
+                            <span class="taxTotal">
+                                <img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" title = "Tax details to be shown" style="vertical-align: text-bottom;"/>
+                                <div class="taxdetails-tooltip">
+                                    <strong>Tax Amount<br/> {{pw.node.tax==null? '0.00':(pw.node.Price*pw.node.tax/100)|number:2}} </strong>
+                                </div>
+                            </span>
+
+                            
+                        </td>
+                        <!-- Action Options -->
+                        <td width="150" style="text-align: left;" ng-class="{newPlanActionAlign: (pw.groupNo.indexOf('ext')==-1),extPlanActionAlign: pw.groupNo.indexOf('ext')>-1}">
+                            <select id="action_select_{{pw.groupNo}}" ng-model="pw.defSel" ng-change="ngHandleAction(pw)" style="width: 100px;"> 
+                                        <option value="0" >Select</option>
+                                        <option value="6" ng-show="!pw.node.isReplaced &&  pw.isGroupSelected">Configure</option>
+                                        <option value="1" ng-show="pw.node.isReplaced && pw.groupNo.indexOf('ext')>-1">Undo Change</option>
+                                        <option value="2" ng-hide="pw.node.isReplaced">Edit Rates</option>
+                                        <option value="3" ng-show="isAcctHaveAriaId && pw.node.planType==mRecType && pw.groupNo.indexOf('ext')>-1 && !pw.node.isReplaced && !pw.node.isNewReplacement && pw.isGroupSelected && pw.node.planInstanceNumber!=null">Swap Plans</option>
+                                        <option value="4" ng-show="pw.node.planInstanceNumber!=null && !pw.node.isReplaced && !pw.node.isNewReplacement && pw.isGroupSelected">Cancel</option>
+                                        <option value="5" ng-hide="!pw.isGroupSelected || pw.isInstance || pw.node.isNewReplacement || pw.node.isReplaced">Duplicate</option>
+                                        
+                                
+                            </select>&nbsp;&nbsp;
+                            <!--                        
+                            <img id="gear_{{pw.groupNo}}"  style="vertical-align:middle;" width="18" height="18" src="{!URLFOR($Resource.Sim_JS, 'images/icon-gear-big-blue.png')}" 
+                                        ng-click="ngOpenPlanConfigOnGear(pw);" ng-hide="pw.node.isReplaced || !pw.isGroupSelected"/>
+                            -->
+                            <img class="add" src="{!URLFOR($Resource.Sim_JS, 'images/icon_removeinstance.png')}"  width="16" height="16" ng-click = "ngCancelPlan(pw, 0)" onmouseover="" style="cursor: pointer;"
+                                ng-show="pw.groupNo.indexOf('ext')>-1 && !pw.node.isReplaced && !pw.node.isNewReplacement && pw.isGroupSelected"/>
+                                
+                        </td>
+                    </tr>
+                    <!-- Service/Child Row -->
+                    <tr id="sec_row_{{pw.groupNo}}" style="display:none;">
+                    <td colspan="10" align="center" id="planServiceTD_{{pw.groupNo}}" style="padding-top: 0px;padding-left: 0px !important;">
+                        <!-- Service DIV -->
+                        <div id="servdiv_{{pw.groupNo}}" class="curtainCls" style="display:none;">
+							
+                        </div>
+                        <!-- Child DIV -->
+                        <div id="subPlanDiv_{{pw.groupNo}}"  width="100%"  style="display:none; margin-left:5%;">
+                            <div ng-repeat="pw in pw.children" ng-include="'items_renderer.html'" width="100%">
+                       
+                            </div>
+                        </div>  
+                    </td>
+                    </tr>
+                   
+                </table>
+                </script>
+               </div> 
+            
+        </div>
+        
+</apex:outputPanel>
+<!-- ER-1338 starts here --> 
+
+<apex:outputPanel layout="block" rendered="{!isAcctHaveAriaId}">
+	<table width="40%" style="margin-top:35px;background-color: #f5f5f5;">
+		<tr>    
+            <td>
+          	      <apex:outputLabel style="font-family: arial,sans-serif;font-weight:bold;padding-bottom:2px;display:block;" value="Alternate Bill Day"/>
+                  <apex:selectList size="1" styleClass="configField" value="{!accPlanObj.Alternate_Bill_Day__c}">
+                     <apex:selectOptions value="{!alternateBillDayList}"></apex:selectOptions>
+                 </apex:selectList>
+             </td>
+          </tr>
+          <tr>      
+               <td> 
+               		<apex:outputLabel style="font-family: arial,sans-serif;font-weight:bold;padding-bottom:2px;display:block;" value="Alternate Billing Start Date"/>
+                   <apex:outputPanel >
+                       <apex:inputField id="alt_bill_start_date" value="{!accPlanObj.Alternate_Billing_Start_Date__c}" styleClass="configField"/>
+                   </apex:outputPanel>
+                   
+                   
+               </td>
+          </tr>
+         
+           <tr>   
+                <td>
+                	<apex:outputLabel style="font-family: arial,sans-serif;font-weight:bold;margin-bottom:2px;display:block;" value="Retroactive Billing Start Date"/>
+                   	<apex:outputPanel >
+	                   <apex:outputPanel >
+	                       <apex:inputField styleClass="configField" id="rect_bill_start_date" value="{!accPlanObj.Retroactive_Billing_Start_Date__c}" />
+	                   </apex:outputPanel>
+	                   
+               </apex:outputPanel>
+                </td>
+          	</tr>
+          	<!--  <tr>
+          		<td>
+          			<apex:outputPanel >
+          				<b>Invoicing Options</b> <br/>
+          				<apex:selectRadio value="{!accPlanObj.Invoicing_Option__c}" layout="pageDirection">
+          					<apex:selectOptions value="{!InvoiceOptionList}"></apex:selectOptions>
+          				</apex:selectRadio>
+          			</apex:outputPanel>
+          		</td>
+          	</tr> -->
+         </table>
+         <br></br>
+         
+         <table style="background-color: #f5f5f5;width: 80%;">
+         	<tr>
+         		<td valign="top">
+         			<table >
+         				<tr>
+         					<td>
+         						 <b>Begin when?</b> <br/>
+			                     <apex:selectRadio layout="pageDirection" value="{!accPlanObj.Begin_When__c}" id="rdBeginWhen" onChange="javascript:toggleBilling(this.value);">
+			                         <apex:selectOption itemValue="Anniversary Date" itemLabel=" On Anniversary Date" />
+			                         <apex:selectOption itemValue="Begin Immediately" itemLabel="Immediately"/>
+			                     </apex:selectRadio>
+         					</td>
+         				</tr>	
+         			</table>
+         		</td>
+         		<td width="70%">
+         			<table>
+         				<tr>
+         					<td id="trProrateCharges" class="billOpt" >
+         						 <apex:outputLabel id="lblProRateCharge" value="Pro-Rate Charges?" style="font-weight: bold;" /> <br/>    
+		                		<apex:outputPanel id="thePanelPRC" >
+		                        <apex:panelGrid columns="5" styleClass="divborder" width="110%">
+		                            <apex:selectRadio styleClass="divborder" layout="pageDirection" value="{!accPlanObj.Pro_Rate_Charges_Value__c}" id="rdRateCharge" onChange="javascript:togglePRC(this.value); " >
+		                                 <apex:selectOption itemValue="Yes" itemLabel="Yes"/>
+		                                 <apex:selectOption itemValue="No"  itemLabel="No"/>
+		                                 <apex:selectOption itemValue="Full Pro-ration"  itemLabel="Full" />
+		                                 <apex:selectOption itemValue="Charge Pro-ration Only"  itemLabel="Charge Only"/>
+		                                 <apex:selectOption itemValue="Credit Pro-ration Only"  itemLabel="Credit Only"/>
+		                            </apex:selectRadio>
+		                            
+		                            <apex:outputPanel styleClass="PRS" id="thePanel" style="display:{! IF( accPlanObj.Pro_Rate_Charges__c != null , '', 'none' )};">
+		                            <apex:outputLabel styleClass="PRS" id="hideLabel" style="display:{! IF( accPlanObj.Pro_Rate_Charges__c != null , '', 'none' )};font-weight:bold"><br/>Pro-Rate Starts?</apex:outputLabel>
+		                            <apex:selectRadio styleClass="divborder" layout="pageDirection" id="rdRateStarts" value="{!accPlanObj.Pro_Rate_Starts__c}" onClick="javascript:showProRateInput(this.value);" >
+		                                 <apex:selectOption itemValue="Offset Days" itemLabel="Offset Months"/>
+		                                 <apex:selectOption itemValue="Alternate Date" itemLabel="Alternate Pro-ration Start Date"/>
+		                            </apex:selectRadio>
+		                            <apex:outputPanel styleClass="PRS" layout="block" style="padding-left:37px;">
+		                                <apex:inputText id="txtOffDays" value="{!accPlanObj.Offset_Days__c}"  styleClass="OffDays" maxlength="6" size="5" onKeypress="if (event.keyCode < 44 || event.keyCode > 57 || event.keyCode==45 || event.keyCode==47) event.returnValue = false;" style="width:100px;" />
+		                                <apex:outputPanel styleClass="OffDate" id="txtDate">
+		                                    <apex:inputField value="{!accPlanObj.Paid_Thru_Date__c}" onkeypress="return false;" onfocus="DatePicker.pickDate(false, '{!$Component.txtDate}', false);"   style="width:100px;"  /> 
+		                                </apex:outputPanel>      
+		                            </apex:outputPanel>
+		                            </apex:outputPanel>
+                            
+                       			 </apex:panelGrid>
+                       			 <apex:actionStatus startText="loading..." id="myStatus"></apex:actionStatus>
+                    			</apex:outputPanel>
+         					</td>
+         				</tr>
+         			</table>
+         		</td>
+         	</tr>
+         </table>
+</apex:outputPanel>
+<br></br>
+<apex:outputPanel rendered="{!isAcctHaveAriaId}"> 
+	<table style="background-color: #f5f5f5;width: 20%;" class="annBillOpt">
+		<tr>
+			<td>
+				<apex:outputPanel >
+                  	<apex:outputLabel style="font-weight:bold"><br/>Pro-Rate Starts?</apex:outputLabel>
+                  	<apex:selectRadio styleClass="divborder" layout="pageDirection" id="rdRateStartsAnn" value="{!accPlanObj.Pro_Rate_Starts__c}" onClick="javascript:showProRateInput(this.value);" >
+                       <apex:selectOption itemValue="Offset Days" itemLabel="Offset Months"/>
+                       <apex:selectOption itemValue="Alternate Date" itemLabel="Alternate Pro-ration Start Date"/>
+                  	</apex:selectRadio>
+                  <apex:outputPanel layout="block" style="padding-left:37px;">
+                      <apex:inputText id="txtOffDaysAnn" value="{!accPlanObj.Offset_Days__c}"  styleClass="OffDays" maxlength="6" size="5" onKeypress="if (event.keyCode < 44 || event.keyCode > 57 || event.keyCode==45 || event.keyCode==47) event.returnValue = false;" style="width:100px;" />
+                      <apex:outputPanel styleClass="OffDate" id="txtDateAnn">
+                          <apex:inputField value="{!accPlanObj.Paid_Thru_Date__c}" onkeypress="return false;" onfocus="DatePicker.pickDate(false, '{!$Component.txtDate}', false);"   style="width:100px;"  /> 
+                      </apex:outputPanel>      
+                  </apex:outputPanel>
+                </apex:outputPanel>
+			</td>
+		</tr>
+	</table>
+	
+</apex:outputPanel>
+
+<apex:outputPanel rendered="{!(showBillThrough && !hideOverrideBilling)}">
+	<table width="40%" style="margin-top:35px;background-color: #f5f5f5;" id="overrideId">
+		    <tr>     
+                    <td>
+                        <apex:outputLabel style="font-weight:bold;" value="Override Bill Through Date"  styleclass="configField"/><br/>
+                        <apex:selectList id="activePlanListId" size="1" styleClass="configField"  value="{!selectedBillThrough}" onchange="handleBillThrough(this.value);">
+                            <apex:selectOptions value="{!OverrideBillThroughList}"></apex:selectOptions>
+                        </apex:selectList>
+                        
+                    </td>
+               </tr>
+               <tr class="billThroughClass" style="display:none;">      
+                    <td>
+                    	 <apex:outputPanel id="billThroughId" style="display:none;"> 
+                         <apex:outputLabel value="Bill through Date" /><br/>
+                         <apex:inputField id="billThroughDateId" value="{!accPlanObj.Override_Bill_Through_Date__c}" style="width:134%"  onchange="stopPreviousdate('{!$Component.billThroughDateId}');"/>
+                         </apex:outputPanel> 
+                    </td>
+               </tr>
+               <tr class="masterBillingClass" style="display:none;">
+                     <td> 
+                     		<apex:outputPanel id="selectMasterPlan" style="display:none;" >
+                     		<apex:outputLabel value="Master Plan Instance" styleclass="configField"/><br/>
+	                     	<apex:selectList size="1" value="{!selectedMasterBillingPlan}" id="selectMasterPlanList" style="width:174%">
+	             				<apex:selectOptions value="{!activeMasterPlanList}"></apex:selectOptions>
+	       					</apex:selectList>
+	       					</apex:outputPanel>
+                     </td>
+               </tr>
+	</table>
+</apex:outputPanel>
+
+<script type="text/javascript">
+	toggleBilling('{!accPlanObj.Begin_When__c}');
+	togglePRC('{!accPlanObj.Pro_Rate_Charges_Value__c}');
+	showProRateInput('{!accPlanObj.Pro_Rate_Starts__c}')
+</script>
+                     
+<!-- ER-1338 ends here -->
+
+
+<div class="buttonPanel"> 
+            <br/><br/><br/>
+           <!-- <input type="button" name="Submit" value="Cancel" class="button white" style="float:left" onclick="cancel();"/> -->
+           <!-- <a href="javascript:;" onclick="saveBillingOptions()" class="btn-Save">Save</a> -->
+            <input type="button" name="Submit" value="Save" class="btn-Save" onclick="saveBillingOptions();" />  
+			<apex:inputHidden value="{!replacedPlansNoToBeDeleted}" id="replacedPlansNoToBeDeletedID"/>
+           <br/><br/>
+        </div> 
+<br/>
+    
+</apex:form>
+        <div id="replaceDialogBox"></div>
+        <div id="cancelDialogBox"></div>
+        <div id="confirmReplaceDialogBox"></div>
+        <div id="confirmCancelDialogBox"></div>
+        <div id="genericDialogBox"></div>
+         <script>
+          
+        
+        overRideCal();
+        handleBillThrough('{!selectedBillThrough}');
+        </script>
+</apex:page>

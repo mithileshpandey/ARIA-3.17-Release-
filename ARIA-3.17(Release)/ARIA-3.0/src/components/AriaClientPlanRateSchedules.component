@@ -1,0 +1,87 @@
+<apex:component access="global" controller="AriaClientPlanRateSchComponantController">
+
+	<apex:attribute name="planId" description="This value defines the plan for which the rate tiers has to be listed." type="String" assignTo="{!planId}"/>
+	<apex:attribute name="planName" description="This value defines the plan name for which the rate tiers has to be listed." type="String" assignTo="{!planName}"/>
+
+	<apex:stylesheet value="{!$Resource.SuperTable}/stylesheets/superTables.css"/>
+<apex:pageblock title="Services for {!planName}" >
+	<apex:outputText value="No Services assigned to this Client plan" rendered="{! IF( ListOfServices.size>0, false, true ) }" />
+	<apex:outputPanel rendered="{! IF( ListOfServices.size>0, true, false) }" >
+	<table border="0" width="100%" class="list " cellspacing="0" cellpadding="0">
+		<tr class="headerRow" >
+			<td width="15%">{!$Label.ARIA_CREDIT_SERVICE}</td>
+			<td width="15%">{!$Label.ARIA_ACCT_SERVICES_SERVICE_TYPE}</td>
+			
+			<td width="10%">{!$Label.ARIA_ACCT_SERVICES_TIERED_PRICING_RULE} &nbsp;</td> 
+			<td width="10%" align="center">Currency<br/>&nbsp;<br/>Schedule Name</td> <!-- Default? -->
+			
+			<apex:repeat value="{!listSchedules}" var="theScheduleName" >
+				<td align="center" >{!theScheduleName.scheduleCurrencySetting}<br/><apex:outputText style="color:{! IF( theScheduleName.isDefaultSchedule=='Y', '#F88017','' ) }" value="{!' [Default ' + theScheduleName.scheduleCurrencySetting + ']'}" rendered="{! IF( theScheduleName.isDefaultSchedule=='Y', true,false )}" ></apex:outputText>&nbsp;<br/>{!theScheduleName.scheduleName}</td>
+			</apex:repeat>
+			</tr>
+		 
+		<apex:repeat value="{!ListOfServices}" var="theServiceWrapper" id="theRepeatServiceWrappers">
+		
+			<tr onMouseOver="this.bgColor='#f9feff'" onMouseOut="this.bgColor='#ffffff'">
+				<td>
+					{!theServiceWrapper.serviceName}
+				</td>
+				<td>{!theServiceWrapper.serviceType}</td> 
+				<td>{!theServiceWrapper.usageType}</td> 
+				<td>&nbsp;</td> 
+				
+				<apex:repeat value="{!listSchedules}" var="theScheduleName" id="theRepeatSchedules">
+					<td valign="top">
+						<table border="0" width="100%" height="100%" cellspacing="0" cellpadding="0">
+						<apex:repeat value="{!theServiceWrapper.listScheduleWrapper}" var="theScheduleWrapper" id="theRepeatScheduleWrappers">
+						<apex:outputPanel id="ratesPanel" rendered="{!IF(theScheduleName.scheduleId == theScheduleWrapper.scheduleId && theScheduleName.scheduleName == theScheduleWrapper.scheduleName , true, false)}">
+						
+						
+							
+							<apex:outputPanel id="ratesPanelcheck" rendered="{!IF(theScheduleWrapper.isTierPricing, true, false)}">
+							<tr class="headerRow">
+							
+							<td align="right">From </td><td >&nbsp;</td><td align="left">To</td><td align="right">Price</td>
+							
+							</tr>
+							</apex:outputPanel>
+					
+							<apex:repeat value="{!theScheduleWrapper.listRateTierWrapper}" var="theRateTierWrapper" id="theRepeatRateTierWrappers">
+							<apex:outputPanel id="ratesPanel22" rendered="{!IF(theScheduleName.scheduleId == theRateTierWrapper.rateTier.Rate_Schedule__c && theScheduleName.scheduleCurrencySetting == theRateTierWrapper.rateTier.Rate_Schedule__r.Currency_Setting__c , true, false)}">
+													
+							<tr>
+							
+									<apex:outputPanel id="ratesPanelcheck" rendered="{!IF(theScheduleWrapper.isTierPricing, true, false)}">
+										<td align="right"><apex:outputField value="{!theRateTierWrapper.rateTier.FromUnit__c}"></apex:outputField></td> <td align="center">&nbsp;-&nbsp;</td><td align="left"> <apex:outputText rendered="{!IF(isnull(theRateTierWrapper.rateTier.ToUnit__c), true, false)}" ><div style="font-size:14pt;">&infin;</div></apex:outputText><apex:outputField rendered="{!IF(isnull(theRateTierWrapper.rateTier.ToUnit__c)==false, true, false)}" value="{!theRateTierWrapper.rateTier.ToUnit__c}"></apex:outputField> </td>
+										<td align="right">
+											<apex:outputText value="{0, number, .00}">
+											       <apex:param value="{!theRateTierWrapper.rateTier.RatePerUnit__c}" />
+											 </apex:outputText>
+										</td>
+									</apex:outputPanel>
+									<apex:outputPanel id="ratesPanelcheck2" rendered="{!IF(theScheduleWrapper.isTierPricing, false, true)}">
+										<td align="right" colspan="4">
+											<apex:outputText value="{0, number, .00}">
+											       <apex:param value="{!theRateTierWrapper.rateTier.RatePerUnit__c}" />
+											 </apex:outputText>
+										</td>
+									</apex:outputPanel>
+							
+							</tr>
+							</apex:outputPanel>
+									</apex:repeat> 
+								</apex:outputPanel>
+								</apex:repeat>
+								</table>
+							</td>
+						</apex:repeat>
+						
+					</tr>
+					
+					
+				</apex:repeat>	 
+			 
+	</table>
+	</apex:outputPanel>
+</apex:pageblock>	
+</apex:component>

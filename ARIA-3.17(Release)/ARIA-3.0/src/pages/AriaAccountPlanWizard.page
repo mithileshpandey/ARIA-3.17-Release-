@@ -1,0 +1,779 @@
+<apex:page controller="AriaAccountPlanWizardCtrl" docType="html-5.0" sidebar="false"  tabStyle="Account" id="thePage" action="{!initSetup}">
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/> 
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css"/> 
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/AriaAccountPlanWizard.css')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/tooltip.css')}"/>
+<style>
+a{
+    color:blue;
+}
+.ui-dialog-buttonset{
+    width:100%;
+}
+.leftFloatClass{
+    background: #999 !important;
+    color: #fff !important;
+}
+.rightFloatClass{
+    float: right !important;
+    background: #428BCA !important;
+    color: #fff !important;
+    border-color: #428BCA !important;
+}
+</style>
+
+<script>
+    function getElement(eId){
+        return document.getElementById(eId);
+    }
+    var __sfdcSessionId = '{!GETSESSIONID()}'; 
+   $j = jQuery.noConflict();
+    function setFocusOnLoad() {}
+    // set below global URL from controller for contextId,context and retURL
+    var context = '{!context}';
+    var contextId = '{!contextId}';
+    var retURL = '{!retCustomURL}';
+</script>
+<script src="/soap/ajax/28.0/connection.js" type="text/javascript"></script>
+<script src="/soap/ajax/28.0/apex.js" type="text/javascript"></script>
+<script>
+var hasExtPlan = '{!hasExistingPlans}';
+var bgsfid = '{!bgsfid}';
+var clickedCustomSectionStr = '{!customSectionVars}';
+function openPageURL(title, pageUrl){
+    if((bgsfid =='' || bgsfid =='NEW') && title != 'Billing Group Details'){
+        alert('Please provide Billing Group details');
+        return;
+    }
+    
+    if(hasExtPlan!='true' && title!='Add Plans' && title != 'Billing Group Details'){
+        alert('Please select plan');
+        return;
+    }
+    location.href = pageUrl+'&customSectionVars='+clickedCustomSectionStr;
+}
+
+function checkExistingSet(indexVal){
+    var isFound=false;
+    if(clickedCustomSectionStr!=''){
+        var arr = clickedCustomSectionStr.split('_');
+        for(var i=0;i<arr.length;i++){
+            if(arr[i]!='' && arr[i]==indexVal){
+                isFound=true;
+                break;
+            }
+        }
+    }
+    return isFound;
+}
+
+function updateLinkRecord(recid){
+     if(recid != ''){
+        // Query link
+         var soql = "SELECT Id,"+nspre+"IsClicked__c FROM "+nspre+"Custom_Navigation_link__c WHERE ID = '" + recid + "'";
+         var result = sforce.connection.query(soql);
+         var records = result.getArray("records");
+        //update links on opportunity
+         for (var i=0; i< records.length; i++) {
+             var record = records[i];
+             record[nspre+'IsClicked__c'] = true;
+         }
+         result = sforce.connection.update(records);
+         if (!result[0].getBoolean("success")) {
+             //console.log('Failed #2: ' + result.toString());
+             alert('Failed #2: ' + result.toString());
+         }
+       }
+     }
+     
+     
+  // js for payment info dialog box 
+  function hideOverlay(){
+        $j(".paymentinfoDiv").hide();
+  } 
+  function showOverlay(){
+        $j(".paymentinfoDiv").show();
+  }
+  
+    var isBillingInfoChecked = false;
+    function validatePaymentInfo(frmwhr){
+        isBillingInfoChecked = true;
+        var isErr = false;
+         $j(".reqPaymentField").each(function() {
+            var element_value = $j(this).val();
+            var altvar = $j(this).attr("alt");
+            if(typeof(altvar) === "undefined"){
+                altvar = $j(this).attr("title");
+            }
+            if(element_value == ''){
+                if(frmwhr == 's'){
+                    alert(altvar+' is required.');
+                    $j(this).focus();
+                }
+                isErr = true;
+                return false;
+            }
+        });
+        //alert(isErr);
+        if(isErr){
+            isBillingInfoChecked = false;
+            return;
+        }
+        if(frmwhr == 's'){
+            showParentScroll();
+            hideOverlay();
+            saveToAriaJS();
+        }
+        return;
+   } 
+   
+   
+function pageValidation(callfrom){
+      if(callfrom == 'commit'){
+          return callConfirmDialog();    
+      }else{
+        return true;
+      }
+} 
+function callConfirmDialog(){
+var htmlContent = "<p align='left' style='margin-top: 0px;'>Are you sure you want to commit?</p>";                               
+$j('#cancelDialogBox').dialog({
+        resizable: false,
+        height:180,
+        width:450,
+        modal: true,
+        open: function(e){
+                $j(this).html(htmlContent);
+        },
+        buttons: [
+                {
+                    text: "Cancel",
+                    "class": 'leftFloatClass',
+                    click: function() {
+                        $j(this).dialog("close");
+                        return false;
+                    }
+                },
+                {
+                    text: "Ok",
+                    "class": 'rightFloatClass',
+                    click: function () {
+                        $j(this).dialog("close");
+                        
+                        if('{!showPopupPaymentInfo}' == 'true' && isBillingInfoChecked == false){
+                            showOverlay();
+                            return false;
+                        }else{
+                            saveToAriaJS();
+                        }
+                    } 
+                }
+        ],
+        title: 'Confirmation'
+});
+}
+/*
+function callErrorDialog(){
+    var htmlContent = "<p align='left' style='margin-top: 0px; height: 50px;'>A billing group requires a payment method. If you had previously entered one, please note that it may not have been saved due to security protocols. Please re-enter your payment information.</p>";                               
+    $j('#cancelDialogBox').dialog({
+            resizable: false,
+            height:180,
+            width:450,
+            modal: true,
+            open: function(e){
+                    $j(this).html(htmlContent);
+            },
+            buttons: [
+                    {
+                        text: "Ok",
+                        "class": 'rightFloatClass',
+                        click: function () {
+                            $j(this).dialog("close");
+                            if('{!showPopupPaymentInfo}' == 'true' && isBillingInfoChecked == false){
+                                showOverlay();
+                                return false;
+                            }
+                            return true;
+                        } 
+                    }
+            ],
+            title: 'Error'
+    });
+}
+*/
+function showParentScroll(){
+    $j('html, body').css({
+        'overflow': 'auto',
+        'height': 'auto'
+    });
+}
+
+function hideParentScroll(){
+    $j('html, body').css({
+    'overflow': 'hidden'//,'height': '100%'
+    });
+}
+     
+</script>
+
+<apex:pageBlock rendered="{!showQuoteError}">
+    <apex:pagemessages id="errorQuoteMessage" ></apex:pagemessages>
+    <apex:form >
+        <apex:commandButton value="Back" immediate="true" action="{!cancel}"></apex:commandButton>
+    </apex:form>
+ </apex:pageBlock>
+    
+    <apex:form rendered="{!!showQuoteError}">
+<c:AriaPriceIndicatorComponent recid="{!$CurrentPage.parameters.id}" context="{!$CurrentPage.parameters.context}" selectedCurrency="{!accountCurrency}" accountName="{!accountName}" billingInterval="{!$CurrentPage.parameters.billingInterval}" />    
+<apex:actionFunction name="rerenderPlansPanel" >
+
+    <apex:param name="bgsfid" value="" assignTo="{!bgsfid}" />
+</apex:actionFunction>
+<apex:actionFunction name="rerenderPlansConfigPanel" rerender=""></apex:actionFunction>
+<apex:inputHidden id="hdn-bgsfid" value="{!bgsfid}"/>
+<apex:commandButton value="Reload" id="hdn-redirect-button" style="display:none" oncomplete="" status="loadStatus" rerender="totalRow,currencyPanel"/>
+ 
+<!--Billing Group Section -->
+<apex:actionFunction name="rerenderBillingPanel" rerender="billingGroups"  status="billingGroupStatus"/>
+<apex:outputPanel id="billingGroups" styleClass="page-section" layout="block">
+<!--     <apex:commandLink styleClass="btn-get-started" value="Get Started" action="{!moveBillingGroupPage}"/> -->
+<!--     <apex:commandLink styleClass="{!IF(BillingGroups.size > 0,'btn-get-edited','btn-get-started')}" value="{!IF(BillingGroups.size > 0,'Edit','Get Started')}" action="{!moveBillingGroupPage}"/> -->
+    <a href="javascript:;" onclick="openPageURL('Billing Group Details','/apex/AriaAccountPlanWizBillingGroup?{!contextVarStr}&retURL=AriaAccountPlanWizard&bgsfid={!bgsfid}'+'&billingInterval='+$j('[id$=theBillIntHiddenInput]').val());" class="{!IF(BillingGroups.size > 0,'btn-get-edited','btn-get-started')}">{!IF(BillingGroups.size > 0,'Edit','Get Started')}</a>
+    
+    <h3>Billing Groups<font size="5" color="red">*</font></h3><apex:outputPanel styleClass="payMSG" style="display:none;color: red;">&nbsp;Credit Card/Electronic Check ACH information will be collected during commit.</apex:outputPanel>
+    <apex:outputPanel layout="block" rendered="{!BillingGroups.size > 0}" style="margin-top: 6px;">
+        <table border="0">
+        <apex:repeat value="{!BillingGroups}" var="bg">
+            <tr>
+            <td style="padding-top:12px"><apex:outputPanel style="width: 12px;height: 13px;background: #1A7FD4;;float: left;border-radius:6px;margin-top: -5px;" styleClass="circle" layout="block" rendered="{!(bgsfid = bg.bgId)}"></apex:outputPanel>&nbsp;</td><td><b>Billing Group</b>&nbsp;{!bg.bgName},&nbsp;<b>Created on</b>&nbsp;{!bg.bgCreatedDate},&nbsp;<b>Payment Method</b>&nbsp;{!bg.payMethod},&nbsp;<b>Statement Contact</b>&nbsp;{!bg.stContactName}<br/></td>     
+            <script>
+                var payMthdStr = '{!bg.payMethod}';
+                //alert(payMthdStr.indexOf('Credit Card')); 
+                if(payMthdStr.indexOf('Credit Card') == 0 || payMthdStr.indexOf('Electronic Check (ACH)') == 0){
+                    $j(".payMSG").show();
+                }
+            </script>
+            </tr>
+        </apex:repeat>
+        </table>
+    </apex:outputPanel>
+    
+    <apex:outputPanel layout="block" rendered="{!BillingGroups.size = 0}">
+        
+        <p>
+            <apex:outputLabel >Before selecting plans, edit an existing billing group or create a new one and configure settings.</apex:outputLabel>
+        </p>
+    </apex:outputPanel>
+ </apex:outputPanel>
+<br/>
+<!-- Plans Section -->
+<apex:actionFunction name="rerenderPlansPanel" rerender="Plans" />
+<apex:outputPanel id="Plans" styleClass="page-section" layout="block" >
+    
+<!--     <a href="javascript:;" onclick="openPageURL('Add Plans','/apex/AriaAccountPlanWizardSelectedPlan?{!contextVarStr}');" class="btn-get-started">Get Started</a> -->
+    <a href="javascript:;" onclick="openPageURL('Add Plans','{!if(hasExistingPlans,'/apex/AriaAccountPlanWizardSelectedPlan?','/apex/AriaAccountPlanWizardPlanSelection?')}{!contextVarStr}&retURL=AriaAccountPlanWizard&bgsfid={!bgsfid}'+'&billingInterval='+$j('[id$=theBillIntHiddenInput]').val());" class="{!if(hasExistingPlans,'btn-get-edited','btn-get-started')}">{!if(hasExistingPlans,'Edit','Get Started')}</a>
+    
+    <h3>Plan Selection &amp; Configuration<font size="5" color="red">*</font></h3>
+    <apex:actionstatus id="loadStatus">
+        <apex:facet name="start">
+            <img src="../img/loading.gif" style="padding-left: 57px; padding-right: 5px; margin-top: 5px;"/>
+            <div style="position:fixed; top:0; left:0; background:rgba(0,0,0,0.6); z-index:5; width:100%; height:100%;"></div>
+        </apex:facet> 
+    </apex:actionstatus>
+        <br/>                
+        <apex:outputLabel rendered="{!!hasExistingPlans}">Before adding products, search, select and configure plans.</apex:outputLabel>
+        
+        
+        <apex:repeat value="{!pwMasterList}" var="plan" rows="5">
+            <p style="padding-top: 3px;">
+                <b>{!plan.name}</b> {!plan.unit} {!if(plan.unit==1,'unit','units')} at 
+                &nbsp;
+                <apex:outputText value="{0,number,##########0.00}">
+                        <apex:param value="{!plan.listPrice}"/>
+                    </apex:outputText> 
+                {!accountCurrency}, <b>Billing Interval</b> {!plan.billInt}. <b>Supplemental Plans</b> {!plan.suppCount}
+            </p>
+             
+        </apex:repeat>
+        <apex:outputText rendered="{!pwMasterList.size>5}"> <a href="javascript:;" onclick="openPageURL('Add Plans','{!if(hasExistingPlans,'/apex/AriaAccountPlanWizardSelectedPlan?','/apex/AriaAccountPlanWizardPlanSelection?')}{!contextVarStr}&retURL=AriaAccountPlanWizard&bgsfid={!bgsfid}'+'&billingInterval='+$j('[id$=theBillIntHiddenInput]').val());">more</a> </apex:outputText>
+        
+        <div class="moreLinkClass" style="display:none">
+            <apex:outputText rendered="{!pwMasterList.size>5}"> <a onclick="$j('.allPlansClass').show();$j('.moreLinkClass').hide();">more</a> </apex:outputText>
+        </div>
+        <div class="allPlansClass" style="display:none">
+        <apex:repeat value="{!pwMasterList}" var="plan" first="5">
+            <p style="padding-top: 3px;">
+                <b>{!plan.name}</b> {!plan.unit} {!if(plan.unit==1,'unit','units')} at 
+                &nbsp;
+                <apex:outputText value="{0,number,##########0.00}">
+                        <apex:param value="{!plan.listPrice}"/>
+                    </apex:outputText> 
+                {!accountCurrency}, <b>Billing Interval</b> {!plan.billInt}. <b>Supplemental Plans</b> {!plan.suppCount}
+            </p>
+             
+        </apex:repeat>
+        <a onclick="$j('.allPlansClass').hide();$j('.moreLinkClass').show();">Less</a>
+        </div>
+
+</apex:outputPanel> 
+<br/>
+<!-- One Time Products Section -->
+<apex:actionFunction name="rerenderOTPPanel" rerender="OTP" status="OTPStatus"/>
+<apex:outputPanel id="OTP" styleClass="page-section" layout="block" rendered="{!permSetBillgrp.show_order_sec}">
+    
+    <a href="javascript:;" onclick="openPageURL('One Time Products','{!if(otpWrapList.size = 0,'/apex/AriaAccountPlanWizardOTP?','/apex/AriaAccountPlanWizEditOTP?')}{!contextVarStr}'+'&retURL=AriaAccountPlanWizard&billingInterval='+$j('[id$=theBillIntHiddenInput]').val());" class="{!if(otpWrapList.size = 0,'btn-get-started','btn-get-edited')}">{!if(otpWrapList.size = 0,'Get Started','Edit')}</a>
+    <h3>One Time Products</h3> 
+    <apex:actionstatus id="OTPStatus"> 
+        <apex:facet name="start"> 
+            <img src="../img/loading.gif" style="margin: 14px -11px 0px 0px; float:right;"/> 
+        </apex:facet> 
+    </apex:actionstatus>
+    <apex:outputPanel id="OTPPanel">
+        <p>
+        <apex:outputLabel rendered="{!if(otpWrapList.size = 0,true,false)}">Choose one or more products to add to this agreement.</apex:outputLabel>
+        <apex:outputPanel rendered="{!if(otpWrapList.size > 0,true,false)}"> 
+        
+            <apex:repeat value="{!otpWrapList}" var="otp">
+            <p style="padding-top: 3px;">
+                <b>{!otp.itemName}</b> {!otp.itemQty} {!if(otp.itemQty ==1,'unit','units')} at 
+                &nbsp;
+                <apex:outputText value="{0,number,##########0.00}">
+                        <apex:param value="{!otp.itemPriceWithTax}"/>
+                    </apex:outputText> 
+                {!accountCurrency}
+            </p>
+             
+        </apex:repeat> 
+        
+        </apex:outputPanel>
+        </p>
+    </apex:outputPanel>
+</apex:outputPanel>
+<br/>
+<!--Promotions Section -->
+<apex:actionFunction name="rerenderPromotionsPanel" rerender="promotions"  status="PromoStatus"/>
+<apex:outputPanel id="promotions" styleClass="page-section" layout="block" rendered="{!permSetBillgrp.show_coupon_sec}">
+    <a href="javascript:;" onclick="openPageURL('Promotions','/apex/AriaAccountPlanWizardPromotions?clientPlanInstanceNumber=&{!contextVarStr}'+'&billingInterval='+$j('[id$=theBillIntHiddenInput]').val());" class="{!if(couponAppliedCount = 0,'btn-get-started','btn-get-edited')}">{!if(couponAppliedCount = 0,'Get Started','Edit')}</a>
+    <h3>Promotions</h3>
+    <apex:actionstatus id="PromoStatus"> 
+        <apex:facet name="start">
+            <img src="../img/loading.gif" style="margin: 14px -11px 0px 0px; float:right;"/>
+        </apex:facet> 
+    </apex:actionstatus>
+    <p>
+        <apex:outputLabel rendered="{!if(couponAppliedCount = 0,true,false)}">Validate and assign coupons or discount line items.</apex:outputLabel>
+        <apex:outputLabel rendered="{!if(couponAppliedCount >0,true,false)}"><b>Total of {!couponAppliedCount} {!if(couponAppliedCount > 1,'coupons','coupon')} </b>at a {!discountedAmount} {!UPPER(accountCurrency)} discount.</apex:outputLabel>
+    </p>
+ </apex:outputPanel>
+<br/>
+<!--Contract Section -->
+<apex:actionFunction name="rerenderContractPanel" rerender="contract" status="status" />
+<apex:outputPanel id="contract" layout="block" styleClass="page-section" rendered="{!permSetBillgrp.show_contract_sec}" >
+    <a href="javascript:;" onclick="openPageURL('Termed Agreements','/apex/AriaAccountPlanWizardContract?contractId={!refreshContractId}&{!contextVarStr}'+'&billingInterval='+$j('[id$=theBillIntHiddenInput]').val());" class="{!if(refreshContractId=='','btn-get-started','btn-get-edited')}">{!if(refreshContractId=='','Get Started','Edit')}</a>
+    <h3 style="font-family: arial;font-size: 18px; font-weight: regular;">Termed Agreements</h3>
+    <apex:actionstatus id="status"> 
+        <apex:facet name="start">
+            <img src="../img/loading.gif" style="margin: 14px -11px 0px 0px; float:right;"/>
+        </apex:facet> 
+    </apex:actionstatus>
+    <p><apex:outputText value="{! refreshContractSectionContents }" style="font-family: arial;font-size: 14px; font-weight: regular;" escape="false"/></p>
+</apex:outputPanel> 
+<!--Custom Link -->
+<script>
+
+var obj = $j.parseJSON('{!JSENCODE(jsonStringCustomLinkMap)}');
+$j.each(obj, function(key, val) {
+    for(i=0;i<val.length;i++){
+        buildCustomLinkDetails(key,val[i]);     
+    }
+})
+
+function buildCustomLinkDetails(position,objVal){
+    // building custom link and positioning
+    var position = position.split('_');
+    var customLink = "";
+    customLink = customLink + "<div class=\"page-sectionforcustomlinks\">";
+    customLink = customLink + "<a class=\"linkStl\" href=\"#\" onclick=\"window.open('"+objVal.Url+"','"+objVal.name+"','height="+objVal.height+",width="+objVal.width+"'); event.preventDefault();updateLinkRecord('"+objVal.recId+"');\">"+objVal.name+"</a>";
+    customLink = customLink + "</div>";
+    
+    if(position[1]=='up'){
+        customLink = customLink + "<br/>";
+        $j("[id$='"+position[0]+"']").before( customLink );
+    }else if(position[1]=='dn'){
+        customLink = "<br/>" + customLink;
+        $j("[id$='"+position[0]+"']").after( customLink );  
+    }
+}
+</script>
+<!--Custom Link End -->
+<!--Custom Section Start-->
+<style>
+body button, body .x-btn1, body .btn1 {
+    display: inline-block;
+    zoom: 1;
+    vertical-align: baseline;
+    outline: none;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    font: 14px/100% Arial, Helvetica, sans-serif;
+    padding: .35em .5em .5em;
+    text-shadow: 0 1px 1px rgba(0,0,0,.3);
+    -webkit-border-radius: .5em;
+    -moz-border-radius: .5em;
+    border-radius: .3em;
+   
+    color: #fff;
+    border: solid 1px #428BCA;
+    background: #428bca;
+    background: -webkit-gradient(linear, left top, left bottom, from(#428BCA), to(#428BCA));
+    background: -moz-linear-gradient(top, #428BCA, #428BCA);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#428BCA', endColorstr='#428BCA');
+}
+body input.btn1 {
+    float: right;
+    padding: .35em .5em .5em;
+}
+body button:hover, body .btn1:hover{
+    background: #3278b4;
+    background: -webkit-gradient(linear, left top, left bottom, from(#3278b4), to(#3278b4));
+    background: -moz-linear-gradient(top, #3278b4, #3278b4);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#3278b4', endColorstr='#3278b4');
+    background-position: right 0px;
+}
+body button, body .x-btn2, body .btn2 {
+    display: inline-block;
+    zoom: 1;
+    vertical-align: baseline;
+    outline: none;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    font: 14px/100% Arial, Helvetica, sans-serif;
+    padding: .35em .5em .5em;
+    text-shadow: 0 1px 1px rgba(0,0,0,.3);
+    -webkit-border-radius: .5em;
+    -moz-border-radius: .5em;
+    border-radius: .3em;
+   
+    color: #fff;
+    border: solid 1px #BCBCBC;
+    background: #BCBCBC;
+    background: -webkit-gradient(linear, left top, left bottom, from(#BCBCBC), to(#BCBCBC));
+    background: -moz-linear-gradient(top, #BCBCBC, #BCBCBC);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#BCBCBC', endColorstr='#BCBCBC');
+}
+body input.btn2 {
+    float: right;
+    padding: .35em .5em .5em;
+}
+body button:hover, body .btn2:hover{
+    background: #3278b4;
+    background: -webkit-gradient(linear, left top, left bottom, from(#3278b4), to(#3278b4));
+    background: -moz-linear-gradient(top, #3278b4, #3278b4);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#3278b4', endColorstr='#3278b4');
+    background-position: right 0px;
+}
+
+body button, body .x-btn3, body .btn3 {
+    display: inline-block;
+    zoom: 1;
+    vertical-align: baseline;
+    outline: none;
+    cursor: not-allowed;
+    text-align: center;
+    text-decoration: none;
+    font: 14px/100% Arial, Helvetica, sans-serif;
+    padding: .35em .5em .5em;
+    text-shadow: 0 1px 1px rgba(0,0,0,.3);
+    -webkit-border-radius: .5em;
+    -moz-border-radius: .5em;
+    border-radius: .3em;
+   
+    color: #fff;
+    border: solid 1px #BCBCBC;
+    background: #BCBCBC;
+    background: -webkit-gradient(linear, left top, left bottom, from(#BCBCBC), to(#BCBCBC));
+    background: -moz-linear-gradient(top, #BCBCBC, #BCBCBC);
+    //filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#BCBCBC', endColorstr='#BCBCBC');
+}
+
+body input.btn3 {
+    float: right;
+    padding: .35em .5em .5em;
+}
+</style>
+<script>
+function OpenURL(url,index){
+    if (typeof(index) != "undefined"){
+        if(!checkExistingSet(index)){
+            clickedCustomSectionStr = clickedCustomSectionStr+index+'_';
+        }
+    }
+    var completeURL = url;
+    if(url.indexOf('?') > -1){
+        completeURL=url+'&contextId='+contextId+'&context='+context+'&retURL='+retURL+'&customSectionVars='+clickedCustomSectionStr;
+    }else{
+        completeURL=url+'?contextId='+contextId+'&context='+context+'&retURL='+retURL+'&customSectionVars='+clickedCustomSectionStr;
+    }
+    window.top.location.href = completeURL;
+    //window.open(completeURL,'_top'); 
+    return false;
+}
+
+var obj = $j.parseJSON('{!JSENCODE(jsonStringCustomSectionMap)}');
+$j.each(obj, function(key, val) {
+    for(i=0;i<val.length;i++){
+        buildCustomSectionDetails(key,val[i]);  
+    }
+})
+
+function buildCustomSectionDetails(position,objVal){
+    var dialogTitle = objVal.sectionName;
+    if(objVal.customHeaderName!=null){
+        dialogTitle = objVal.customHeaderName;
+    }
+    //alert(objVal.index);
+    // building custom section and positioning
+    var position = position.split('_');
+    var customSection="";
+    customSection = customSection + "<div class=\"page-section\">";
+    var x = checkExistingSet(objVal.index);
+    //alert(x);
+    if(objVal.showCustomBtn){
+        if(x){
+            customSection = customSection + "<a href=\"javascript:;\" onclick=\"javascript:OpenURL('"+objVal.custBtnURL+"','"+objVal.index+"');\" class=\"btn-get-edited\" style=\"margin: 0px 0px 0px 0px;\">Edit</a>";
+        }else{
+            customSection = customSection + "<a href=\"javascript:;\" onclick=\"javascript:OpenURL('"+objVal.custBtnURL+"','"+objVal.index+"');\" class=\"btn-get-started\" style=\"margin: 0px 0px 0px 0px;\">"+objVal.custBtnName+"</a>";
+        }       
+    }
+    if(objVal.showPrevBtn){
+        customSection = customSection + "<a href=\"javascript:;\" onclick=\"javascript:window.location.reload();\" class=\"btn-get-started\" style=\"margin: 0px 0px 0px 0px;margin-right: 10px;\">Refresh</a>";
+    }
+    customSection = customSection + "<h3>"+dialogTitle+"</h3>";
+    customSection = customSection + ((objVal.sectionContent == null) ? '<p>Customer-generated text will go here.</p>':objVal.sectionContent);
+    customSection = customSection + "</div>";
+    
+    if(position[1]=='up'){
+        customSection = customSection + "<br/>";
+        $j("[id$='"+position[0]+"']").before( customSection );
+    }else if(position[1]=='dn'){
+        customSection = "<br/>" + customSection;
+        $j("[id$='"+position[0]+"']").after( customSection );   
+    }
+}
+</script>
+<!--Custom Section END-->
+<!-- <apex:pageBlock > -->
+<!--     <apex:pageBlockButtons style="padding-left:180px;" location="bottom"> -->
+<!--        <apex:commandButton value="Save & Exit"/> -->
+<br/>
+        <apex:actionStatus id="CommitStatus">
+            <apex:facet name="start">
+               <apex:outputPanel >
+                   <img src="../img/loading.gif" style="padding-left: 12px;"/>  
+                    <apex:commandButton id="disabledSave" value="Save & Exit" disabled="true" style="float:left;"/>
+                    <apex:commandButton id="disabledCommit" value="Commit" style="float:right;" disabled="true" />
+<!--                    <apex:commandButton value="Cancel" disabled="true"/> -->
+                    
+               </apex:outputPanel>
+            </apex:facet>
+            <apex:facet name="stop">
+                <apex:outputPanel >
+                    <apex:commandButton id="btnCancel" value="Cancel" action="{!cancel}" style="float:left;display:none" styleClass="btn2"/>
+                    <apex:commandButton id="btnSnE" value="Save & Exit" style="float:left;" styleClass="btn1" action="{!SaveAsDraft}" rerender="commitToAria" disabled="{!NOT(isAllowSaveAsDraft)}" />
+                    <apex:commandButton id="btnCommit" styleClass="btn1" value="Commit"  action="{!SaveToAria}" rerender="commitToAria,bgPaymentInfo" status="CommitStatus" rendered="{!isAllowCommit}" onclick="if(!pageValidation('commit'))return false" />
+                    <apex:commandButton id="btnCommitdisabled" value="Commit"  action="{!SaveToAria}" disabled="{!NOT(isAllowCommit)}" rendered="{! !isAllowCommit && hasExistingPlans}" styleClass="btn3"/>
+                    <apex:actionFunction name="saveToAriaJS" action="{!SaveToAria}" rerender="commitToAria,bgPaymentInfo" status="CommitStatus" />
+                    <script>
+                        
+                            var btnCancel = getElement("{!$Component.btnCancel}");
+                            var btnSnE = getElement("{!$Component.btnSnE}");
+                            var btnCommit = getElement("{!$Component.btnCommit}");
+                            var hasAriaId = {!isAcctHaveAriaId};
+                            if(hasExtPlan == 'false'){
+                                $j(btnCancel).show();
+                                $j(btnSnE).hide();
+                                $j(btnCommit).hide();
+                                if(bgsfid){
+                                    if(bgsfid != '' && bgsfid != 'NEW'){
+                                        $j(btnSnE).show();
+                                        $j(btnCancel).hide();
+                                    }
+                                }
+                                // in case of removing saved plan over aria , the plans are not hard deleted from opp so this check is not required here
+                                //if(hasAriaId){
+                                    //$j(btnCommit).show();
+                                //}
+                            }
+                            else{
+                                $j(btnCancel).hide();
+                                $j(btnSnE).show();
+                                $j(btnCommit).show();
+                            }
+                            if({!hasCancelledPlan}){
+                                $j(btnCommit).show();
+                            }
+                            /*
+                            //ele.className = "button white";
+                            ele = getElement("{!$Component.btnCommit}");
+                            $j(ele).show();
+                            //ele.className = "button white";
+                            ele = getElement("{!$Component.btnCommit}");
+                            $j(ele).show();
+                            //ele.className = "button white";
+                            
+                        }*/
+                    </script>
+                   
+                </apex:outputPanel>
+            </apex:facet>
+        </apex:actionStatus>
+<!--        <apex:inputHidden value="{!replacedPlansNoToBeDeleted}" id="replacedPlansNoToBeDeletedID"/>   -->
+<!--     </apex:pageBlockButtons>  -->
+<!-- </apex:pageBlock> -->
+
+<script>
+    var counter = 1;
+</script>
+
+<apex:outputPanel id="commitToAria">
+   <apex:actionRegion >
+       <apex:commandButton id="btnHTTP" style="display:none" value="Save to Aria" action="{!processNextHTTP}" rerender="commitToAria" status="CommitStatus"/>  
+        
+   </apex:actionRegion>
+   <script>
+       
+       if("{!isDmlProcessed}" == "true" && counter == 1){
+       var b =  document.getElementById("{!$Component.btnHTTP}");
+       b.click(); 
+       counter++; 
+       }
+  </script>
+       
+    <apex:outputPanel rendered="{!IF(con.processStatus == 'Processing Start' || con.processStatus == 'Processing', true, false)}" >
+        <font color="red"><b>{!con.processStatus}</b></font>
+        <script>
+            var b =  document.getElementById("{!$Component.btnHTTP}");
+            b.click();
+        </script>
+    </apex:outputPanel> 
+     
+     <apex:outputPanel rendered="{!IF(con.processStatus == 'Processing Complete', true, false)}" >
+        <script>
+        console.log('==redirectURL:{!redirectURL}');
+            if("{!errorEncountered}" == "true"){
+                alert("{!api_msg}");
+                window.top.location.href= "/{!opportunity.id}";
+            }
+            window.top.location.href= "{!redirectURL}";
+        </script>   
+    </apex:outputPanel> 
+      
+    <apex:repeat value="{!con.AriaCallOutItems}" rendered="false" var="theAriaCallOutItem" id="thecallout"> 
+        <br/><apex:outputPanel rendered="{!IF(theAriaCallOutItem.isProcessed == true, true, false)}">
+            <img src="{!$Resource.SuperTable}/image-tick.jpg" width="16px" height="16px"/> 
+        </apex:outputPanel>
+         {!theAriaCallOutItem.accountPlan.Name}  &nbsp; {!theAriaCallOutItem.callName}  &nbsp; {!theAriaCallOutItem.params}  &nbsp; {!theAriaCallOutItem.listparams}
+        <br/>
+    </apex:repeat>  
+    </apex:outputPanel>
+    
+    <apex:outputPanel layout="none" id="bgPaymentInfo" >
+    <apex:outputPanel layout="block" rendered="{!showPopupPaymentInfo}"  styleClass="paymentinfoDiv" id="billGrpPayment" style="background-color: rgba(98,98,98,0.5);position:fixed;height: 100%;width: 100%;top: 0px;margin-left:-20px;display:none;">
+        <apex:outputPanel layout="block" style="width: 70%;position: absolute;margin: 80px auto;left: 0px;right: 0px;background: #fff;top:40px;">
+            <apex:pageBlock >
+             <div class="topLeft11"><Span style="color: #428bca;font-style: italic;">***Please provide payment information for following billing group(s).</Span><a id="InlineEditDialogX" title="Close" tabindex="0" href="javascript:void(0)" class="dialogClose" onclick="validatePaymentInfo('c');showParentScroll();hideOverlay(); return false;">Close</a></div>
+            <apex:outputPanel layout="block" style="width: 100%;float: left;min-height: 250px;overflow-y: scroll;height: 300px;">
+                
+                <apex:repeat value="{!billPaymentInfos}" var="bg">
+                    <apex:outputpanel style="margin-top: 12px;float: left;background-color:#F8F8F8">
+                        Billing Group - <span style="font-size: 14px;font-weight: bold;">{!bg.billGrpName}</span>&nbsp;({!bg.payMethodName})
+                    </apex:outputpanel>
+                    <apex:pageBlockSection columns="1" collapsible="false" rendered="{!(LOWER(bg.payMethodName) == 'credit card')}">
+                        <apex:pageBlockSectionItem >
+                            <apex:outputLabel > Credit Card</apex:outputLabel>
+                            <apex:outputPanel layout="block" styleClass="requiredInput">
+                                <div class="requiredBlock"></div>
+                                <apex:inputText alt="Credit Card No." onblur="$j(this).val($j(this).val().replace(/\s/g,''));" onkeypress="if(event.charCode > 31 && (event.charCode < 48 || event.charCode > 57)) return false;" style="width:200px;"  maxlength="16" value="{!bg.ccNo}" id="ccNumber" styleClass="reqPaymentField"/> 
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        
+                        <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="CVV" />
+                            <apex:outputPanel layout="block" styleClass="requiredInput">
+                                <div class="requiredBlock"></div>
+                            <apex:inputText alt="CVV No." onblur="$j(this).val($j(this).val().replace(/\s/g,''));" onkeypress="if(event.charCode > 31 && (event.charCode < 48 || event.charCode > 57)) return false;" maxlength="4" value="{!bg.cvvNo}" id="cvvNumber" styleClass="reqPaymentField"/>
+                            </apex:outputpanel>
+                        </apex:pageBlockSectionItem>
+                          <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="Expiration Date (Month/Year)" />
+                                <apex:outputPanel >
+                                    <apex:outputPanel layout="block" styleClass="requiredInput">
+                                        <div class="requiredBlock"></div>
+                                        <apex:selectList title="Expiration Month" size="1" value="{!bg.exp_mm}" id="mmCC" styleClass="reqPaymentField"> 
+                                           <apex:selectOptions value="{!billGroupWrap.mm_options}"></apex:selectOptions>
+                                        </apex:selectList>
+                                        &nbsp;/&nbsp;&nbsp;
+                                        <div class="requiredBlock"></div>
+                                        <apex:selectList title="Expiration Year" size="1" value="{!bg.exp_yy}" id="yyCC" styleClass="reqPaymentField"> 
+                                           <apex:selectOptions value="{!billGroupWrap.yyyy_options}"></apex:selectOptions>
+                                        </apex:selectList>
+                                   </apex:outputPanel>  
+                               </apex:outputPanel>                                    
+                        </apex:pageBlockSectionItem>
+                        
+                        <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="Tokenized Credit Card" />
+                        <apex:outputPanel >
+                            <apex:inputCheckbox id="chkbxToken" value="{!bg.isTok}"/>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    </apex:pageBlockSection>
+                    
+                <apex:pageBlockSection columns="1" collapsible="false" rendered="{!LOWER(bg.payMethodName) = 'electronic check (ach)'}">
+                  <apex:pageblockSectionItem >
+                    <apex:outputLabel styleclass="paymentSectionLabel">Routing number</apex:outputLabel>
+                    <apex:outputPanel styleClass="requiredInput" layout="block">
+                        <div class="requiredBlock"></div>
+                      <apex:inputText alt="Routing No." onblur="$j(this).val($j(this).val().replace(/\s/g,''));" onkeypress="if(event.charCode > 31 && (event.charCode < 48 || event.charCode > 57)) return false;" value="{!bg.routNo}" style="width: 167px;" styleClass="reqPaymentField"/> 
+                    </apex:outputPanel>
+                  </apex:pageblockSectionItem>
+                     
+                  <apex:pageblockSectionItem >
+                      <apex:outputLabel styleclass="paymentSectionLabel">Account number</apex:outputLabel>
+                      <apex:outputPanel styleClass="requiredInput" layout="block">
+                        <div class="requiredBlock"></div>
+                        <apex:inputText alt="Account No." onblur="$j(this).val($j(this).val().replace(/\s/g,''));" onkeypress="if(event.charCode > 31 && (event.charCode < 48 || event.charCode > 57)) return false;" value="{!bg.acctNo}" style="width: 167px;" styleClass="reqPaymentField"/> 
+                     </apex:outputPanel>
+                  </apex:pageblockSectionItem>
+                </apex:pageBlockSection> 
+                <br/>    
+                    </apex:repeat>
+                
+            </apex:outputPanel>
+            </apex:pageBlock>
+            <apex:outputPanel layout="block" style="width: 100%;float: left;height: 50px;border-top: 1px ridge #ccc;">
+                <span style="color: #428bca;font-style: italic;display:none;">***After you done.Please click on commit button again.</span>
+                <apex:outputPanel layout="block" style="margin-top: 8px;float: right;padding-right: 20px;">
+                    <input type="Button" value="Close" style="display:none;" Class="button blue" onclick="validatePaymentInfo('c');showParentScroll();hideOverlay(); return false;"/>&nbsp;&nbsp;
+                    <input type="Button" value="Done"  Class="button blue"  onclick="validatePaymentInfo('s'); return false;"/>
+                </apex:outputPanel>
+            </apex:outputPanel>
+        </apex:outputPanel>
+        <script>
+            hideOverlay();
+        </script>
+    </apex:outputPanel>
+    </apex:outputPanel>
+    
+
+</apex:form>
+        <div id="replaceDialogBox"></div>
+        <div id="cancelDialogBox"></div>
+        <div id="confirmReplaceDialogBox"></div>
+        <div id="confirmCancelDialogBox"></div>
+        <div id="genericDialogBox"></div>
+</apex:page>

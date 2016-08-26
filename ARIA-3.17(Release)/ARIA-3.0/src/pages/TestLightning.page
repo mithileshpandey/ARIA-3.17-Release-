@@ -1,0 +1,127 @@
+<apex:page standardController="Opportunity" showHeader="false" sidebar="false">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"/>
+<script src="/soap/ajax/35.0/connection.js"/>
+<script src="/soap/ajax/35.0/apex.js"/>
+
+<script>
+try{ 
+var isAriaIdExists=false; 
+var isAcctPlanNotExists=false; 
+var oppStage = '{!Opportunity.StageName}'; 
+var namespace_prefix='ASF3__'; 
+var queryString="Select Id, "+namespace_prefix+"Aria_id__c from Account where Id='{!Opportunity.AccountId}' limit 1"; 
+var result= sforce.connection.query(queryString); 
+var records = result.getArray("records"); 
+if (records.length == 0) { 
+alert("Account not found"); 
+}else{ 
+//alert(":"+records[0][namespace_prefix+'Aria_Id__c']+":"); 
+if(records[0][namespace_prefix+'Aria_Id__c']){ 
+isAriaIdExists = true; 
+}else{ 
+isAriaIdExists = false; 
+} 
+} 
+// check for non-closed won opportunity manually 
+var queryStringPlan="Select Id from "+namespace_prefix+"Account_Plan__c where "+namespace_prefix+"Opportunity__c='{!Opportunity.Id}'"; 
+var resultPlan= sforce.connection.query(queryStringPlan); 
+var recordPlans = resultPlan.getArray("records"); 
+if (recordPlans.length == 0) { 
+isAcctPlanNotExists=true; 
+} 
+}catch(e){ //alert(e); 
+alert(e.message); 
+} 
+
+function showBillingOptionDialog(){ 
+$j = jQuery.noConflict(); 
+var sd = sfdcPage.dialogs['OverlayDialog'], close; 
+if (!sd) { 
+sd = sfdcPage.dialogs['OverlayDialog'] = new SimpleDialog('OverlayDialog', false); 
+sd.setTitle('New Account Billing Options'); 
+sd.setWidth("370px"); 
+sd.createDialog(); 
+} 
+//Specify the iFrame and give URL of VF page or give the content 
+var styleCss = "<style>.buttonPanel{padding-top:11px;//background:#f8f8f8;padding-bottom:2px}.button:hover{text-decoration:none}.button,.button:focus{display:inline-block;zoom:1;vertical-align:baseline;outline:0;cursor:pointer;text-align:center;text-decoration:none;font:14px/100% Arial,Helvetica,sans-serif;padding:.35em .5em .5em;text-shadow:0 1px 1px rgba(0,0,0,.3);-webkit-border-radius:.5em;-moz-border-radius:.5em;border-radius:.3em;-webkit-box-shadow:0 1px 2px rgba(0,0,0,.2);-moz-box-shadow:0 1px 2px rgba(0,0,0,.2);box-shadow:0 1px 2px rgba(0,0,0,.2)}.white{color:#fff;border:1px solid #999999;background:#999999;background:-webkit-gradient(linear,left top,left bottom,from(#999999),to(#ededed));background:-moz-linear-gradient(top,##999999,#ededed);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#ededed')}.white:hover{background:#ededed;background:-webkit-gradient(linear,left top,left bottom,from(#999999),to(#dcdcdc));background:-moz-linear-gradient(top,#999999,#dcdcdc);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#dcdcdc')}body{font-family:Arial,Helvetica,sans-serif;color:#222}</style>"; 
+
+var htmlCont = styleCss + "<iframe src='/apex/ASF3__AriaBillingGroupDialog?accId={!Opportunity.AccountId}&id={!Opportunity.Id}&context=opportunity&name={!Opportunity.Name}&selectionContext={!Opportunity.ASF3__z_AriaPlanChangeType__c }&btnClick=addmodifyclicked' style='border: 0; width:100%; height: 230px' scrolling='no' /><table style='margin-top: -29px;' width='100%' border='0' cellspacing='0' cellpadding='0'> <tr><td align='left'><input id='svCancel' type='button' name='Submit' value='Cancel' class='button white'/></td><td align='right'></td></tr></table>"; 
+
+$j(sd.dialog).find('#OverlayDialogInner').html(htmlCont); 
+
+if ($j(sd.dialog).find('#InlineEditDialogX').size() == 0) { 
+var close = $j("<a id='InlineEditDialogX' title='Close' tabindex='0' href='javascript:void(0)' class='dialogClose'>Close</a>"); 
+close.mouseover(function() { 
+this.className = 'dialogCloseOn'; 
+}).mouseout(function() { 
+this.className = 'dialogClose'; 
+}).click(function(){ 
+// finally our on click handler which closes the dialog 
+//window[callingFunc](); 
+sd.hide(); 
+//This is to refresh the page once the modal is closed.If you dont want to refresh comment the code 
+//window.location.reload(true); 
+}); 
+// insert the new generated close button before the h2 tag so it'll show up on the top right corner 
+close.insertBefore($j(sd.dialog).find('.topLeft h2')); 
+} 
+$j(sd.dialog).find('input[type="button"]').on('click', function() { 
+if($j(this).val() == 'Cancel'){ 
+sd.hide(); 
+} 
+}); 
+sd.show(); 
+} 
+function showMasterPlanDialog(){ 
+$j = jQuery.noConflict(); 
+var sd = sfdcPage.dialogs['OverlayDialog'], close; 
+if (!sd) { 
+sd = sfdcPage.dialogs['OverlayDialog'] = new SimpleDialog('OverlayDialog', false); 
+sd.setTitle('Select plans to be included with this opportunity'); 
+sd.setWidth("80%"); 
+sd.createDialog(); 
+} 
+//Specify the iFrame and give URL of VF page or give the content 
+var htmlCont = "<iframe src='/apex/ASF3__AriaMasterPlanSelectionDialog?accId={!Opportunity.AccountId}&id={!Opportunity.Id}&context=opportunity&name={!Opportunity.Name}&selectionContext={!Opportunity.ASF3__z_AriaPlanChangeType__c }&accountid={!Opportunity.AccountId}&btnClick=addmodifyclicked' style='border: 0; width:100%; height: 230px' scrolling='no' />"; 
+
+$j(sd.dialog).find('#OverlayDialogInner').html(htmlCont); 
+
+if ($j(sd.dialog).find('#InlineEditDialogX').size() == 0) { 
+var close = $j("<a id='InlineEditDialogX' title='Close' tabindex='0' href='javascript:void(0)' class='dialogClose'>Close</a>"); 
+close.mouseover(function() { 
+this.className = 'dialogCloseOn'; 
+}).mouseout(function() { 
+this.className = 'dialogClose'; 
+}).click(function(){ 
+// finally our on click handler which closes the dialog 
+//window[callingFunc](); 
+sd.hide(); 
+//This is to refresh the page once the modal is closed.If you dont want to refresh comment the code 
+//window.location.reload(true); 
+}); 
+// insert the new generated close button before the h2 tag so it'll show up on the top right corner 
+close.insertBefore($j(sd.dialog).find('.topLeft h2')); 
+} 
+$j(sd.dialog).find('input[type="button"]').on('click', function() { 
+if($j(this).val() == 'Cancel'){ 
+sd.hide(); 
+} 
+}); 
+sd.show(); 
+} 
+//alert(isAriaIdExists); 
+if(isAriaIdExists){ 
+if(oppStage=='Closed Won'){ 
+showMasterPlanDialog(); 
+} 
+else if(oppStage!='Closed Won' && isAcctPlanNotExists==true){ 
+showMasterPlanDialog(); 
+} 
+else{ 
+location.href = '/apex/'+namespace_prefix+'AriaAccountPlanWizard?id={!Opportunity.Id}&context=opportunity&name={!Opportunity.Name}&selectionContext={!Opportunity.ASF3__z_AriaPlanChangeType__c }&fromPlanButton=true&action=modify'; 
+} 
+}else{ 
+showBillingOptionDialog(); 
+}
+</script>
+</apex:page>

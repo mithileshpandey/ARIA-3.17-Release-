@@ -1,0 +1,267 @@
+<apex:component access="global" controller="AriaPromotionComponentController" allowDML="true">
+ 
+<!-- <apex:attribute name="userContext" type="String" assignTo="{!context}" description="Context"/>
+<apex:attribute name="userContextId" type="String" assignTo="{!contextId}" description="Context Id"/> -->
+<apex:attribute name="userContext" type="String" description="Context"/>
+<apex:attribute name="userContextId" type="String" description="Context Id"/>
+<apex:attribute name="jsToInvoke" type="String" description="JS methodname invokeonComplete" default="console.log('test');"/>
+<apex:attribute name="clientPlanInstanceNumber" type="String" assignTo="{!clientPlanInstNum}" description="Client Plan Instance Number"/>
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'collapse.css')}" /> 
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" />  
+<script>
+     function confirmDelete(cid){
+        var r = confirm("Are you sure, you wanted to delete this coupon record?"); 
+        if(r){
+            DeleteCoupon(cid); 
+       }
+       return false;
+    }
+    function showTooltip(id, title, desc){
+         var div = document.getElementById(id);
+         div.style.display = 'inline';
+         /*div.style.position = 'absolute';
+         div.style.width = '200';
+         div.style.backgroundColor = '#333';
+         div.style.background =rgba(0,0,0,.8);
+         div.style.border = 'dashed 1px black';
+         div.style.border-radius = '5px';
+         div.style.padding = '5px 15px';*/
+         //div.styleClass = 'tooltip';
+         div.innerHTML = '<div class="tooltipHeader">' + title + 
+         '</div><div class="tooltipContent">' + desc + '</div>';
+        }
+        function showTooltip1(id, title, desc)
+        {
+         var div = document.getElementById(id);
+         div.style.display = 'inline';
+         var newstring = desc.replace(/[\,]/g, "<br/>")
+         div.innerHTML = '<div class="tooltipHeader">' + title + '</div><div class="tooltipContent">' + newstring + '</div>';
+        } 
+        function hideTooltip(id)
+        {
+         var div = document.getElementById(id);
+         div.style.display = 'none';
+        }
+</script>
+<style>
+        .myTable{
+        border-width: 0px !important;
+        border-style: solid !important;
+        border-color: #fff ;
+        font-size: 12px !important; 
+        background-color:#ffffff ;    
+        }
+        .myTable tbody tr:nth-child(even) {
+            background-color:#eeeeee !important ;
+        }
+        .myTable tbody tr td {
+            border-width: 1px !important;
+            border-style: solid !important;
+            border-color: #fff ;
+        }
+        .myTable tr{
+            height:26px;
+        }
+        .myTable th,td{
+            padding-left:5px;
+        }
+        table.altrowstable {
+            font-family: arial;
+            font-size:12px;
+            color:#333333;
+            border-color: #CCCCCC;
+            border-collapse: collapse;
+            text-align:left
+        }
+        table.altrowstable th {
+            font-size:12px;
+            border-width: 1px;
+            border-style: solid;
+            border-color: #CCCCCC;
+            border-left: 1px solid #f8f8f8;
+            border-right: 1px solid #f8f8f8;
+        
+        }
+        table.altrowstable td {
+            border-width: 0px;
+            padding-right: 8px !important;
+            padding-top: 1px;
+            padding-bottom: 1px;
+            border-style: solid;
+            border-right: 2px solid #f8f8f8;     
+            border-bottom: 1px solid #f8f8f8;
+        }
+        .headerRow{
+            vertical-align:middle !important; 
+            background: #eeeeee !important; /* Old browsers */
+            background: -moz-linear-gradient(top,  #eeeeee 0%, #cccccc 100%) !important; /* FF3.6+ */
+            background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#eeeeee), color-stop(100%,#cccccc)) !important; /* Chrome,Safari4+ */
+            background: -webkit-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* Chrome10+,Safari5.1+ */ 
+            background: -o-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* Opera 11.10+ */
+            background: -ms-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* IE10+ */
+            background: linear-gradient(to bottom,  #eeeeee 0%,#cccccc 100%) !important; /* W3C */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#eeeeee', endColorstr='#cccccc',GradientType=0 ) !important; /* IE6-9 */ 
+        }
+        .toolTipWrapper{
+                background: #333;
+                color: #fff;
+                width: 150px;
+                position: absolute;
+                z-index: 98;
+                } 
+            .tooltipHeader{
+                background: #f0f0f0;
+                color: #000;
+                padding: 2px;
+                width: 100%;
+                border:solid 1px #333;
+             } 
+             .tooltipContent{
+                background: #333;
+                color: #fff;
+                padding: 2px;
+                width: 100%;
+                font-size:11px;
+                border:solid 1px #333;
+                word-wrap:break-word;
+            } 
+    
+            .tooltip{
+                background: #333;
+                background: rgba(0,0,0,.8);
+                border-radius: 5px;
+                color: #fff;
+                content: attr(title);
+                padding: 5px 15px;
+                position: absolute;
+                z-index: 98;
+                width: 185px;
+            } 
+            .tooltip1{
+                background: #333;
+                background: rgba(0,0,0,.8);
+                border-radius: 5px;
+                color: #fff;
+                content: attr(title);
+                padding: 5px 15px;
+                position: absolute;
+                z-index: 98;
+                width: 20px;
+            }
+</style>
+    <apex:outputPanel id="CouponPb">
+    <table style="width:100%;"> 
+                   
+                   <tr>
+                        <td style="padding-left:10px;vertical-align:top;font-family:Arial;" >
+                                <apex:outputLabel style="font-family:verdana;font-size:18px;" rendered="{!if(clientPlanInstNum != null, false,true)}">Promotions</apex:outputLabel><br></br>
+                                <apex:outputLabel rendered="{!if(clientPlanInstNum != null, false,true)}" value="Validate and assign coupons or discount line items."/><br></br>
+                                <apex:outputLabel rendered="{!if(clientPlanInstNum != null, true,false)}" style="font-family:Arial;font-size:12px;font-weight:bold" value="Validate Promotion Codes"/><br></br>
+                                <apex:inputText value="{!validate_to_coupon}" size="50" html-placeholder="Enter Coupon Code" style="width: 15%;padding-left:5px;"/> &nbsp;&nbsp;&nbsp;
+                                <apex:commandLink value="Validate" action="{!ValidateCoupon}" reRender="CouponPb" status="Couponstatus" style="color:blue;"/>
+                                <apex:actionstatus id="Couponstatus">
+                                    <apex:facet name="start"> 
+                                        <img src="../img/loading.gif" style="padding-left:10px;"/>
+                                    </apex:facet> 
+                                </apex:actionstatus> 
+                            
+                    </td>
+                </tr>
+                <tr style="display:{!if(cpn_msg = 'NE' || cpn_msg = '','none','')};">
+                    <td>
+                        <apex:outputPanel rendered="{!IF(cpn_msg = 'NE',false,true)}" style="Color:Red;padding-left:10px;">{!cpn_msg }</apex:outputPanel>
+                    </td>
+                </tr>
+               
+                <tr style="display:{!if(assignedCoupons != null && assignedCoupons.size>0,'','none')};">
+                    <td style="padding-left:10px;padding-top:10px;">
+                        <apex:outputPanel >
+                            <apex:outputLabel ><b>Assign Validated Coupons</b></apex:outputLabel><br></br>
+                            <apex:outputLabel >The following promotions will be applied when the opportunity is commited.</apex:outputLabel><br></br>
+                        </apex:outputPanel>
+                    </td>
+                </tr>
+                </table>
+                
+            <br></br>
+            <apex:outputPanel layout="block" rendered="{!assignedCoupons != null && assignedCoupons.size>0}" style="margin-top:-15px;" >
+                
+                <table id="report" class="altrowstable myTable" style="margin-top:10px;width:99%;margin-left:10px;">
+                     <tr  class="headerRow">
+                        <th class="headerRow" style="width:35%;">Name</th>
+                        <th class="headerRow" style="width:10%;">Applied</th>
+                        <th class="headerRow" style="width:15%;">Alternate Service</th>
+                        <th class="headerRow" style="width:8%;">Templates</th>
+                        <th class="headerRow" style="width:8%;">Frequency</th>
+                        <th class="headerRow" style="width:10%;">Start Date</th>
+                        <th class="headerRow" style="width:10%;">Discount Type</th>
+                        <th class="headerRow" style="width:3%;"></th>
+                     </tr>
+                     <apex:variable var="rowIndex" value="{!0}"/>
+                     <apex:repeat value="{!assignedCoupons}" var="cl" > 
+                     <tr>
+                        <td>{!cl.Coupon_Code__c}</td>
+                        <td >
+                            <apex:outputPanel layout="block" rendered="{!IF(AND(NOT(ISNULL(cl.eligible_eval_plan_no__c)), NOT(ISNULL(cl.eligible_eval_service_no__c))) ,false,true)}">
+                                Any Charge
+                            </apex:outputPanel>
+                            <apex:outputPanel layout="block" rendered="{!IF(AND(NOT(ISNULL(cl.eligible_eval_plan_no__c)), NOT(ISNULL(cl.eligible_eval_service_no__c))) ,true,false)}">
+                                <a href="#"  onmouseout="hideTooltip('{!cl.credit_template_no__c}_1')" onmouseover="showTooltip('{!cl.credit_template_no__c}_1', 'Charge','Eligible Plan -{!cl.eligible_eval_plan_name__c}<br/>Eligible Services-{!cl.eligible_eval_service_name__c}')" >Specific Charge</a>
+                                <div class="toolTipWrapper" style="display:none" id="{!cl.credit_template_no__c}_1"></div>
+                            </apex:outputPanel>  
+                        </td>
+                        <td >{!cl.alt_service_no_2_apply_name__c}</td>
+                        <td>
+                            <apex:outputPanel rendered="{!cl.hasTemplate__c}">
+                            View All
+                            <span style="position: relative">
+                                <img src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}" align="right" width="16" height="16" title = "Templates" style="vertical-align: text-bottom;" onmouseout="hideTooltip('{!cl.Coupon_Code__c}')" onmouseover="showTooltip1('{!cl.Coupon_Code__c}','Templates','{!cl.Templates_Name__c}')"></img>
+                                <div class="toolTipWrapper" style="bottom: 17px; display:none" id="{!cl.Coupon_Code__c}"></div>
+                            </span>
+                            </apex:outputPanel>
+                        </td>
+                        <td>
+                            <apex:outputPanel layout="block" rendered="{!IF(cl.num_credits_required__c != null && cl.num_credits_required__c = 1,true,false)}">
+                                {!IF(cl.num_credits_required__c = 1, 'Once',IF(cl.num_credits_required__c <10000 , 'Multiple', 'No Limits'))}
+                                <a href="#" onclick="return false;" onmouseout="hideTooltip('{!cl.credit_template_no__c}')" onmouseover="showTooltip('{!cl.credit_template_no__c}', 'Frequency','Number of Credits - {!FLOOR(cl.num_credits_required__c)}<br/>Time between Credits months - {!FLOOR(cl.credit_interval_months__c)}')"> 
+                                  <span >{!IF(cl.num_credits_required__c = 1, 'Once',IF(cl.num_credits_required__c <10000 , 'Multiple', 'No Limits'))}</span>
+                                </a>
+                                 <div class="toolTipWrapper" style="display:none" id="{!cl.credit_template_no__c}"></div>
+                             </apex:outputPanel>  
+                        </td>
+                        <td>{!cl.Start_Date__c}</td>
+                        <td>
+                            <apex:outputPanel rendered="{!if(cl.flat_amount__c != null,true,false)}">
+                                {!IF(NOT(ISNULL(cl.flat_amount__c)),'Flat','Percent')}
+                                <span style="position: relative">
+                                    <img src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}" align="right" width="16" height="16" title = "Templates" style="vertical-align: text-bottom;"
+                                    onmouseout="hideTooltip('{!cl.credit_template_no__c}_2')"
+                                    onmouseover="showTooltip('{!cl.credit_template_no__c}_2', 'Discount','{!IF(NOT(ISNULL(cl.flat_amount__c)),'Discount Amount - '&TEXT(cl.flat_amount__c),'Percentage Plan - '&cl.percent_eval_plan_name__c&'<br>Percentage Service - '&cl.percent_eval_service_name__c&'<br>Discount Amount - '&TEXT(cl.percent_amount__c))}', '')"></img>
+                                    <div class="toolTipWrapper" style="bottom: 17px; margin-left: -25px; display:none" id="{!cl.credit_template_no__c}_2"></div>
+                                </span>
+                            </apex:outputPanel>
+                        </td>
+                        <td style="text-align:middle;">
+                            <apex:outputLink onclick="return  confirmDelete('{!rowIndex}');">
+                                 <apex:image url="{!URLFOR($Resource.Sim_JS, 'images/red_cross.png')}">
+                                  </apex:image>
+                            </apex:outputLink> 
+                            <apex:variable var="rowIndex" value="{!rowIndex+1}"/>   
+                        </td>
+                     </tr> 
+                     </apex:repeat>
+               </table>
+               <apex:actionFunction name="DeleteCoupon" action="{!DeleteCoupon}" reRender="CouponPb" status="status1">
+                    <apex:param name="couponRowIdx" assignTo="{!couponRowIdx}" value=""/> 
+                </apex:actionFunction>
+                
+             </apex:outputPanel>
+      </apex:outputPanel>
+      <apex:actionFunction name="saveData" status="LoadingStatus" action="{!ProceedtoNext}" rerender="CouponPb" oncomplete="{!jsToInvoke}">
+            <apex:param id="billintval" name="billingInterval" assignTo="{!billingInterval}" value="" /> 
+      </apex:actionFunction>
+      <apex:actionFunction name="actionRedirect" status="LoadingStatus" action="{!actionRedirect}" rerender="">
+            <apex:param id="billintval1" name="billingInterval1" assignTo="{!billingInterval}" value="" /> 
+      </apex:actionFunction>
+</apex:component>

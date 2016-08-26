@@ -1,0 +1,154 @@
+<apex:component controller="AriaPlanSelectionConfigCtrl" allowDML="true">
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.Chosen, 'chosen.jquery.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.Chosen, 'docsupport/prism.js')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.Chosen, 'docsupport/prism.css')}"/> 
+<apex:stylesheet value="{!URLFOR($Resource.Chosen, 'chosen.css')}"/>
+	<style> 
+	.planTable {
+	  	 width:100%; 
+	   border-collapse:collapse; 
+	}
+	.planheader td{
+	    color:#fff;
+	    line-height:26px;
+	    background-color:#a6afa2;
+	    padding-top:1px;
+	    
+	}
+	.planTable td{
+	
+	    padding-top:1px;
+	    border-width: 1px;
+	    border-style:inset;
+	}
+	.checkBoxStyleProfile  { 
+	    width: 17px;
+	    height: 17px;
+	}
+	.checkBoxStyleProfile1  { 
+	    width: 17px;
+	    height: 17px;
+	}
+	.checkBoxStyle{
+	    width: 17px;
+	    height: 17px;
+	}
+	.checkAllcheckbox{
+	    width: 18px;
+	    height: 16px;
+	}
+	.oddrowcolor{
+	    background-color:#FFFFFF;
+	}
+	.evenrowcolor{
+	    background-color:#d0e9f1;
+	}
+	</style>
+	<apex:actionstatus id="status">
+    <apex:facet name="start">
+        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 20%;opacity:.8;">
+            <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+            
+            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+        </div>
+    </apex:facet>
+</apex:actionstatus>  
+
+<apex:actionFunction name="nextPlans" action="{!nextPlans}" rerender="planSel" status="status"/>
+<apex:actionFunction name="previousPlans" action="{!previousPlans}" rerender="planSel" status="status"/>
+<apex:actionFunction name="firstPlans" action="{!firstPlans}" rerender="planSel" status="status"/>
+<apex:actionFunction name="lastPlans" action="{!lastPlans}" rerender="planSel" status="status"/>     
+	<apex:outputPanel id="planSel">	
+	<table width="100%" border="0" cellspacing="0" cellpadding="0" class="planTable">
+	<tr>
+	   	 <td colspan="4" style="text-align:center;height:25px;">
+	              	<apex:outputLink disabled="{!!hasPrevious}" onclick="firstPlans();return false;" value=""> <img id="firstPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/first_0.png')}" class="paggingIconExt" title="First"/> </apex:outputLink>
+	              &nbsp;<apex:outputLink disabled="{!!hasPrevious}" onclick="previousPlans();return false;" > <img id="prevPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/previous_0.png')}" class="paggingIconExt" title="Previous"/> </apex:outputLink>
+	              &nbsp;<span class="paggingText"> Showing {!recordCountFrom}-{!recordCountTo} of {!totalNoOfProducts} Products </span>&nbsp;<apex:outputLink disabled="{!!hasNext}" onclick="nextPlans();return false;" value=""> <img id="nextPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/next_0.png')}"  class="paggingIconExt" title="Next"/> </apex:outputLink>
+	              &nbsp;<apex:outputLink disabled="{!!hasNext}" onclick="lastPlans();return false;" > <img id="lastPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/last_0.png')}" class="paggingIconExt" title="Last"/> </apex:outputLink>
+             </td> 
+         </tr>
+		<tr class="planheader">
+		  <td align="center" width="30.7%"><b>{!$Label.ARIA_GENERAL_CONFIG_PLAN}</b></td>
+		  <td align="center" width="10%"><b>Plan Type</b></td>
+		  <td align="center" width="8%" style="display:none;"><b>Is Promotional</b></td>
+		  <td align="center" width="8.5%">
+		       <b>{!$Label.ARIA_GENERAL_CONFIG_ALL_PROFILES}</b> 
+		       <apex:inputcheckbox title="Select all plan" styleclass="checkAllcheckbox" value="{!checkAllCheckBoxes}" onchange="checkallcheckboxes()" />
+		  </td>
+		  <td align="center" width="40%"><b>{!$Label.ARIA_GENERAL_CONFIG_SELECT_PROFILE}</b></td> 
+		</tr> 
+		 
+		 <apex:variable var="planRow" value="{!0}" /> 
+	    <apex:repeat value="{!availablePlans}" var="p">   
+	    
+	     <tr class="{!IF(MOD(planRow,2)=0,'evenrowcolor','oddrowcolor')}"> 
+	         <td width="30.7%" style="{!if(p.planType='S','padding-left: 30px;','')}">&nbsp;&nbsp;&nbsp;<b>{!p.planName}</b></td>
+	         <td align="center" width="10%">{!p.planType}</td>
+	         <td width="8.5%" align="center"><apex:inputCheckbox id="chkAllProfiles" styleClass="checkBoxStyle" value="{!p.isAllProfiles}" onchange="showHideElement(this.checked,'.chosen-container',this.parentNode)"/></td>
+	         <td width="40%" style="padding-left:2px;" >
+	           <div>
+	             <apex:selectList style="width:430px;" tabindex="3" styleClass="chosen-select" title="{!$Label.ARIA_GENERAL_CONFIG_CHOOSE_PROFILE}" size="1" multiselect="true" value="{!p.profileIds}">
+	                 <apex:selectOptions value="{!profileOptions}"></apex:selectOptions>
+	             </apex:selectList>
+	              </div> 
+	        </td>
+	        <apex:variable var="planRow" value="{!planRow + 1}" />     
+	     </tr>
+	     
+	   </apex:repeat> 
+	<tr>
+	    <td colspan="5" align="center">
+	      <apex:commandButton action="{!savePlanVisibility}" value="{!$Label.ARIA_GENERAL_CONFIG_SAVE}" reRender="planSelectionTab" status="status" style="margin-top:12px;width: 63px;font-size: 16px;"/>
+	      </td>
+	  </tr>
+	</table>
+	
+	<script>
+	  function checkallcheckboxes(){
+        if($('.checkAllcheckbox').prop("checked") == false){
+            $.each($('.checkBoxStyle'),function(i,v){
+                 $(v).attr("checked",false);
+                 showHideElement(this.checked,'.chosen-container',this.parentNode);
+            });
+        }
+        if($('.checkAllcheckbox').prop("checked") == true){
+            $.each($('.checkBoxStyle'),function(i,v){ 
+                $(v).attr("checked",true);
+                showHideElement(this.checked,'.chosen-container',this.parentNode);
+            });
+        }       
+    } 
+       function hideProfilesInput(){
+          $.each($('.checkBoxStyle'),function(i,v){
+              if($(v).attr("checked")){ 
+                   $(v).parent().next("td").children("div").hide();
+               }
+          });
+       }
+       
+       function showHideElement(isShow,selector,td){
+       
+           if(isShow == true){
+           
+               $(td).next("td").children("div").hide();
+           }
+           else{
+               $(td).next("td").children("div").show();
+           }
+       }
+       var config = {
+         '.chosen-select'           : {},
+         '.chosen-select-deselect'  : {allow_single_deselect:true},
+         '.chosen-select-no-single' : {disable_search_threshold:10},
+         '.chosen-select-no-results': {no_results_text:'Oops, nothing found!'},
+         '.chosen-select-width'     : {width:"95%"}
+       }
+       for (var selector in config) {
+         $(selector).chosen(config[selector]);
+       }
+       hideProfilesInput();
+    </script>
+    </apex:outputPanel>
+</apex:component>

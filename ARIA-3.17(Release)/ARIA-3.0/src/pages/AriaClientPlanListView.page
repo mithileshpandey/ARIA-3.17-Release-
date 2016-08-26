@@ -1,0 +1,27 @@
+<apex:page tabStyle="Client_Plan__c" sidebar="false" id="ClientPlanListView" controller="AriaClientPlansRefresh">
+<apex:pagemessages />
+<c:AriaMDAPIRemoteSiteSetting ></c:AriaMDAPIRemoteSiteSetting>
+<apex:form >
+<!--  <apex:commandbutton value="Refresh Client Plans from Aria" action="{!refreshClientPlans}" title="To refresh Salesforce with all the latest Client Plan information from Aria"/>-->
+<apex:commandbutton value="{!$Label.ARIA_PLAN_VIEW_REFRESH}" action="{!refreshClientPlans}" title="To refresh Salesforce with all the latest Client Plan information from Aria"/>
+ &nbsp;<apex:commandbutton value="Create/Update Plan Supp Fields" action="{!refreshSuppFields}" title="To refresh Salesforce with all the latest Client Plan information from Aria"/>
+ 
+</apex:form>
+<br/>
+        <!-- Tab pannel added by MP on 1/9/2012 -->
+         <apex:tabPanel switchType="client" selectedTab="clientPlans" id="clientPlansView"> 
+             <apex:tab label="{!$Label.ARIA_CLIENT_PLAN_TEXT}" name="clientPlans" id="tab_clientplans"> 
+                <c:AriaPlanViewer width="100%" height="400px" planId="" />
+             </apex:tab>
+              <apex:tab label="{!$Label.ARIA_CLIENT_PLAN_ITEMS}" name="items" id="tab_items">
+                  <c:AriaitemViewer width="100%" height="400px" itemId=""/>
+              </apex:tab>
+              <apex:tab label="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_TEMPLATES}" name="templates" id="tab_templates">
+                    <br />
+                  <c:AriaTemplateViewer width="100%" height="400px" templateId=""/>
+              </apex:tab>
+         </apex:tabPanel>
+         <script>
+         addEvent(document.body,"mousedown",function(a){ListPaginator.hideSelector('item_paginator_rpp_target')},!0);
+         </script>
+</apex:page>

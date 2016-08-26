@@ -1,0 +1,56 @@
+<apex:page standardController="Quote" extensions="AriaPlanSaveQuotePdfController" showHeader="false">
+ <apex:pageMessages />
+    
+    <apex:form id="theFormToSaveToQuote">
+        
+        <script >
+            function closeSavePdf()
+            {
+                var surl="{!HTMLENCODE(sfdcURL)}";
+                surl= surl.replace(/amp;/g,'');
+                parent.window.opener.location.href=surl;
+                window.close();
+            }
+        </script>
+
+      <!-- <apex:pageBlock id="messageBlock1">
+        <apex:outputText value="{!errMessage}"/>
+        </apex:pageBlock>  -->
+    
+    
+    <apex:iframe src="/apex/AriaPlanQuotePdf?id={!Quote.id}" height="100%" scrolling="true" id="theIFrame" />
+    
+    
+     <!-- <div style="position:absolute;bottom:0; width:100%" > -->
+     <apex:pageBlock id="theBlock">
+        <apex:actionFunction name="methodSavePdf" action="{!savePdf}"  oncomplete="javascript:closeSavePdf();"/>
+        <apex:actionFunction name="methodSaveAndEmailPdf" action="{!saveAndEmailQuote}"  oncomplete="javascript:closeSavePdf();" rerender="theBlock, theFormToSaveToQuote"/>
+        <apex:inputHidden value="{!sfdcURL}" id="theHidden"/>
+        
+         <table border="0" width="20%"  cellspacing="0" cellpadding="0" align="center" >
+             <tr>
+                <td><apex:commandButton id="btnSavetoQuote" value="{!$Label.ARIA_PLAN_SAVE_TO_QUOTE}" action="{!savePdf}" onclick="methodSavePdf(); return false;"  /> </td>
+                <td><apex:commandButton id="saveAndEmailQuote" value="{!$Label.ARIA_PLAN_SAVE_AND_EMAIL_QUOTE}" action="{!saveAndEmailQuote}" onclick="methodSaveAndEmailPdf(); return false;" /> </td> 
+                <td><apex:commandButton id="closePdf"  value="{!$Label.ARIA_PLAN_SAVE_CLOSE}" onclick="window.close();" action="{!closePdf}"/></td>
+             </tr>
+         </table>
+        <!-- <apex:outputPanel rendered="{!IF(errMessage=='test1',false,true)}"> -->
+            <script language="javascript">
+                //if(document.all) {
+                    var val = document.getElementById('theIFrame');
+                    val.style.height="600px";
+                //}
+                //alert("{!$Component.theFormToSaveToQuote.theBlock.btnSavetoQuote}");
+                //var b =  document.getElementById("{!$Component.theFormToSaveToQuote.theBlock.btnSavetoQuote}");
+                //var b =  document.getElementById("{!$Component.theFormToSaveToQuote.theBlock.closePdf}");
+                //b.click();
+                 
+            </script>
+        <!--  </apex:outputPanel> -->
+        
+    </apex:pageBlock> 
+     <!-- </div> --> 
+    
+    </apex:form>
+
+</apex:page>

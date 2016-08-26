@@ -1,0 +1,12 @@
+<apex:page standardController="Opportunity">
+  <h1>Please Wait</h1>
+    Redirecting ....
+  <script>
+    if ( (typeof window.sforce != 'undefined') && (window.sforce!=null) ) {
+       sforce.one.navigateToURL('/apex/ASF3__Aria_S1_EOM_New_Quote?id={!Opportunity.id}');
+    }
+    else {
+      alert('Not in SF1 :(');
+    }
+ </script>
+</apex:page>

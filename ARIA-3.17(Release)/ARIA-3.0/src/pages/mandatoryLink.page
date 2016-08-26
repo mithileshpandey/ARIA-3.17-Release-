@@ -1,0 +1,5 @@
+<apex:page showHeader="false" controller="mandatoryLinkController" >
+     <apex:form id="theForm">
+         <apex:commandButton value="Validate Link" style="margin:200px 0px  0px 200px" action="{!saveLink}"/>
+     </apex:form>
+</apex:page>

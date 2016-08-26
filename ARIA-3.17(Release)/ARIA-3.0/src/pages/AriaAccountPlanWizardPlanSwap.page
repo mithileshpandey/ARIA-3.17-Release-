@@ -1,0 +1,295 @@
+<apex:page controller="AriaAccountPlanWizardPlanSelectionCtrl" action="{!initSwapPlans}" docType="html-5.0" sidebar="false" showHeader="false" tabStyle="Account" id="thePage" >
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/> 
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css"/> 
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/AriaAccountPlanWizard.css')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/tooltip.css')}"/>
+<style>
+a{
+	color:blue;
+}
+.ui-dialog-buttonset{
+	width:100%;
+}
+.leftFloatClass{
+	background: #999 !important;
+    color: #fff !important;
+}
+.rightFloatClass{
+	float: right !important;
+	background: #428BCA !important;
+    color: #fff !important;
+    border-color: #428BCA !important;
+}
+
+.overlayDialog .topLeft {
+    background: #f8f8f8;
+    display: none !important;
+}
+.buttonPanel {
+         padding-top: 11px;
+         background: #f8f8f8;
+         padding-bottom: 2px;
+               }
+ .scrollDiv {
+ 	min-height: 330px !important;
+	max-height: 330px !important;
+	overflow-y: auto;
+}
+.taxdetails-tooltip.right:after {
+    left: auto;
+    right: 5px;
+}
+
+</style>
+<script type="text/javascript">
+$j = jQuery.noConflict(); 
+var oldPlanNo = '{!replacedPlanNo}'; 
+//var specialChars = "<>@!#$%^&*()_+[]{}?:;|'\"\\,./~`-=";
+var specialChars = "<>@!#$%^&*()+[]{}?:;|'\"\\,./~`=";
+function containSpecialChar(string){
+    for(i = 0; i < specialChars.length;i++){
+        if(string.indexOf(specialChars[i]) > -1){
+            return true
+        }
+    }
+    return false;
+}
+function clearSearch(){
+        //backup selected plans
+        $j('input[id$=searchTextID]')[0].value='';
+        searchPlansJS();
+}
+
+
+function searchPlansJS(){
+        if(containSpecialChar($j('input[id$=searchTextID]')[0].value)){
+		    alert('Search string contains speacial chars. Please try again.');
+		    showGenericDialog('Alert !','Search string contains speacial chars. Please try again.');
+		    $j('input[id$=searchTextID]')[0].value='';
+		    $j('input[id$=searchTextID]')[0].focus();
+		    return;
+		}
+        searchPlans();
+}
+
+function validateSwap(){
+	if($j("input[type='radio'][name='planRadio']:checked").length!=0){
+			var planNo = $j("input[type='radio'][name='planRadio']:checked")[0].value;
+            confirmReplacePlan(planNo);
+            
+    }else{
+            showGenericDialog('Alert ','No plan to replace');
+    }
+
+}
+
+function confirmReplacePlan(planNo){
+         
+       $j('#confirmReplaceDialogBox').dialog({
+               resizable: false,
+               height:180,
+               width:450,
+               modal: true,
+               open: function(e){
+                       $j(this).html('Are you sure you wish to replace this plan?');
+               },
+               buttons: [
+                       {
+                               text: "Yes",
+                               click: function() {
+                                       $j(this).dialog("close");
+                                       //alert(planNo);
+                                       //getNewPlanReplacement(planNo);
+                                       //closeDialog will pass control to parent window, from where getNewPlanReplacement() will be called
+                                       console.log('planNo='+planNo+'---oldPlanNo='+oldPlanNo+'----- {!replacedPlanNo}='+{!replacedPlanNo});
+                                       replacePlan(planNo, oldPlanNo);
+                                       
+                               }
+                       },
+                       {
+                               text: "No",
+                               "class": 'rightFloatClass',
+                               click: function() {
+                                       $j(this).dialog("close");
+                               }
+                       }
+               ],
+               title: 'Confirm'
+       }); 
+       
+}
+
+function showGenericDialog(title,htmlBody,height,width){
+	 var ht=180;
+	 var wt=450;
+	 
+	 if(typeof(height)!="undefined"){
+	        ht=height;
+	 }
+	 if(typeof(width)!="undefined"){
+	        wt=width;
+	 }
+	     
+	  $j('#genericDialogBox').dialog({
+            resizable: false,
+            height:ht,
+            width:wt,
+            modal: true,
+            open: function(e){
+                    $j(this).html(htmlBody);
+            },
+            buttons: [
+                    {
+                            text: "Ok",
+                            "class": 'rightFloatClass',
+                            click: function() {
+                                    $j(this).dialog("close");
+                            }
+                    }
+            ],
+            title: title
+    });  
+}
+
+function closeDailog(){
+	//$j('#close-button').attr("data-newPlanNo",planNo);
+ 	$j('#close-button').click();
+ }
+ 
+ 
+$j(document).ready(function() {
+
+      $j('input[id$=searchTextID]').keypress(function (e) {
+         if (e.keyCode == '13') {
+             e.preventDefault();
+             searchPlansJS();
+             return false;
+         }
+      });
+                    
+       
+});     
+    
+    
+</script>
+<div class="scrollDiv">
+<apex:form >
+	<apex:actionstatus id="FormLoadingStatus">
+	    <apex:facet name="start">
+	        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 15%;opacity:.8;">
+	            <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+	            
+	            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+	        </div>
+	    </apex:facet>
+	</apex:actionstatus>
+	<apex:actionFunction name="searchPlans" action="{!searchPlansForSwap}" oncomplete="" rerender="swapPlanID,clearSearchText" status="LoadingStatus"/>
+	<apex:actionFunction name="nextPlans" action="{!nextPlansSwap}" oncomplete="" rerender="swapPlanID,paginationBlock1" status="LoadingStatus"/>
+	<apex:actionFunction name="previousPlans" action="{!previousPlansSwap}" oncomplete="" rerender="swapPlanID,paginationBlock1" status="LoadingStatus"/>
+	<apex:actionFunction name="firstPlans" action="{!firstPlansSwap}" oncomplete="" rerender="swapPlanID,paginationBlock1" status="LoadingStatus"/>
+	<apex:actionFunction name="lastPlans" action="{!lastPlansSwap}" oncomplete="" rerender="swapPlanID,paginationBlock1" status="LoadingStatus"/>
+	
+	<apex:actionFunction name="replacePlan"  action="{!replacePlan}" oncomplete="closeDailog();" status="FormLoadingStatus">
+		<apex:param name="newPlanNum" value="" assignTo="{!replacementPlanNo}" />
+		<apex:param name="oldPlanNum" value="" assignTo="{!replacedPlanNo}" />
+	</apex:actionFunction>
+
+	<apex:outputPanel id="swapPlanID">
+		<table style="width:100%;">
+			<tr>
+				<th colspan="3">Swap Plan</th>
+			</tr>
+			<tr>
+				<td style="width:33%;">
+					<apex:inputText id="searchTextID" value="{!searchSwapPlanText}" style="width: 50%;padding-top: 0px;padding-bottom: 0px;height: 25px;"/>
+			        <input type="button" value="search" style="width: 15%;height: 28px;padding-bottom: 0px;padding-top: 0px;border-radius: 4px;color: black;background: white;" onclick="searchPlansJS()"/>
+			        <apex:outputPanel id="clearSearchText">
+				         <apex:outputPanel rendered="{!searchSwapPlanText!=''}">
+				         	<a onclick="clearSearch();"> &nbsp;<u>clear search</u></a>
+				         </apex:outputPanel>
+			        </apex:outputPanel>
+				</td>
+				<td style="width:33%;">
+					<apex:outputPanel id="paginationBlock1" layout="">
+						<script>
+							hasNextSwap={!hasNextSwap};
+							hasPreviousSwap={!hasPreviousSwap};
+						</script>
+						<table>
+							<tr>
+				                <td style="padding-left:0px !important;padding-right:2px !important;"><a href="#" onclick="if(!hasPreviousSwap) return false; firstPlans();"><img id="firstPlanID1" src="{!if(hasPreviousSwap,URLFOR($Resource.Sim_JS, 'images/first_0.png'),URLFOR($Resource.Sim_JS, 'images/first_1.png'))}" class="paggingIconExt" title="First"/></a></td>
+				                <td style="padding-left:0px !important;padding-right:0px !important;"><a href="#" onclick="if(!hasPreviousSwap) return false; previousPlans();"><img id="prevPlanID1" src="{!if(hasPreviousSwap,URLFOR($Resource.Sim_JS, 'images/previous_0.png'),URLFOR($Resource.Sim_JS, 'images/previous_1.png') )}" class="paggingIconExt" title="Previous"/></a></td>
+				                <td style="padding-left:0px !important;padding-right:0px !important;"><span class="paggingText"> Showing {!fromRecSwap} - {!toRecSwap}  of {!totalNoOfPlansSwap} Plans </span></td>
+				                <td style="padding-left:0px !important;padding-right:0px !important;"><a href="#" onclick="if(!hasNextSwap) return false; nextPlans();"><img id="nextPlanID1" src="{!if(hasNextSwap,URLFOR($Resource.Sim_JS, 'images/next_0.png'),URLFOR($Resource.Sim_JS, 'images/next_1.png'))}"  class="paggingIconExt" title="Next"/></a></td>
+				                <td style="padding-left:0px !important;padding-right:0px !important;"><a href="#" onclick="if(!hasNextSwap) return false; lastPlans();"><img id="lastPlanID1" src="{!if(hasNextSwap,URLFOR($Resource.Sim_JS, 'images/last_0.png'),URLFOR($Resource.Sim_JS, 'images/last_1.png'))}" class="paggingIconExt" title="Last"/></a></td>
+				        	</tr>
+				        </table>
+					</apex:outputPanel>
+				</td>
+				<td style="width:33%;">
+					<apex:actionstatus id="LoadingStatus">
+			           <apex:facet name="start">
+			               <img src="../img/loading.gif" style="padding-left: 57px; padding-right: 5px; margin-top: 5px;"/>
+			           </apex:facet> 
+			       	</apex:actionstatus>
+				</td>
+			</tr>
+			
+		</table>
+		<table width='100%' class='altrowstable' id='alternatecolor_sd'>
+			<tr>
+				<th class='gradiantHeader' align='center' style="width: 5%;">Select</th>
+				<th class='gradiantHeader' align='center'>PlanName</th>
+				<th class='gradiantHeader' style="width: 15%;">Billing Interval</th>
+				<th class='gradiantHeader' style='text-align:right;padding-right:5px !important;width: 15%;'>List Price</th>
+				<th class='gradiantHeader' style='text-align:right;padding-right:5px !important;width: 15%;'>Total</th>
+			</tr>
+			<apex:variable value="{!1}" var="rowNum"/>
+			<apex:repeat var="plan" value="{!planInclWrapperList}">
+				<tr class="testClone {!IF((MOD(rowNum,2) == 0),'evenrowcolor','oddrowcolor')}">
+					<td><input type='radio' name='planRadio' value="{!plan.planNo}"/></td>
+					<td>{!plan.planName}</td>
+					<td>{!plan.billIntLabel}</td>
+					<td style='text-align:right;padding-right:5px !important;'>{!plan.ListPrice}</td>
+					
+					<apex:variable value="{0,number,###,###,###,##0.00}" var="vformat"/>
+					<td style='text-align:right;padding-right:5px !important;'>
+						<apex:outputText value="{!vformat}">
+                         <apex:param value="{! plan.ListPrice + plan.ListPrice * plan.tax/100 }"/>
+                       </apex:outputText>
+						<span class="taxTotal">
+                           	<img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" title = "Tax details to be shown" style="vertical-align: text-bottom;"/>
+							<div class="taxdetails-tooltip right" style="margin-left:-90px;">
+								<strong>Tax Amount<br/> 
+									<apex:outputText styleClass="taxAmt" value="{!vformat}">
+                                        <apex:param value="{!(plan.ListPrice * plan.tax/100) }"/>
+                                    </apex:outputText>
+								 </strong>
+							</div>
+						</span>
+					</td>
+				</tr>
+				<apex:variable var="rowNum" value="{!rowNum + 1}"/>  
+			</apex:repeat>
+		</table>
+	</apex:outputPanel>
+		
+</apex:form>
+</div>	
+	<div class="buttonPanel">
+		   <input type="button" value="Cancel" class="button white" style="float:left" onclick=""/>
+		   <input type="button" value="Done" class="button blue" onclick="validateSwap();"/>
+		   <input id="close-button" type="button" value="Save" style="display:none;"/>
+		   
+		   <br/><br/>
+		</div> 
+
+ <div id="replaceDialogBox"></div>
+<div id="cancelDialogBox"></div>
+<div id="confirmReplaceDialogBox"></div>
+<div id="confirmCancelDialogBox"></div>
+<div id="genericDialogBox"></div>
+
+</apex:page>

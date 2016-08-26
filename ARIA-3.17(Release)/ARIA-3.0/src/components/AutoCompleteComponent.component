@@ -1,0 +1,147 @@
+<apex:component access="global" controller="AutoCompleteMainController"> 
+	<!-- JQuery Files --> 
+	<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/themes/base/jquery-ui.css" type="text/css" media="all" /> 
+	<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.5.min.js" type="text/javascript"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/jquery-ui.min.js" type="text/javascript"></script>
+
+  	<!-- Attributes Required For Component -->
+   	<apex:attribute name="autoAccountId" description="Any additional fields youd like to search and include in the display." type="String" />
+   	<apex:attribute name="autoContactId" description="Any additional fields youd like to search and include in the display." type="String" />
+   	<apex:attribute name="autoContactName" description="Any additional fields youd like to search and include in the display." type="String" />
+   	<apex:attribute name="autoContactType" description="Type of contact whether it is statement or billing" type="String"/>
+   	<style>
+   	  	.inputForm{
+      		/*border-radius:5px;
+      		-moz-border-radius:5px;
+      		-webkit-border-radius:5px;
+      		width:250px;
+      		height:21px;*/
+   		}
+    	.ui-autocomplete-loading { background: white url(../img/loading.gif) right center no-repeat; }
+    	.ui-state-hover, .ui-widget-content .ui-state-hover, .ui-widget-header .ui-state-hover, .ui-state-focus, .ui-widget-content .ui-state-focus, .ui-widget-header .ui-state-focus {
+		   border: 1px solid #ffffff/*{borderColorHover}*/;
+		   background: #eeeeee;
+		   font-weight: normal/*{fwDefault}*/;
+		   color: #212121/*{fcHover}*/;
+		}
+		
+		.ui-state-hover, .ui-widget-content .ui-state-hover, .ui-widget-header .ui-state-hover, .ui-state-focus, .ui-widget-content .ui-state-focus, .ui-widget-header .ui-state-focus {
+		   /* border: 1px solid #999999/*{borderColorHover}; */
+		   color: #212121/*{fcHover}*/;
+		}
+  	</style>
+  	
+  	<script type='text/javascript'>
+    var j$ = jQuery.noConflict(); 
+    j$(document).ready(function() {
+        var sObjects;
+        var queryTerm;
+        var ele = document.getElementById('{!autoContactName}'); 
+        j$(ele).change(function() {
+			if(ele.value=='' || ele.length<1){
+		 		document.getElementById('{!autoContactId}').value = '';
+		 		//hide the edit link
+		 		var contactType='{!autoContactType}';
+                if(contactType=='stmtContact'){
+                	var stmtObj = j$('#editStmtContactLink');
+			 		if(typeof(stmtObj) != "undefined"){
+			 			j$('#editStmtContactLink').hide();
+			 		}
+               }else{
+					var bilObj = j$('#editBillingContactLink');
+			 		if(typeof(bilObj) != "undefined"){
+			 			j$('#editBillingContactLink').hide();
+			 		}                        
+                }
+	                    
+		 	}
+		});
+        j$(ele).autocomplete({
+            minLength: 1,
+            source: function(request, response) { 
+                        queryTerm = request.term;
+                        ASF3.AutoCompleteMainController.findSObjects(request.term, '{!autoAccountId}', function(result, event){
+                            if(event.type == 'exception') {
+                                 alert(event.message);
+                            } else {
+                            	 if(result == ''){
+                            	 	document.getElementById('{!autoContactId}').value = '';
+                            	 }
+                            	 
+                                 sObjects = result;
+                                 response(sObjects); 
+                            }
+                        });
+                   },
+            focus: function( event, ui ) {
+	                    varTitle = j$('<textarea />').html(formatedSuggestValue(ui.item)).text();
+	                    j$(this).val(varTitle);
+	                    return false;
+                    },
+            select: function( event, ui ) {
+            		    varTitle1 = j$('<textarea />').html(formatedSuggestValue(ui.item)).text();	
+                        j$(this).val(varTitle1);
+                        document.getElementById('{!autoContactId}').value = ui.item.Id;
+                        //show the edit link
+                        var contactType='{!autoContactType}';
+                        if(contactType=='stmtContact'){
+                        	var stmtObj = j$('#editStmtContactLink');
+					 		if(typeof(stmtObj) != "undefined"){
+					 			j$('#editStmtContactLink').show();
+					 		}
+                        }else{
+							var bilObj = j$('#editBillingContactLink');
+					 		if(typeof(bilObj) != "undefined"){
+					 			j$('#editBillingContactLink').show();
+					 		}                        
+                        }
+                        
+                        return false;
+                    },
+         })
+         .data( 'autocomplete' )._renderItem = function( ul, item ) { 
+            var entry = '<a>' + formatedSuggestValue(item) + '</a>';
+            //entry = entry.toUpperCase().replace(queryTerm.toUpperCase(), '<b>' + queryTerm.toUpperCase() + '</b>');
+           	document.getElementById('{!autoContactId}').value = '';
+            return j$( '<li></li>' ).data( 'item.autocomplete', item ).append( entry ).appendTo( ul );
+        };
+    });
+
+	function formatedSuggestValue(obj){
+ 		var optionValue='';
+  		var strAddress='';
+    	
+    	if(!(typeof obj.FirstName === 'undefined' || obj.FirstName === null)){
+			optionValue = optionValue + toTitleCase(obj.FirstName) +' ';
+  		}
+  		if(!(typeof obj.LastName === 'undefined' || obj.LastName === null)){
+  			optionValue = optionValue + toTitleCase(obj.LastName) + '  ';
+  		} 
+  		if(!(typeof obj.Email === 'undefined' || obj.Email === null)){
+ 			optionValue = optionValue + obj.Email + '  ';
+		}
+		if(!(typeof obj.MailingStreet === 'undefined' || obj.MailingStreet === null)){
+ 			optionValue = optionValue + obj.MailingStreet + ', ';
+		}
+		if(!(typeof obj.MailingCity === 'undefined' || obj.MailingCity === null)){
+ 			optionValue = optionValue + obj.MailingCity + ', ';
+		}
+		if(!(typeof obj.MailingState === 'undefined' || obj.MailingState === null)){
+ 			optionValue = optionValue + obj.MailingState + ', ';
+		}
+		if(!(typeof obj.MailingPostalCode === 'undefined' || obj.MailingPostalCode === null)){
+ 			optionValue = optionValue + obj.MailingPostalCode;
+		}
+		if(optionValue.endsWith(', ') || optionValue.endsWith(' - ')) {
+		  optionValue = optionValue.substring(0,optionValue.length-2);
+		}
+		optionValue = optionValue.trim();
+  		return optionValue;
+  	}
+  	
+  	function toTitleCase(str) {
+    	return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+	}
+  </script>
+  <apex:inputHidden id="autoContactId" />
+</apex:component>

@@ -1,0 +1,357 @@
+<apex:page sidebar="false" showHeader="false"   standardController="Opportunity" extensions="Aria_S1_EOM_AccountPlanSelectionCtr"  id="billingContacts">
+<apex:stylesheet value="{!URLFOR($Resource.sf_resources,'styles/main.css')}"/>
+<apex:includeScript value="{!URLFOR($Resource.sf_resources,'scripts/jquery.js')}"/>
+<div id="myCurtain" class="requiredLoaderBG" style="display:none;"></div>
+<apex:form id="addContactList">
+<style>
+    .errorText{
+        border: 2px solid #9E5645 !important;
+        background-color: #EBCABE !important;
+    }
+    #datePicker{
+        display:none;
+    }
+</style>
+    <div class="blue-header">
+            <div class="left-button" onclick="$('#myCurtain').show(); cancelNewContact();">Cancel</div>
+            <div class="right-button" onclick="doneClick();">Done</div>
+    </div>
+    <div class="page-header context-account">
+        <h1>New Billing Contact</h1>
+        <p class="title truncate">for {!opportunityObj.Name}</p>
+    </div>
+    <div class="error-message" style="display:none;" id="errorMessageBlock">
+        <div class="row group error">
+            <div class="col col-button span_4_of_4">
+                <div class="error-body">
+                    <div class="error-title" id="msgDetails"></div>
+                    <div class="close-button" onclick="clearError();"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="new-contact">
+        <div class="row">
+            <div class="col col-custom span_6_of_12">
+                <span class="title-combo" id="salutation-label">Salutation</span>
+                <div class="styled-select">
+                    <apex:selectList id="salutation" onchange="checkSalutation();" value="{!selectedContact.Salutation}" size="1" required="true">
+                      <apex:selectOptions value="{!salutation}"/>
+                    </apex:selectList>
+                </div>
+            </div>
+         </div>
+       
+       <div class="row">
+            <div class="col col-custom span_6_of_12">
+                <span class="title-combo" id="firstName-label">First Name</span>
+                <div class="form-control">
+                     <apex:inputText styleClass="text-input" id="firstName" onchange="checkFirstName();" maxlength="40" value="{!selectedContact.FirstName}"/>
+                </div>
+            </div>
+
+            <div class="col col-custom span_6_of_12">
+                <span class="title-combo" id="lastName-label">Last Name</span>
+                 <div class="form-control">
+                     <apex:inputText styleClass="text-input" id="lastName" onchange="checkLastName();"  maxlength="40" value="{!selectedContact.LastName}"/>
+                 </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col col-custom span_12_of_12">
+                <span class="title-combo" id="title-label">Title</span>
+                <div class="form-control">
+                      <apex:inputText id="title" styleClass="text-input" onchange="checkTitle();"  maxlength="100" value="{!selectedContact.Title}"/>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col col-custom span_12_of_12">
+                <span class="title-combo" id="mailingSrteet-label">Mailing Street</span>
+                <div class="form-control">
+                    <apex:inputText id="mailingSrteet" styleClass="text-input" onchange="checkMailingSrteet();"  maxlength="120" value="{!selectedContact.MailingStreet}"/>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col col-custom span_12_of_12">
+                <span class="title-combo" id="mailingCity-label">Mailing City</span>
+                <div class="form-control">
+                      <apex:inputText id="mailingCity" styleClass="text-input" maxlength="40" onchange="checkMailingCity();"  value="{!selectedContact.MailingCity}"/>
+                </div>
+            </div>
+        </div>
+
+        
+       <div class="row">
+            <div class="col col-custom span_6_of_12">
+                <span class="title-combo" id="state-label">Mailing State/Province</span>
+                <div class="form-control">
+                    <apex:inputField rendered="{!!isContactAddressPicklistEnabled}" id="state" styleClass="text-input"  onchange="checkState('state');"  value="{!selectedContact.MailingState}"/>
+                    <div id="stateDiv">
+                        <apex:inputField rendered="{!isContactAddressPicklistEnabled}" id="statePick" styleClass="text-input"  onchange="checkState('statePick');"  value="{!selectedContact['MailingStateCode']}"/>
+                    </div>
+                </div>
+            </div>
+            <div class="col col-custom span_6_of_12">
+                <span class="title-combo" id="zipCode-label" >Mailing Zip/Postal Code</span>
+                <div class="form-control">
+                    <apex:inputText id="zipCode" styleClass="text-input" maxlength="20"  onchange="checkZipCode();"  value="{!selectedContact.MailingPostalCode}"/>
+                </div>
+            </div>
+        </div> 
+        <div class="row">
+            <div class="col col-custom span_12_of_12">
+                <span class="title-combo" id="mailingCountry-label" >Mailing Country</span>
+                <div class="form-control">
+                
+                     <apex:inputText rendered="{!!isContactAddressPicklistEnabled}" id="mailingCountry" styleClass="text-input"  onchange="checkMailingCountry('mailingCountry');"  value="{!selectedContact.MailingCountry}"/>
+                     <apex:inputField rendered="{!isContactAddressPicklistEnabled}" id="mailingCountryPick" styleClass="text-input"  onchange="checkMailingCountry('mailingCountryPick');adjustStateClass('statePick');"  value="{!selectedContact['MailingCountryCode']}"/>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <apex:actionFunction name="createNewContact" action="{!createNewContact}">
+    </apex:actionFunction>  
+    <apex:actionFunction name="cancelNewContact" action="{!cancelNewContact}">
+    </apex:actionFunction>  
+    
+</apex:form>
+<script>
+    function adjustStateClass(statePick){
+        var statePickObj = document.getElementById('billingContacts:addContactList:'+statePick);
+        $(statePickObj).addClass('text-input');
+    }
+    function checkSalutation(){
+        var flag = true;
+        clearError();
+        var salutation = document.getElementById('billingContacts:addContactList:salutation');
+        if(salutation.value.trim() =="--None--" ){
+                console.log('value is invalid');
+                $(document.getElementById('billingContacts:addContactList:salutation')).addClass('errorText');
+                $('#msgDetails').text("Please select salutation.");
+                $('#salutation-label').addClass('error-label');
+                $('#errorMessageBlock').show();
+                flag = false;
+            }
+        return flag;
+    }
+    function checkFirstName(){
+        var flag = true;
+        clearError();
+        var firstName = document.getElementById('billingContacts:addContactList:firstName');
+        if(firstName.value == null || firstName.value.trim() =="" ){
+                console.log('value is invalid');
+                $(document.getElementById('billingContacts:addContactList:firstName')).addClass('errorText');
+                $('#msgDetails').text("Please enter first name.");
+                $('#firstName-label').addClass('error-label');
+                $('#errorMessageBlock').show();
+                flag = false;
+            }
+        return flag;
+    }
+    function checkLastName(){
+        var flag = true;
+        clearError();
+        var lastName = document.getElementById('billingContacts:addContactList:lastName');
+        if(lastName.value == null || lastName.value.trim() =="" ){
+                console.log('value is invalid');
+                $(document.getElementById('billingContacts:addContactList:lastName')).addClass('errorText');
+                $('#msgDetails').text("Please enter last name.");
+                $('#lastName-label').addClass('error-label');
+                $('#errorMessageBlock').show();
+                flag = false;
+            }
+        return flag;
+    }
+    function checkTitle(){
+        var flag = true;
+        clearError();
+        var title = document.getElementById('billingContacts:addContactList:title');
+        if(title.value == null || title.value.trim() =="" ){
+                console.log('value is invalid');
+                $(document.getElementById('billingContacts:addContactList:title')).addClass('errorText');
+                $('#msgDetails').text("Please enter title.");
+                $('#title-label').addClass('error-label');
+                $('#errorMessageBlock').show();
+                flag = false;
+            }
+        return flag;
+    }
+    function checkMailingSrteet(){
+        var flag = true;
+        clearError();
+        var mailingSrteet = document.getElementById('billingContacts:addContactList:mailingSrteet');
+        if(mailingSrteet.value == null || mailingSrteet.value.trim() =="" ){
+                console.log('value is invalid');
+                $(document.getElementById('billingContacts:addContactList:mailingSrteet')).addClass('errorText');
+                $('#msgDetails').text("Please enter mailing srteet.");
+                $('#mailingSrteet-label').addClass('error-label');
+                $('#errorMessageBlock').show();
+                flag = false;
+            }
+        return flag;
+    }
+    function checkMailingCity(){
+        var flag = true;
+        clearError();
+        var mailingCity = document.getElementById('billingContacts:addContactList:mailingCity');
+        if(mailingCity.value == null || mailingCity.value.trim() =="" ){
+                console.log('value is invalid');
+                $(document.getElementById('billingContacts:addContactList:mailingCity')).addClass('errorText');
+                $('#msgDetails').text("Please enter mailing city.");
+                $('#mailingCity-label').addClass('error-label');
+                $('#errorMessageBlock').show();
+                flag = false;
+            }
+        return flag;
+    }
+    function checkState(stateElement){
+        var flag = true;
+        clearError();
+        var state = document.getElementById('billingContacts:addContactList:'+stateElement);
+        if(state.value == null || state.value.trim() =="" ){
+                console.log('value is invalid');
+                $(document.getElementById('billingContacts:addContactList:'+stateElement)).addClass('errorText');
+                $('#msgDetails').text("Please enter state/province.");
+                $('#state-label').addClass('error-label');
+                $('#errorMessageBlock').show();
+                flag = false;
+            }
+        return flag;
+    }
+    function checkZipCode(){
+        var flag = true;
+        clearError();
+        var zipCode = document.getElementById('billingContacts:addContactList:zipCode');
+        if(zipCode.value == null || zipCode.value.trim() =="" ){
+                console.log('value is invalid');
+                $(document.getElementById('billingContacts:addContactList:zipCode')).addClass('errorText');
+                $('#msgDetails').text("Please enter postal/zip code.");
+                $('#zipCode-label').addClass('error-label');
+                $('#errorMessageBlock').show();
+                flag = false;
+            }
+        return flag;
+    }
+    
+    function checkMailingCountry(countryElement){
+        var flag = true;
+        clearError();
+        var mailingCountry = document.getElementById('billingContacts:addContactList:'+countryElement);
+        if(mailingCountry.value == null || mailingCountry.value.trim() =="" ){
+                console.log('value is invalid');
+                $(document.getElementById('billingContacts:addContactList:'+countryElement)).addClass('errorText');
+                $('#msgDetails').text("Please enter country.");
+                $('#mailingCountry-label').addClass('error-label');
+                $('#errorMessageBlock').show();
+                flag = false;
+            }
+        return flag;
+    }
+    function clearError(){
+        var isPicklistEnabled = "{!isContactAddressPicklistEnabled}";
+        $(document.getElementById('billingContacts:addContactList:salutation')).removeClass('errorText');
+        $('#salutation-label').removeClass('error-label');
+        $(document.getElementById('billingContacts:addContactList:firstName')).removeClass('errorText');
+        $('#firstName-label').removeClass('error-label');
+        $(document.getElementById('billingContacts:addContactList:lastName')).removeClass('errorText');
+        $('#lastName-label').removeClass('error-label');
+        $(document.getElementById('billingContacts:addContactList:title')).removeClass('errorText');
+        $('#title-label').removeClass('error-label');
+        $(document.getElementById('billingContacts:addContactList:mailingSrteet')).removeClass('errorText');
+        $('#mailingSrteet-label').removeClass('error-label');
+        $(document.getElementById('billingContacts:addContactList:mailingCity')).removeClass('errorText');
+        $('#mailingCity-label').removeClass('error-label');
+        if(isPicklistEnabled == 'true')
+            $(document.getElementById('billingContacts:addContactList:statePick')).removeClass('errorText');
+        else
+            $(document.getElementById('billingContacts:addContactList:state')).removeClass('errorText');
+        $('#state-label').removeClass('error-label');
+        $(document.getElementById('billingContacts:addContactList:zipCode')).removeClass('errorText');
+        $('#zipCode-label').removeClass('error-label');
+        if(isPicklistEnabled == 'true')
+            $(document.getElementById('billingContacts:addContactList:mailingCountryPick')).removeClass('errorText');
+        else
+            $(document.getElementById('billingContacts:addContactList:mailingCountry')).removeClass('errorText');
+        $('#mailingCountry-label').removeClass('error-label');
+        $('#errorMessageBlock').hide();
+    }
+    function doneClick(){
+        var isPicklistEnabled = "{!isContactAddressPicklistEnabled}";
+        flag = checkSalutation();
+        if(flag){
+            flag = checkFirstName();
+        }
+        if(flag){
+            flag = checkLastName();
+        }
+        if(flag){
+            flag = checkTitle();
+        }
+        if(flag){
+            flag = checkMailingSrteet();
+        }
+        if(flag){
+            flag = checkMailingCity();
+        }
+        if(flag){
+            if(isPicklistEnabled == 'true')
+                flag = checkState('statePick');
+            else
+                flag = checkState('state');
+        }
+        if(flag){
+            flag = checkZipCode();
+        }
+        if(flag){
+            if(isPicklistEnabled == 'true')
+                flag = checkMailingCountry('mailingCountryPick');
+            else
+                flag = checkMailingCountry('mailingCountry');
+        }
+        if(flag){
+            $('#myCurtain').show(); 
+            createNewContact();
+        }
+    }
+</script>
+<style>
+    .requiredLoaderBG{
+        background-color: rgb(71,71,71);
+        opacity:0.7;
+        filter:alpha(opacity=70);
+        //background-image:url('/img/loading.gif');
+        background-image:url("{!URLFOR($Resource.sf_resources,'/images/icons/ajax-loader.gif')}");
+        background-position: center center;
+        background-repeat: no-repeat;
+        height: 100%;
+        left: 0;
+        position: fixed;
+        text-align: center;
+        top: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+    #curtainText{
+        position: relative;
+        top: 54%;
+        color: white;
+    }
+    #stateDiv select{
+          height: 42px;
+          line-height: 38px;
+          margin-top: 10px;
+          font-size: 14px;
+          color: #252C35;
+          background-color: #ECEDEF;
+          border: 2px solid #ccc;
+          border-radius: 4px;
+          -moz-border-radius: 4px;
+          -webkit-border-radius: 4px;
+          width: 100%;
+          text-indent: 10px;
+    }
+</style>
+</apex:page>

@@ -1,0 +1,67 @@
+<apex:page docType="html-5.0" controller="AriaAccountPlanWizardPromotionsCtrl" sidebar="false"  tabStyle="Account" id="thePromotionsPage">
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/AriaAccountPlanWizardPromotions.css')}"/> 
+<style>
+.btn-Cancel{
+	background: #999999;
+	padding: 6px 15px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    border: 1px solid #999999;
+    float: left;
+    font: 13px Arial, Helvetica, sans-serif;
+    font-family: arial;
+    cursor: pointer;
+}
+.btn-Save{
+	background: #428bca;
+	padding: 6px 15px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    margin: 7px 0px 7px 20px;
+    border: 1px solid #428bca;
+    float: right;
+    font: 13px Arial, Helvetica, sans-serif;
+    font-family: arial;
+    cursor: pointer;
+}
+</style>
+	<apex:actionstatus id="LoadingStatus">
+			    <apex:facet name="start">
+			        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 15%;opacity:.8;">
+			            <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+			            
+			            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+			        </div>
+			    </apex:facet>
+			</apex:actionstatus>
+	<div> 
+		<apex:form >
+			<apex:outputPanel >
+				<c:AriaPriceIndicatorComponent recid="{!$CurrentPage.parameters.id}" context="{!$CurrentPage.parameters.context}" selectedCurrency="{!$CurrentPage.parameters.accountCurrency}" accountName="{!accountName}" billingInterval="{!$CurrentPage.parameters.billingInterval}" />
+			</apex:outputPanel> 
+			<apex:outputPanel >
+				<c:AriaPromotionComponent userContext="{!$CurrentPage.parameters.context}" userContextId="{!$CurrentPage.parameters.id}" 
+										clientPlanInstanceNumber="{!$CurrentPage.parameters.clientPlanInstanceNumber}"/>
+			</apex:outputPanel>
+	</apex:form>
+	</div>
+	<div>
+		<div style="margin-top:250px;">
+		  <input style="margin-left:10px" type="button" name="Submit" value="Cancel" class="btn-Cancel" onclick="actionRedirect1();"/>
+   		  <input style="margin-right:10px" type="submit" name="Submit" value="Save" class="btn-Save" onClick="saveData1(); return false;"/>
+		</div> 
+	</div>
+	<script>
+	function actionRedirect1(){ 
+	    var billintval = $j('[id$=theBillIntHiddenInput]').val();
+		actionRedirect(billintval);
+	}
+	function saveData1(){ 
+	    var billintval = $j('[id$=theBillIntHiddenInput]').val();
+		saveData(billintval);
+	}
+	</script>
+	
+</apex:page>

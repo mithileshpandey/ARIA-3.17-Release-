@@ -1,0 +1,55 @@
+<apex:component controller="AriaOTPTaxSetupController" allowDML="true">
+<script>
+
+/*function isNumberKey(evt, val)
+      {
+         var charCode = (evt.which) ? evt.which : evt.keyCode
+         if (charCode == 46) {
+            // Allow only 1 decimal point ('.')...
+            if((val) && (val.indexOf('.') >= 0))
+                return false;
+            else
+                return true;
+         }
+         
+         if (charCode > 31 && (charCode < 48 || charCode > 57))
+            return false;
+
+         return true;
+      }*/
+</script>
+   <!-- <apex:outputPanel id="otpTax">
+   		<apex:actionFunction name="nextPlans" action="{!nextPlans}" rerender="otpTax" status="status"/>
+		<apex:actionFunction name="previousPlans" action="{!previousPlans}" rerender="otpTax" status="status"/>
+		<apex:actionFunction name="firstPlans" action="{!firstPlans}" rerender="otpTax" status="status"/>
+		<apex:actionFunction name="lastPlans" action="{!lastPlans}" rerender="otpTax" status="status"/>
+		<table style="width:100%; text-align:center;"><tr>
+                <td style="text-align:center;"><a href="#" onclick="firstPlans()"><img id="firstPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/first_0.png')}" class="paggingIconExt" title="First"/></a>
+                &nbsp;<a href="#" onclick="previousPlans()"><img id="prevPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/previous_0.png')}" class="paggingIconExt" title="Previous"/></a>
+                &nbsp;<span style="position:relative;top:-7px;font-weight: bold;"> Page {!pageNumber}  of {!totalNoOfPage} --- {!totalNoOfProducts} Products </span><a href="#" onclick="nextPlans()"><img id="nextPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/next_0.png')}"  class="paggingIconExt" title="Next"/></a>
+                &nbsp;<a href="#" onclick="lastPlans()"><img id="lastPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/last_0.png')}" class="paggingIconExt" title="Last"/></a>
+                </td>
+        </tr></table>
+   
+    	<table style="width:100%" class="planTable">
+    		<tr class="planheader"> 
+	    		<td style="width:15%;">Item No.</td>
+	    		<td style="width:55%;">Item SKU</td>
+	    		<td style="width:30%;">Tax Percentage</td>
+    		</tr>
+    		<apex:repeat value="{!itemsToDisplay}" var="ai">
+	    		<tr>
+	    				<td>{!ai.Aria_Id__c}</td>
+	    				<td>{!ai.Client_SKU__c}</td>
+	    				<td><apex:inputField value="{!ai.TaxPercentage__c}" onkeypress="return isNumberKey(event)"/></td>
+	    		</tr>
+    	</apex:repeat> 
+    	<tr>
+        	<td colspan="3" align="center">
+        		<apex:commandButton value="Save" action="{!saveData}" rerender="otpTax" status="status" style="margin-top:12px;width:63px;font-size:16px;"/>
+        	</td>
+            
+        </tr>   		
+    	</table>
+    	</apex:outputPanel> -->
+</apex:component>

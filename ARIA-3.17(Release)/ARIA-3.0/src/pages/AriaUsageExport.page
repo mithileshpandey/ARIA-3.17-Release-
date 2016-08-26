@@ -1,0 +1,6 @@
+<apex:page id="thePage"  sidebar="false" controller="AriaUsageExportController" showheader="false" readOnly="true" contenttype="text/csv#dashboard_usage_{!now()}.csv" cache="true" showChat="false" >
+"USAGE_DATE","USAGE_TIME","ACCT_NO","BILLED_USERID","USAGE_TYPE","FROM/TO","IS_EXCLUDED","QUALIFIER_1","QUALIFIER_2","QUALIFIER_3","QUALIFIER_4","USAGE_DESC","USAGE_UNITS","UNIT_RATE","CHARGE","INVOICE_TRANS_ID","USAGE_RECORD_NO","RECORDED_UNITS","COMMENTS","EXCLUSION_COMMENTS","EXCLUDE_REASON"
+ <apex:repeat value="{!usageHistories}" var="his" >
+"{!his.usage_date}","{!his.usage_time}","{!his.billable_acct_no}","{!userId}","{!his.usage_type_description}","{!IF(his.telco_from!=null && his.telco_to!=null,'Message from '+his.telco_from+' To '+his.telco_to,'')}","{!his.is_excluded}","{!his.qualifier_1}","{!his.qualifier_2}","{!his.qualifier_3}","{!his.qualifier_4}","{!his.units_description}","{!his.Units}","{!his.pre_rated_rate}","{!his.specific_record_charge_amount}","{!his.invoice_transaction_id}","{!his.usage_rec_no}","{!his.recorded_units}","{!his.comments}","{!his.exclusion_comments}","{!his.exclude_reason_cd}"
+</apex:repeat>
+</apex:page>

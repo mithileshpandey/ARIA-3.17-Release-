@@ -1,0 +1,302 @@
+<apex:page controller="AriaMasterPlanSelectionDialogCtrl" showheader="false" sidebar="false">
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<style>
+.gradiantHeader{ 
+    font-size:12px !important; 
+    background-color:#D4D4D4 !important;
+    background: #eeeeee !important; /* Old browsers */
+    background: -moz-linear-gradient(top,  #eeeeee 0%, #cccccc 100%) !important; /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#eeeeee), color-stop(100%,#cccccc)) !important; /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* IE10+ */
+    background: linear-gradient(to bottom,  #eeeeee 0%,#cccccc 100%) !important; /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#eeeeee', endColorstr='#cccccc',GradientType=0 ) !important; /* IE6-9 */
+}
+table.scroll {
+    /* width: 100%; */ /* Optional */
+    /* border-collapse: collapse; */
+    border-spacing: 0;
+}
+table.scroll tbody,
+table.scroll thead { display: block; } 
+.scroll thead tr th { 
+    height: 30px;
+    line-height: 30px;
+    /* text-align: left; */
+}
+table.scroll tbody {
+    /*height: 165px;
+    overflow-y: auto;
+    overflow-x: hidden;*/
+}
+.scroll tbody td, .scroll thead th {
+    /* width: 20%; */ /* Optional */
+    border-right: 1px solid #f8f8f8;
+    /* white-space: nowrap; */
+    padding: 0px 8px;
+    text-align:left;
+}
+.scroll tbody td {
+    padding: 5px 8px;
+}
+.scroll tbody td:last-child, thead th:last-child {
+    border-right: none;
+}
+.scroll tbody tr:nth-child(even) {
+    background-color:#eeeeee !important;
+}
+
+.button:hover {
+    text-decoration: none;
+}
+.button, .button:focus {
+    display: inline-block;
+    zoom: 1;
+    vertical-align: baseline;
+    outline: none;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    font: 14px/100% Arial, Helvetica, sans-serif; 
+    padding: .35em .5em .5em;
+    text-shadow: 0 1px 1px rgba(0,0,0,.3);
+    -webkit-border-radius: .5em;
+    -moz-border-radius: .5em;
+    border-radius: .3em;
+    -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    -moz-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    box-shadow: 0 1px 2px rgba(0,0,0,.2);
+}
+.blue, .blue:focus{
+	float:right;
+    color: #fff;
+    border: solid 1px #0076a3;
+    background: #428bca;
+    background: -webkit-gradient(linear, left top, left bottom, from(#00adee), to(#0078a5));
+    background: -moz-linear-gradient(top, #00adee, #0078a5);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#00adee', endColorstr='#0078a5');
+}
+.blue:hover {
+    background: #007ead;
+    background: -webkit-gradient(linear, left top, left bottom, from(#0095cc), to(#00678e));
+    background: -moz-linear-gradient(top, #0095cc, #00678e);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0095cc', endColorstr='#00678e');
+}
+.overlayDialog .innerContent, .inlineOverlayDialog .innerContent {
+    padding: 5px 5px !important;
+}
+.firstChild{
+    padding-left:20px !important;
+    font-weight:normal !important;
+    background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 2px 2px !important;
+}
+.secondChild {
+    padding-left:40px !important;
+    font-weight:normal !important;
+    background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 20px 2px !important;
+}
+.thirdChild {
+    padding-left:60px !important;
+    font-weight:normal !important;
+    background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 40px 2px !important;
+}
+.fourthChild {
+    padding-left:80px !important;
+    font-weight:normal !important;
+    background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 60px 2px !important;
+}
+.scrollDiv {
+	min-height: 190px;
+    max-height: 190px; /* you will need to pass height from main page and this height will be less than 40px as pe main page dialog height*/
+    overflow-y: auto;
+}  
+</style>
+
+<apex:form id="frmDialog">
+<div class="scrollDiv">
+	<apex:actionstatus id="LoadingStatus">
+	    <apex:facet name="start">
+	        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 5%;opacity:.8;">
+	            <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+	            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+	        </div>
+	    </apex:facet>
+	</apex:actionstatus>
+	
+	<table>
+		<tr>
+			<td>
+				<apex:outputLabel value="To work with a single billing group, choose only plans in the same billing group." />
+			</td>
+		</tr>
+		<tr>
+			<td>
+				 <apex:outputLabel style="font-weight:bold;" rendered="{!if(AvailableBillingGroups != null && AvailableBillingGroups.size = 1,true,false)}" value="{!if(isPlanWithNoGroup,'Plan With No Billing Group',billGrpList[0].Name +'-'+billGrpList[0].Aria_Id__c)}"></apex:outputLabel> 
+				<apex:selectList rendered="{!if(AvailableBillingGroups != null && AvailableBillingGroups.size > 1,true,false)}" value="{!bgSFId}" size="1" style="width: 240px;margin-top: 3px;border-radius: 4px;" onchange="reloadPlanSection()">
+                       <apex:selectOptions value="{!AvailableBillingGroups}"></apex:selectOptions>
+                   </apex:selectList>
+			</td> 
+		</tr>
+	</table>
+	
+	<apex:outputPanel id="planSection">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" class="scroll" style="margin-top:10px;">
+      <thead class="gradiantHeader">
+      <tr>
+        <th width="4%" class="gradiantHeader"> 
+            <apex:inputCheckbox styleClass="selectedAllPlans" disabled="{!(lstAccountPlanWrap.SIZE == 0)}"></apex:inputCheckbox>
+        </th>
+        <th width="24%" class="gradiantHeader">Plan Name </th>
+        <th width="23.5%" class="gradiantHeader">Client Defined Identifier</th>
+        <th width="16.5%" class="gradiantHeader">Unit </th>
+        <th width="23.5%" class="gradiantHeader">Status</th>
+        <th width="16.5%" class="gradiantHeader">MRR</th>
+        <th width="16.5%" class="gradiantHeader" style="min-width: 120px;">MRR Total </th>
+      </tr>
+      </thead>
+    <tbody>
+    <apex:repeat value="{!lstAccountPlanWrap}" rendered="{!(lstAccountPlanWrap.SIZE > 0)}" var="accPlan" id="rpt">  
+      <tr>
+        <td width="4%">
+            <apex:inputCheckbox value="{!accPlan.accChkSelected}"  id="selectedPlan" label="{!accPlan.parentAcctPlanId}" styleClass="selectedPlansChk {!accPlan.nodeId}" onchange="checkMaster('{!accPlan.nodeId}',this.value);"></apex:inputCheckbox>
+        </td>
+        <td width="24%">
+        <apex:outputlabel value="{!accPlan.accPlanName}" escape="false"   styleClass="accountName {!if(accPlan.level == 1,'firstChild','')} {!if(accPlan.level == 2,'secondChild','')} {!if(accPlan.level == 3,'thirdChild','')} {!if(accPlan.level == 4,'fourthChild','')}" />
+        </td>
+        <td width="23.5%">{!accPlan.clienPlanInstanceId}</td>
+        <td width="16.5%">{!accPlan.accPlanUnit}</td>
+        <td width="23.5%">{!accPlan.ariaPlanStatus}</td>
+        <td width="16.5%">
+            <apex:outputText value="{0,number,##########0.00}">
+        	<apex:param value="{!accPlan.accPlanMRRNet}"/>
+     		</apex:outputText>
+        </td>
+        <td width="16.5%" style="min-width: 120px;">{!accPlan.accPlanMRRTotal}</td>
+      </tr>
+    </apex:repeat>
+    <apex:outputpanel rendered="{!(lstAccountPlanWrap.SIZE = 0)}">
+    	<tr>
+    		<td colspan="6"> <i>There is no active plan available on account.</i></td>
+    	</tr>
+    </apex:outputpanel> 
+    
+     </tbody>
+    </table>
+    <script>
+    
+    $(".selectedAllPlans").prop('checked', ($(".selectedPlansChk:not(:checked)").length == 0));
+    $(document).ready(function(){ 
+		    $(".selectedAllPlans").change(function(){
+		    	$(".selectedPlansChk").prop('checked', $(this).prop("checked"));
+		    });
+		    
+		     $(".selectedPlansChk").change(function(){
+		    	if(!$(this).prop("checked")){
+		    		$(".selectedAllPlans").prop('checked', false);
+		    	}else{
+					$(".selectedAllPlans").prop('checked', ($(".selectedPlansChk:not(:checked)").length == 0));
+				}
+		    });
+		    
+		 });
+		
+		
+		
+		
+    
+    </script>
+    </apex:outputPanel>
+    </div>
+    <apex:actionFunction name="proceedtoNext" action="{!proceedtoNext}" status="LoadingStatus" oncomplete="redirectToPlanWizard('{!url}')" ></apex:actionFunction>
+    <apex:actionFunction name="reloadPlanSection" action="{!init}" status="LoadingStatus"  rerender="planSection">
+    	
+    </apex:actionFunction>
+    <div style="padding-top:4px; float:right;">
+      <apex:actionstatus id="status">
+        <apex:facet name="start">
+            <img src="../img/loading.gif" style="float:left;text-align: center;padding: .35em .5em .5em;"/>
+        </apex:facet> 
+      </apex:actionstatus>
+      <input type="submit" name="Submit" value="Next" class="button blue" onClick="proceedAndCallSave(); return false;" />
+    </div>
+    <script>
+		
+		function redirectToPlanWizard(url){ 
+		    //alert(url); 
+		    window.top.location.href = url;
+		}
+		function proceedAndCallSave(){
+			proceedtoNext();
+		}
+        // Change the selector if needed
+        var $table = $('table.scroll'),
+            $bodyCells = $table.find('tbody tr:first').children(),
+            colWidth;
+        
+        // Adjust the width of thead cells when window resizes
+        $(window).resize(function() {
+            // Get the tbody columns width array
+            colWidth = $bodyCells.map(function() {
+                return $(this).width();
+            }).get();
+            
+            // Set the width of thead columns
+            $table.find('thead tr').children().each(function(i, v) {
+                $(v).width(colWidth[i]);
+            });    
+        }).resize(); // Trigger resize handler
+        
+        function checkMaster(nodeId){
+        	
+        	var maintainClass = 'selectedPlansChk'+' '+nodeId;
+        	var actionPerform =   document.getElementsByClassName(maintainClass)[0].checked;
+			if(actionPerform == true){
+            var splitted ='';
+            var replaced = '';
+	            if(nodeId != null){
+	            	if(nodeId.indexOf('-') > -1){
+	            	var SplitChars = '-';
+	            	var charLength = nodeId.split('-').length-1	
+	            	splitted =''+nodeId.split("-", charLength);
+	            	splitted = splitted.replace(/,/g , "-");
+	            	}else{
+	            		splitted = nodeId;
+	            	}
+	            	var className = 'selectedPlansChk'+' '+splitted;
+	            	document.getElementsByClassName(className)[0].checked = true;
+	            	if(splitted !== nodeId){
+	            		checkMaster(splitted);
+	            	}
+	            }
+            }else{
+            	var array = [];
+            	$("input[type=checkbox]:checked").each(function(){
+    				console.log('$(this)=='+$(this).class);
+    				/*if($(this).attr('class'):contains(nodeId)){
+    					$(this)[0].attr('checked','false');
+    				}*/
+    				/*if($.contains($(this).attr('class'),nodeId)){
+    					console.log('===Enter');
+    				}*/
+    				var classgiven = ''+$(this).attr('class');
+    				/*if(classgiven.is(':contains(nodeId)')){
+    					console.log('===Enter');
+    				}*/
+    				console.log('condtn=='+classgiven.search('xyz'));
+    				if(classgiven.search(nodeId) != '-1'){
+    					$(this).removeAttr('checked');
+    				}
+    				
+				});
+  				console.log('array=='+array);
+            }
+            
+            /*console.log(pId+'--'+lvl);
+            var styleClass = pId+(lvl-1); 
+            console.log(styleClass);
+            $("."+styleClass).prop('checked', true);*/
+        }
+    </script>
+</apex:form>
+</apex:page>

@@ -1,0 +1,195 @@
+<apex:page sidebar="false" controller="AriaTaxPercentageController">
+<script>
+	function isNumberKey(evt, val)
+      {
+         var charCode = (evt.which) ? evt.which : evt.keyCode
+         if (charCode == 46) {
+            // Allow only 1 decimal point ('.')...
+            if((val) && (val.indexOf('.') >= 0))
+                return false;
+            else
+                return true;
+         }
+         
+         if (charCode > 31 && (charCode < 48 || charCode > 57))
+            return false;
+
+         return true;
+      }
+      function changeTab(t){
+      	changeTaxTab(t);
+      	return false;
+      }
+     
+</script>
+<style>
+	.tabs_container {  
+    	border-bottom: 1px solid #ccc; 
+	}
+	.tabs {
+	    list-style: none;
+	    padding: 5px 0 4px 0;
+	    margin: 0 0 0 20px;
+	    font: 0.90em arial;
+	}
+	.tabs li {
+	    display: inline;
+	}
+	.tabs li a {
+	    border: 1px solid #ccc;
+	    padding: 4px 6px;
+	    text-decoration: none;
+	    background-color: #eeeeee;
+	    border-bottom: none;
+	    outline: none;
+	    border-radius: 5px 5px 0 0;
+	    -moz-border-radius: 5px 5px 0 0;
+	    -webkit-border-top-left-radius: 5px;
+	    -webkit-border-top-right-radius: 5px;
+	    color:#000;
+	}
+	.tabs li a:hover {
+	    background-color: #dddddd;
+	    padding: 4px 6px;
+	}
+	.tabs li.active a {
+	    border-bottom: 1px solid #fff;
+	    background-color: #fff;
+	    padding: 4px 6px 5px 6px; 
+	    border-bottom: none;
+	}
+	.tabs li.active a:hover {
+	    background-color: #eeeeee;
+	    padding: 4px 6px 5px 6px;
+	    border-bottom: none;
+	}
+	.tabs li a.icon_accept:hover {
+	    padding-left: 24px;
+	}
+	
+	.tabs_content_container {
+	    border: 1px solid #ccc;
+	    border-top: none;
+	    padding: 10px;
+	    width: 98.4%;
+	}
+	ul li, ol li {
+		margin-left: 0em;
+		padding-left: 0;
+		}
+	.planTable {
+	  width:100%; 
+	  border-collapse:collapse; 
+	}
+	.planheader td{
+	   color:#fff;
+	   line-height:26px;
+	   background-color:#a6afa2;
+	   padding-top:1px;
+	   
+	}
+	.planTable td{
+	   padding-top:1px;
+	   border-width: 1px;
+	   border-style:inset;
+	}
+	.paggingIconExt{
+	   padding-bottom: 0px;
+	   width: 25px;
+	   height: 22px;
+	}
+	.paggingText{
+	         font-weight: bold;
+	}   
+</style>
+<apex:actionstatus id="status">
+    <apex:facet name="start">
+      <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 20%;opacity:.8;">
+          <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+          <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+      </div>
+  </apex:facet>
+</apex:actionstatus> 
+<apex:form >
+	<div class="tabs_container">
+            <ul class="tabs">
+                <li class="{!IF(activeTab = 'BillingTab','active','')}"><b><a href="/apex/AriaConnectorSettings?t=BillingTab">{!$Label.ARIA_GENERAL_CONFIG_BILLING_OPTIONS}</a></b></li>
+                <li class="{!IF(activeTab = 'AccountTab','active','')}"><b><a href="/apex/AriaConnectorSettings?t=accttab">{!$Label.ARIA_GENERAL_CONFIG_SEARCH_ACCOUNT}</a></b></li>
+                <li class="{!IF(activeTab = 'OtherConfigTab','active','')}"><b><a href="/apex/AriaConnectorSettings?t=othrConfigtab">{!$Label.ARIA_GENERAL_CONFIG_OTHER_CONFIGS}</a></b></li>
+                <li class="{!IF(activeTab = 'usagetypeTab','active','')}"><b><a href="/apex/AriaConnectorSettings?t=usagetypeTab">{!$Label.ARIA_GENERAL_CONFIG_USAGE_TYPES}</a></b></li>
+                <li class="{!IF(activeTab = 'ScreenConfigTab','active','')}"><b><a href="/apex/AriaConnectorSettings?t=ScreenConfigTab">{!$Label.ARIA_GENERAL_CONFIG_SCREEN_CONFIG}</a></b></li>
+                <li style="display:none;" class="{!IF(activeTab = 'DiscountTab','active','')}"><b><a href="/apex/AriaConnectorSettings?t=DiscountTab">{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_DISCOUNT_RULES}</a></b></li>
+                <apex:outputPanel rendered="{!refreshFromAria}"><li class="{!IF(activeTab = 'accountsnapshotTab','active','')}"><b><a href="/apex/AriaConnectorSettings?t=accountsnapshotTab">{!$Label.ARIA_GENERAL_CONFIG_QUICK_VIEW}</a></b></li></apex:outputPanel>
+                <li class="{!IF(activeTab = 'planTab','active','')}"><b><a href="AriaPlanSelectionGeneralConfig">{!$Label.ARIA_GENERAL_CONFIG_PLAN_SELECTION}</a></b></li>
+                <li class="{!IF(activeTab = 'priceBookConfig','active','')}"><b><a href="/apex/AriaConnectorSettings?t=PriceBookConfigTab">{!$Label.ARIA_GENERAL_CONFIG_PRICE_BOOK_CONFIG}</a></b></li> 
+                <li class="{!IF(activeTab = 'customSection','active','')}"><b><a href="/apex/AriaConnectorSettings?t=customSectionTab">{!$Label.ARIA_GENERAL_CONFIG_CUSTOM_SECTION}</a></b></li>
+                <li class="active" ><b><a href="#">Tax Percentage</a></b></li>
+				<li class="{!IF(activeTab = 'customPermissionTab','active','')}"><b><a href="/apex/AriaConnectorSettings?t=customPermissionsTab">Custom Permissions</a></b></li>                
+            </ul>
+        </div> 
+<apex:actionFunction name="changeTaxTab" action="{!init}" rerender="taxPage" status="status">
+	<apex:param name="tabName" value="" assignTo="{!tabName}"/>  
+</apex:actionFunction>
+
+<apex:actionFunction name="nextPlans" action="{!nextPlans}" rerender="plansTable" status="status"/>
+<apex:actionFunction name="previousPlans" action="{!previousPlans}" rerender="plansTable" status="status"/>
+<apex:actionFunction name="firstPlans" action="{!firstPlans}" rerender="plansTable" status="status"/>
+<apex:actionFunction name="lastPlans" action="{!lastPlans}" rerender="plansTable" status="status"/>
+<apex:pageBlock id="taxPage">
+<div class="tabs_container">
+   <ul class="tabs" style="margin-left:0px;">
+	   	<li class="{!IF(tabName = 'planTab','active','')}"><b><apex:commandLink value="Client Plan Tax Setup" onclick="return changeTab('planTab');" id="planTab"/></b></li>
+	   	<li class="{!IF(tabName = 'otpTab','active','')}"><b><apex:commandLink value="One Time Product Tax Setup" onclick="return changeTab('otpTab');" id="otpTab"/></b></li>
+   </ul>
+</div>
+<apex:outputPanel id="plansTable"> 
+        <table style="width:100%; text-align:center;"><tr>
+                <td style="text-align:center;"><a href="#" onclick="firstPlans()"><img id="firstPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/first_0.png')}" class="paggingIconExt" title="First"/></a>
+                &nbsp;<a href="#" onclick="previousPlans()"><img id="prevPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/previous_0.png')}" class="paggingIconExt" title="Previous"/></a>
+                &nbsp;<span style="position:relative;top:-7px;font-weight: bold;"> Page {!pageNumber}  of {!totalNoOfPage} --- {!totalNoOfPlans} Plans </span><a href="#" onclick="nextPlans()"><img id="nextPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/next_0.png')}"  class="paggingIconExt" title="Next"/></a>
+                &nbsp;<a href="#" onclick="lastPlans()"><img id="lastPlanID1" src="{!URLFOR($Resource.Sim_JS, 'images/last_0.png')}" class="paggingIconExt" title="Last"/></a>
+                </td>
+                <td style="text-align:left;">
+                </td>
+        </tr></table>
+        <table style="width:100%" class="planTable">
+	    	<apex:outputPanel layout="none" rendered="{!if(tabName = 'otpTab',false,true)}"> 
+	    	 
+	    		<tr class="planheader">
+		    		<td><b>Plan No.</b></td> 
+		            <td><b>Plan Name</b></td> 
+		            <td><b>Plan Type</b></td> 
+		            <td><b>Tax Percentage</b></td>
+	            </tr>
+	            <apex:repeat value="{!plansToDisplay}" var="cp">
+	            <tr>
+	            	<td>{!cp.Aria_Id__c}</td> 
+	            	<td>{!cp.Name}</td>
+	            	<td>{!cp.RecordType.Name}</td>
+	            	<td><apex:inputField value="{!cp.TaxPercentage__c}" onkeypress="return isNumberKey(event)"/></td>
+	            </tr>
+	            </apex:repeat>
+	           
+	    	</apex:outputPanel>
+	    	<apex:outputPanel layout="none" rendered="{!if(tabName = 'otpTab',true,false)}">
+	    		<tr class="planheader"> 
+		    		<td style="width:15%;">Item No.</td>
+		    		<td style="width:55%;">Item SKU</td>
+		    		<td style="width:30%;">Tax Percentage</td>
+	    		</tr>
+	    		<apex:repeat value="{!itemsToDisplay}" var="ai">
+		    		<tr>
+		    				<td>{!ai.Aria_Id__c}</td>
+		    				<td>{!ai.Client_SKU__c}</td>
+		    				<td><apex:inputField value="{!ai.TaxPercentage__c}" onkeypress="return isNumberKey(event)"/></td>
+		    		</tr>
+		    	</apex:repeat> 
+	    	</apex:outputPanel>
+	    	 <tr> 
+	                <td colspan="4" align="center"><apex:commandButton value="Save" action="{!saveData}" rerender="plansTable" status="status" style="margin-top:12px;width:63px;font-size:16px;"/></td>
+	            </tr>
+	    	</table>
+    	</apex:outputPanel>
+	  </apex:pageBlock>
+	</apex:form>
+</apex:page>

@@ -1,0 +1,36 @@
+<apex:component access="global" controller="AriaClientPlanHierarchyViewerController">
+
+	<apex:attribute name="accountId" description="This value defines the account for which the plans have to listed" type="String" required="false" assignTo="{!accountId}"/>
+
+	<apex:pageBlock >
+
+ 				
+	       		<apex:pageBlockTable value="{!selectedPlans}" var="theAcctPlan" >
+              		<apex:column >
+              		  <apex:facet name="header">Plan Name</apex:facet>
+              		  <apex:outputlabel value="{!theAcctPlan.planDisplayName}" escape="false"/>
+              		</apex:column>
+              		<apex:column >
+              		  <apex:facet name="header">Plan Description</apex:facet>
+              		  
+              		  {!theAcctPlan.planDescription}
+
+              		</apex:column>              		
+              		<apex:column width="150">
+              		  <apex:facet name="header">Units</apex:facet>
+              		  
+              		  <apex:outputText id="units" value="{!theAcctPlan.units}"  style="text-align:right;" />
+ 
+              		</apex:column>
+
+              		<apex:column >
+              		  <apex:facet name="header">Status</apex:facet>
+              		  {!theAcctPlan.planStatus}
+              		</apex:column>
+           		</apex:pageBlockTable>
+           		
+       		
+	
+	</apex:pageBlock>
+	
+</apex:component>

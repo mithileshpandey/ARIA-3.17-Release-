@@ -1,0 +1,119 @@
+<apex:component access="public"
+	controller="AriaAccountPlanServiceComponentControler">
+
+	<apex:attribute name="accountPlanIds" description="account plans"
+		type="String" required="false" assignTo="{!accPlanIds}" />
+	<apex:attribute name="source" description="account plans" type="String"
+		required="false" assignTo="{!source}" />
+	<apex:attribute name="accountPlanName" description="" type="String"
+		required="false" />
+	<apex:attribute name="currencyStr" description="" type="String"
+		required="false" assignTo="{!currencyStr}" />
+		<style>
+			.myInnerTable{
+						border-width: 0px !important;
+					    border-style: solid !important;
+					    border-color: #eee !important;
+					    font-size: 12px !important; 
+					}
+			.myInnerTable tbody tr td {
+				border-width: 0px !important;
+				border-style: solid !important;
+			    border-color: #fff !important;
+			}
+		</style>
+
+	<apex:pageBlock title="{!$Label.ARIA_ACCT_SERVICES}"
+		rendered="{!plansAndServices.size==0}">
+		{!$Label.ARIA_ACCT_SERVICES_CLICK_ON_A_PLAN} 
+	</apex:pageBlock>
+	
+	<apex:pageBlock rendered="{!plansAndServices.size>0}">
+		<apex:facet name="header">
+			<div class="pbHeader">
+				<table border="0" cellpadding="0" cellspacing="0">
+					<tbody>
+						<tr>
+							<td class="pbTitle" style="width:50% !important;"><h2 class="mainTitle">Services for
+									{!accountPlanName}</h2></td>
+							<td style="width:50% !important;">
+								<div style="float: right">
+									<div style="float: left; font-weight: bold">{!$Label.ARIA_ACCT_SERVICES_SCHEDULE_NAME}</div>
+									<div style="float: left; margin-left: 5px;">{!scheduleName}</div>
+									<div style="float: left; margin-left: 30px; font-weight: bold">{!$Label.ARIA_ACCT_SERVICES_DEFAULT}</div>
+									<div style="float: left; margin-left: 5px;">{!defaultSchedule}</div>
+								</div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</apex:facet>
+
+
+		<table border="0" width="100%" class="list myTable" cellspacing="0" cellpadding="0">
+			<tr >
+				<th width="25%" class="gradiantHeader">{!$Label.ARIA_CREDIT_SERVICE}</th>
+				<th width="25%" class="gradiantHeader">{!$Label.ARIA_ACCT_SERVICES_SERVICE_TYPE}</th>
+				<th width="25%" class="gradiantHeader">{!$Label.ARIA_ACCT_SERVICES_TIERED_PRICING_RULE}</th>
+				<th width="25%" class="gradiantHeader">{!$Label.ARIA_ACCT_SERVICES_PRICING}</th>
+			</tr>
+
+			<apex:repeat value="{!plansAndServices}" var="plan">
+				<tr onMouseOver="this.bgColor='#f9feff'" onMouseOut="this.bgColor='#ffffff'" >
+					<td>{!plan.serviceName}</td>
+					<td>{!plan.serviceType}</td>
+					<td>{!plan.usageType}</td>
+					<td>
+						<apex:outputPanel id="tieredPricePanel" rendered="{!plan.isTieredPricing==true}">
+							<apex:repeat value="{!plan.rateTiers}" var="tier">
+								<div style="float:right; width:100%; margin-bottom:5px;">
+									<div style="float:right;">
+										<table border="0" cellspacing="0" cellpadding="0" width="100%" class="myInnerTable">
+											<tr>
+												<td align="right" width="100px">
+													<apex:outputText value="{0, number, .00}">
+														<apex:param value="{!tier.rate}" />
+													</apex:outputText>
+												</td>
+											</tr>
+										</table>
+									</div>
+									
+									<div style="float:right;text-align:right;margin-right:10px;padding-top:4px;">
+										{!$Label.ARIA_ACCT_SERVICES_FROM}
+										&nbsp;
+										<apex:outputText value="{0,number,0}">
+											<apex:param value="{!tier.fromUnits}" />
+										</apex:outputText>
+										&nbsp;
+										{!$Label.ARIA_USAGE_MESSAGE_TO}
+										&nbsp;
+										<apex:outputText value="{0,number,0}" rendered="{!tier.toUnits>0}">
+											<apex:param value="{!tier.toUnits}" />
+										</apex:outputText>
+										<apex:outputText value="&infin;" escape="false" rendered="{!IF(tier.toUnits>0,false,true)}" />
+									</div>
+									
+								</div>
+							</apex:repeat>
+
+						</apex:outputPanel> <apex:outputPanel id="tieredPricePanel3" rendered="{!plan.isTieredPricing==false}">
+							<table border="0" cellspacing="0" cellpadding="0" width="100%" class="myInnerTable">
+								<apex:repeat value="{!plan.rateTiers}" var="tier">
+									<tr>
+										<td colspan="4" align="right" width="100px">
+											<apex:outputText value="{0, number, .00}">
+												<apex:param value="{!tier.rate}" />
+											</apex:outputText>
+										</td>
+									</tr>
+								</apex:repeat>
+							</table>
+						</apex:outputPanel></td>
+				</tr>
+			</apex:repeat>
+		</table>
+		
+	</apex:pageBlock>
+</apex:component>

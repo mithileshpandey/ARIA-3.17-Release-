@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<StaticResource xmlns="http://soap.sforce.com/2006/04/metadata">
+    <cacheControl>Public</cacheControl>
+    <contentType>application/vnd.openxmlformats-officedocument.wordprocessingml.document</contentType>
+    <description>Aria Admin Tool API&apos;s Help Docs.
+This static resource has been deprecated. Please look for all SDK relates documents in the AriaSdkHelpDocs Static Resource</description>
+</StaticResource>

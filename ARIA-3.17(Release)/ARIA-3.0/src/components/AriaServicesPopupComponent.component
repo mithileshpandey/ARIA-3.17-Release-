@@ -1,0 +1,78 @@
+<apex:component access="global" >
+<script>
+
+
+function showServicesPopUp(planid,currency, leftPos,topPos){
+
+ var div1 = document.getElementById('div1');
+ 
+ var popupFrame = document.getElementById('popupFrame'); 
+ div1.style.visibility = "visible";
+ 
+ AssignPosition(div1,leftPos,topPos); 
+ var loc = '/apex/AriaClientPlanServicesPopUpPage?id='+planid+'&currency='+currency; 
+ popupFrame.src="";
+ popupFrame.src=loc;
+ popupFrame.width="650";
+ popupFrame.height="400";
+
+
+}
+
+function hideServicesPopUp(){
+ var div1 = document.getElementById('div1');
+ 
+ var popupFrame = document.getElementById('popupFrame');
+ popupFrame.src="";
+ popupFrame.width="0";
+ popupFrame.height="0";
+
+}
+
+function AssignPosition(d,leftPos,topPos) {
+	var cX = 0; var cY = 0; var rX = 0; var rY = 0;
+	var xx='';
+	if(self.pageYOffset) {
+		rX = self.pageXOffset;
+		rY = self.pageYOffset;
+		xx+='=1 >>'+rX+'>>'+rY+"))";
+	}
+	else if(document.documentElement && document.documentElement.scrollTop) {
+		rX = document.documentElement.scrollLeft;
+		rY = document.documentElement.scrollTop;
+		xx+='=2';
+	}
+	else if(document.body) {
+		rX = document.body.scrollLeft;
+		rY = document.body.scrollTop;
+		xx+='=3';
+	}
+	//if(document.all) {
+		cX += rX; 
+		cY += rY;
+		//xx+='=4';
+	//}
+	//if(d.style){
+	//d.style.top=(cY+topPos)+"px"; 
+	//d.style.left= (cX+leftPos+10)+"px";
+	//}
+	
+
+	
+}
+	
+</script>
+
+
+
+
+<!-- style="position: absolute; z-index: 95; height: 10px; " -->
+
+
+<div id="div1" style="z-index:95; position: absolute; top: 50px; left: 200px;">  
+
+<iframe src="" width="650px" height="400px" id="popupFrame" frameborder="0">
+
+</iframe>
+</div>
+</apex:component>

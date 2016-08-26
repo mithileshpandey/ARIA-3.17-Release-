@@ -1,0 +1,193 @@
+<apex:component access="global" controller="AriaPlanViewerController">
+    <apex:attribute name="title" description="This value defines the title of the component" type="String" required="false" default="Client Plans"/>
+    <apex:attribute name="width" description="This value defines the width of the component" type="String" required="false" default="100%"/>
+    <apex:attribute name="height" description="This value defines the height of the component" type="String" required="false" default="400px"/>
+    <apex:attribute name="planId" description="This value defines the root plan" type="String" required="false" default="" />
+     <apex:attribute name="fieldsToDisplay" description="This value defines the list of fields to be displayed" type="String" required="false" default="planName;planType;planDescription;planStatus;recurringBillingInterval;recurringUsageInterval;rolloverMonths"/> 
+   
+
+<script type="text/javascript" src="{!$Resource.EXTJS4}/ext-all.js"></script>   
+<apex:stylesheet value="{!$Resource.ExtJS4}/resources/css/ext-all.css"/>
+<style>
+
+.x-tree-icon-parent {
+  display: none;
+}
+
+.x-tree-icon-leaf {
+    display: none;
+}
+
+.masterRow {
+    background-color: #E3DEB8;
+}
+
+.dependentRow {
+    background-color: #CCCCCC;
+}
+
+</style>
+<script type="text/javascript">
+var nsPrefix = '{!jqueryNameSpace}';
+
+Ext.require([
+    'Ext.data.*',
+    'Ext.grid.*',
+    'Ext.tree.*'
+]);
+
+Ext.Loader.setConfig({enabled:true}); 
+
+Ext.onReady(function() {
+    
+    //we want to setup a model and store instead of using dataUrl
+    Ext.define('AriaPlanModel', {
+        extend: 'Ext.data.Model',
+        fields: [
+            {name: 'planName',     type: 'string'},        
+            {name: 'id',     type: 'string'},
+            {name: 'planType',     type: 'string'},
+            {name: 'planDescription',     type: 'string'},
+            {name: 'planStatus',     type: 'string'},
+            {name: 'planId',     type: 'string'},
+            {name: 'recurringBillingInterval',     type: 'string'},
+            {name: 'recurringUsageInterval',     type: 'string'},
+            {name: 'rolloverMonths',     type: 'string'},
+            {name: 'leaf',     type: 'boolean'},
+            {name: 'expanded',     type: 'boolean'},
+            {name: 'iconCls',     type: 'string'}
+        ]
+    });
+
+    var store = Ext.create('Ext.data.TreeStore', {
+        model: 'AriaPlanModel',
+        root: {
+            nodetype: 'async',
+            id: '{!planId}',
+            planName:'root',
+            planType:'1',
+            leaf: false,
+            expanded: false
+        },
+        proxy: {
+            type: 'ajax', 
+            url:'/apex/'+nsPrefix+'AriaPlanViewerService',
+            reader: {
+                type: 'json', 
+                root: 'children'
+            }
+        },
+        folderSort: true,
+        autoload: false
+    });
+
+    //Ext.ux.tree.TreeGrid is no longer a Ux. You can simply use a tree.TreePanel
+    var tree = Ext.create('Ext.tree.Panel', {
+        title: '{!title}',
+        width: '{!width}',
+        height: '{!height}',
+        renderTo: document.getElementById('planViewer'),
+        collapsible: true,
+        useArrows: true,
+        rootVisible: false,
+        store: store,       multiSelect: true,
+        //singleExpand: true,
+        defaultOpen: false,
+        expanded: false,
+        //the 'columns' property is now 'headers'
+        columns: [{
+            xtype: 'treecolumn', //this is so we know which column will show the tree
+            text: '{!$Label.ARIA_PLAN_VIEW_PLAN_NAME}',
+            flex: 3,
+            sortable: true,
+            dataIndex: 'planName',
+            renderer :function(value, meta, record,view) 
+            {
+            	
+              var planType = record.get('planType');
+              if(planType=='Master' || planType=='1' ){
+                return Ext.String.format('<label onmouseover=showServicesPopUp(\'{1}\',\'\',\'250px\',\'300px\');><b>{0}</b></label>', record.get('planName'),record.get('planId'));
+                
+               } else {
+                return Ext.String.format('<label onmouseover=showServicesPopUp(\'{1}\',\'\',\'250px\',\'300px\');>{0}</label>', record.get('planName'),record.get('planId'));
+               }
+                        
+            }            
+        },{
+            text: '{!$Label.ARIA_PLAN_VIEW_PLAN_TYPE}',
+            flex: 1,
+            dataIndex: 'planType',
+            hidden: {!contains(fieldsToDisplay,'planType')==false},
+            sortable: true
+        },{
+            text: 'Id',
+            flex: 1,
+            dataIndex: 'id',
+            hidden: true,
+            sortable: true
+        },{
+            text: '{!$Label.ARIA_PLAN_VIEW_PLAN_DESCRIPTION}',
+            flex: 1,
+            dataIndex: 'planDescription',
+            hidden: {!contains(fieldsToDisplay,'planDescription')==false},
+            sortable: true
+        },{
+            text: '{!$Label.ARIA_PLAN_VIEW_PLAN_STATUS}',
+            flex: 1,
+            dataIndex: 'planStatus',
+            hidden: {!contains(fieldsToDisplay,'planStatus')==false},
+            sortable: true
+        },{
+            text: '{!$Label.ARIA_PLAN_VIEW_RECURRING_BILLING_INTERVAL}',
+            flex: 1,
+            dataIndex: 'recurringBillingInterval',
+            hidden: {!contains(fieldsToDisplay,'recurringBillingInterval')==false},
+            sortable: true
+        },{
+            text: '{!$Label.ARIA_PLAN_VIEW_RECURRING_USAGE_INTERVAL}',
+            flex: 1,
+            dataIndex: 'recurringUsageInterval',
+            hidden: {!contains(fieldsToDisplay,'recurringUsageInterval')==false},
+            sortable: true
+        },{
+            text: '{!$Label.ARIA_PLAN_VIEW_ROLLOVER_MONTHS}',
+            flex: 1,
+            dataIndex: 'rolloverMonths',
+            hidden: {!contains(fieldsToDisplay,'rolloverMonths')==false},
+            sortable: true
+        }],
+        listeners: {
+            "render": function(){
+                this.getRootNode().expand();
+            },
+            "itemmouseenter": function(self, store_record, html_element, node_index, event) {
+                //console.log(store_record.data.planId);
+                //console.log(node_index);
+                //console.log(this);
+                //if(store_record.data.planType=='Master'){
+                //  hideServicesPopUp();
+                //} else {
+                    hideServicesPopUp();
+                    if(store_record.data.planId!=''){
+                    //showServicesPopUp(store_record.data.planId,'','350px','300px'); //commented SK2012-7-5
+                    }
+                //}
+                //alert('121212');
+            }
+        }
+    });
+});
+ </script>   
+
+ 
+    <apex:form >
+
+                <div id="planViewer"></div>
+
+
+    </apex:form>    
+    <c:AriaServicesPopupComponent />
+    <script>
+        hideServicesPopUp();
+    </script>
+</apex:component>

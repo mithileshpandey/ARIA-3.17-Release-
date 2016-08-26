@@ -1,0 +1,321 @@
+<apex:page standardController="Account" readOnly="true"  sidebar="false" showHeader="false" standardStylesheets="true" title="{!$Label.ARIA_ACCT_HISTORY_DISPLAY_MESSAGE}" extensions="AriaAccountHistoryExtn">
+    <style>
+    .Checking PA{  
+        display:none;
+    }
+    
+    .header{
+        text-align:right;
+    }
+    
+  
+    #tabs_wrapper {
+        width: 96%;
+        margin:0 auto;
+        margin-top: 14px;
+        margin-left: 20px;
+    }
+    #tabs_container {
+        border-bottom: 1px solid #ccc;
+        
+    }
+    #tabs {
+        list-style: none;
+        padding: 5px 0 4px 0;
+        margin: 0 0 0 20px;
+        font: 0.90em arial;
+    }
+    #tabs li {
+        display: inline;
+    }
+    #tabs li a {
+        border: 1px solid #ccc;
+        padding: 4px 6px;
+        text-decoration: none;
+        background-color: #eeeeee;
+        border-bottom: none;
+        outline: none;
+        border-radius: 5px 5px 0 0;
+        -moz-border-radius: 5px 5px 0 0;
+        -webkit-border-top-left-radius: 5px;
+        -webkit-border-top-right-radius: 5px;
+        color:#000;
+    }
+    #tabs li a:hover {
+        background-color: #dddddd;
+        padding: 4px 6px;
+    }
+    #tabs li.active a {
+        border-bottom: 1px solid #fff;
+        background-color: #fff;
+        padding: 4px 6px 5px 6px;
+        border-bottom: none;
+    }
+    #tabs li.active a:hover {
+        background-color: #eeeeee;
+        padding: 4px 6px 5px 6px;
+        border-bottom: none;
+    }
+    #tabs li a.icon_accept:hover {
+        padding-left: 24px;
+    }
+    
+    #tabs_content_container {
+        border: 1px solid #ccc;
+        border-top: none;
+        padding: 10px;
+        width: 98.4%;
+    }
+    ul li, ol li {
+    margin-left: 0em;
+    padding-left: 0;
+    }
+         
+    </style>
+    
+    <script>
+        function callMasterTab(p){
+            if(p == 'master'){
+                return false;
+            }else{
+                master();
+                return false;
+            }
+        }
+        
+        function callSuppliemental(p){
+            if(p == 'supplemental'){
+            }else{
+                supplemental();
+            }
+            return false;
+        }
+        
+        function callAcctStatus(p){
+            if(p == 'acct_status'){
+            }else{
+                accountStatus();
+            }
+            return false;
+        }
+    </script>
+    
+    <apex:actionstatus id="status">
+    <apex:facet name="start">
+        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 10%;opacity:.8;">
+            <img src="{!URLFOR($Resource.LodingGif)}" title="{!$Label.ARIA_GENERAL_CONFIG_LOADING}" /><br/><br/>
+            <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+        </div>
+    </apex:facet>
+    </apex:actionstatus>
+    
+    <apex:pagemessages ></apex:pagemessages>
+    <apex:form id="frm">
+    
+          <apex:actionFunction name="master" action="{!get_acct_master_history}"  reRender="frm" status="status"/>
+         <apex:actionFunction name="supplemental" action="{!get_acct_supp_history}" reRender="frm" status="status"/>
+         <apex:actionFunction name="accountStatus" action="{!get_acct_status_history}"  reRender="frm" status="status"/> 
+            
+          <apex:actionFunction id="aFunction2" name="firstPage" action="{!firstBtnClick}" reRender="pb" status="status" />
+          <apex:actionFunction id="aFunction3" name="prePage" action="{!previousBtnClick}" reRender="pb" status="status" />
+          <apex:actionFunction id="aFunction4" name="nextPage" action="{!nextBtnClick}" reRender="pb" status="status" />
+          <apex:actionFunction id="aFunction5" name="lastPage" action="{!lastBtnClick}" reRender="pb" status="status" />
+          <apex:actionFunction id="aFunction6" name="setPageSize" reRender="pb" status="status" >
+            <apex:param name="pSize" value="" assignTo="{!PageSize}"/>
+          </apex:actionFunction>
+          <apex:actionFunction id="aFunction7" name="refresh_acctMasterHistory" action="{!get_acct_master_history}" reRender="master" status="status"/>
+          <apex:actionFunction id="aFunction8" name="refresh_acctSuppHistory" action="{!get_acct_supp_history}" reRender="supp" status="status"/>
+          
+        <div id="tabs_wrapper"> 
+        <div id="tabs_container">
+            <ul id="tabs">
+                <li class="{!IF(active_tab = 'master','active','')}" ><b><apex:commandLink value="{!$Label.ARIA_ACCT_HISTORY_MASTER_PLANS}" onclick="return callMasterTab('{!active_tab}');"  id="MasterTab"/></b></li>
+                <li class="{!IF(active_tab = 'supplemental','active','')}"><b><apex:commandLink value="{!$Label.ARIA_ACCT_HISTORY_SUPP_PLANS}" onclick="return callSuppliemental('{!active_tab}');"  id="SupplementalTab"/></b></li>
+                <li class="{!IF(active_tab = 'acct_status','active','')}"><b><apex:commandLink value="{!$Label.ARIA_ACCT_HISTORY_ACCCOUNT_STATUS}" onclick="return callAcctStatus('{!active_tab}');"  id="acctstatusTab"/></b></li>
+            </ul>
+        </div>
+        <div id="tabs_content_container">
+            <div id="tab1" class="tab_content" style="display: block;">
+            
+          <apex:pageBlock id="pb" title="{!pbTitle }">
+          <apex:outputPanel layout="block" style="width:100%;background-color:#fcf2b9;padding: 6px;" rendered="{!active_tab == 'supplemental'}" >
+              <apex:outputLabel value="{!$Label.ARIA_ACCT_HISTORY_ALL_HISTORICAL_SUPPLEMENTAL}"></apex:outputLabel>
+          </apex:outputPanel>
+          <div class="paginator">
+          <span class="left">
+             <span onmouseout="ListPaginator.unhoverSelector(this)" onmouseover="ListPaginator.hoverSelector(this)" onmousedown="ListPaginator.showSelector('item_paginator_rpp_target')" id="item_paginator_rpp_target" class="selectorTarget">
+                {!start}-{!ends}&nbsp;{!$Label.ARIA_PAYMENT_CREDIT_OF}&nbsp; {!totalRecords}
+                <table cellspacing="0" cellpadding="0" id="item_paginator_rpp" class="selector rpp">
+                    <tbody>
+                    <tr onmousedown="setPageSize(10);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=10,'optSelected','optUnselected')}">
+                        <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">10</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                    </tr>
+                    <tr onmousedown="setPageSize(25);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=25,'optSelected','optUnselected')}">
+                        <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">25</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                    </tr>
+                    <tr onmousedown="setPageSize(50);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=50,'optSelected','optUnselected')}">
+                        <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td><td class="rppOpt">50</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                    </tr>
+                    <tr onmousedown="setPageSize(100);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=100,'optSelected','optUnselected')}">
+                        <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">100</td> <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                    </tr>
+                    
+                </tbody>
+              </table>
+            <img src="/s.gif" class="selectArrow" />
+           </span>
+           </span>
+          <span class="prevNextLinks">
+            <span class="prevNext">
+                <apex:outputPanel rendered="{!!previousButtonDisabled}">
+                <a href="javascript:firstPage();">
+                    <img class="first" alt="{!$Label.ARIA_ACCT_HISTORY_FIRST_PAGE}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_FIRST_PAGE}" src="/s.gif"/>
+                </a>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!previousButtonDisabled}">
+                <img class="firstoff" src="/s.gif"/>
+                </apex:outputPanel>
+            </span>
+            <span class="prevNext">
+                <apex:outputPanel rendered="{!!previousButtonDisabled}">
+                <a href="javascript:prePage();">
+                    <img class="prev" alt="{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}" title="{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}" src="/s.gif"/>{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}
+                </a>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!previousButtonDisabled}">
+                <img class="prevoff" src="/s.gif"/>{!$Label.ARIA_PAYMENT_CREDIT_PREVIOUS}
+                </apex:outputPanel>
+            </span>
+            <span class="prevNext">
+                <apex:outputPanel rendered="{!!nextButtonDisabled}">
+                <a href="javascript:nextPage();">
+                    {!$Label.ARIA_PAYMENT_CREDIT_NEXT}<img class="next" alt="{!$Label.ARIA_PAYMENT_CREDIT_NEXT}" title="{!$Label.ARIA_PAYMENT_CREDIT_NEXT}" src="/s.gif"/>
+                </a>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!nextButtonDisabled}">
+                    {!$Label.ARIA_PAYMENT_CREDIT_NEXT}<img class="nextoff" src="/s.gif"/>
+                </apex:outputPanel>
+            </span>
+            <span class="prevNext">
+                <apex:outputPanel rendered="{!!nextButtonDisabled}">
+                <a href="javascript:lastPage();">
+                    <img class="last" alt="{!$Label.ARIA_REFUND_LAST_PAGE}" title="{!$Label.ARIA_REFUND_LAST_PAGE}" src="/s.gif"/>
+                </a>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!nextButtonDisabled}">
+                <img class="lastoff" src="/s.gif"/>
+                </apex:outputPanel>
+            </span>
+         </span>
+         <span class="right">{!$Label.ARIA_PAYMENT_REFUND_PAGE}&nbsp;{!PageNumber}&nbsp;{!$Label.ARIA_PAYMENT_CREDIT_OF}&nbsp;{!totalPageNumber}
+         <!--<input type="text" value="{!PageNumber}" onchange="jump(this.value);" maxlength="4" class="pageInput"/> of {!totalPageNumber}-->
+         </span>
+         </div>
+                
+                    <apex:outputPanel layout="block" rendered="{!active_tab == 'master'}" id="master">
+                         <!-- this list show records for master plan change history of account -->
+                         <apex:outputPanel layout="block" style="float:right">
+						       <apex:outputLabel value="{!$Label.ARIA_PLAN_QUOTE_SUBSCRIPTIONS}" />&nbsp;&nbsp;&nbsp;&nbsp;
+						       <apex:selectList value="{!selSubIdForMasterHis}" size="1" onchange="refresh_acctMasterHistory()">
+						           <apex:selectOptions value="{!subscriptionList}"/>
+						       </apex:selectList>
+					     </apex:outputPanel>
+					     <br/><br/>
+                         <apex:pageBlockTable columnClasses="crow" value="{!master_plan_histories}" var="h" rendered ="{!NOT(ISNULL(master_plan_histories)) &&master_plan_histories.Size > 0}">
+                              <apex:column headerValue="{!$Label.ARIA_PLAN_VIEW_PLAN_NAME}" headerClass="headerlbl" value="{!h.new_plan_name}"></apex:column>
+                              <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_PLAN_UNITS}" value="{!h.new_plan_units}"  headerClass="headerlbl" />
+                              <apex:column headerValue="{!$Label.ARIA_ACCOUNT_DETAIL_SUBSCRIPTION_ID}" headerClass="headerlbl" value="{!h.master_plan_instance_no}"></apex:column>
+                              <apex:column headerValue="{!$Label.ARIA_USAGE_HISTORY_CLIENT_SUBSCRIPTION_ID}" value="{!h.new_client_plan_instance_id}"  headerClass="headerlbl" />
+                              
+<!--                               <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_EFFECTIVE_FROM}" style="text-align:left;" value="{!h.start_date}"> -->
+<!--                               </apex:column> -->
+<!--                               <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_EFFECTIVE_TO}" style="text-align:left;" > -->
+<!--                                   {!IF(ISNULL(h.end_date),'PRESENT',h.end_date)} -->
+<!--                               </apex:column> -->
+                            
+                          </apex:pageBlockTable>
+                          
+                          <!--  In case No records Found the below pageblock table will be rendered -->
+                          <apex:pageBlockTable value="{!master_plan_histories}" var="t" rendered="{!NOT(ISNULL(master_plan_histories)) && master_plan_histories.Size = 0}">
+                             <apex:column headerValue="{!$Label.ARIA_PLAN_VIEW_PLAN_NAME}" headerClass="headerlbl" styleClass="drow" width="12%"/>
+                             <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_PLAN_UNITS}" width="11%" headerClass="headerlbl" styleClass="crow" />
+                             <apex:column headerValue="{!$Label.ARIA_ACCOUNT_DETAIL_SUBSCRIPTION_ID}" headerClass="headerlbl" ></apex:column>
+                              <apex:column headerValue="{!$Label.ARIA_USAGE_HISTORY_CLIENT_SUBSCRIPTION_ID}" headerClass="headerlbl" />
+                              
+<!--                              <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_EFFECTIVE_FROM}" width="20%" headerClass="headerlbl"  styleClass="lrow" /> -->
+<!--                              <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_EFFECTIVE_TO}" width="20%" headerClass="headerlbl"  styleClass="lrow" /> -->
+                             <apex:facet name="footer">{!$Label.ARIA_DISPUTE_NO_RECORDS}</apex:facet>
+                          </apex:pageBlockTable>
+                      </apex:outputPanel>  
+                      
+                        <apex:outputPanel layout="block" rendered="{!active_tab == 'supplemental'}" id="supp">
+                         <!-- this list show records for supplemental plan change history of account -->
+                         	<apex:outputPanel layout="block" style="float:right">
+						       <apex:outputLabel value="{!$Label.ARIA_PLAN_QUOTE_SUBSCRIPTIONS}" />&nbsp;&nbsp;&nbsp;&nbsp;
+						       <apex:selectList value="{!selSubIdForSuppHis}" size="1" onchange="refresh_acctSuppHistory()">
+						           <apex:selectOptions value="{!subscriptionListForSupplemental}"/>
+						       </apex:selectList>
+					     </apex:outputPanel>
+					     <br/><br/>
+                         <apex:pageBlockTable columnClasses="crow" value="{!supp_plan_histories}" var="h" rendered ="{!NOT(ISNULL(supp_plan_histories)) &&supp_plan_histories.Size > 0}">
+                              <apex:column headerValue="{!$Label.ARIA_GENERAL_CONFIG_PLAN}"  width="360px" breakBefore="" value="{!h.new_plan_name}" headerClass="headerlbl" />
+                              <apex:column headerValue="{!$Label.ARIA_ACCOUNT_DETAIL_SUBSCRIPTION_ID}" headerClass="headerlbl" value="{!h.master_plan_instance_no}"></apex:column>
+                              <apex:column headerValue="{!$Label.ARIA_USAGE_HISTORY_CLIENT_SUBSCRIPTION_ID}" value="{!h.new_client_plan_instance_id}"  headerClass="headerlbl" />
+                             
+                              <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_ADD_MODIFY_DATE}" headerClass="headerlbl" width="90px" value="{!h.update_date}"></apex:column>
+                              <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_ACTION_SUMMARY}" style="text-align:left;" width="60px" ></apex:column>
+                              <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_ACTION_DETAIL}" style="text-align:left;" >
+                               
+                              </apex:column>
+                           </apex:pageBlockTable>
+                           
+                          <!--  In case No records Found the below pageblock table will be rendered -->
+                          <apex:pageBlockTable value="{!supp_plan_histories}" var="t" rendered="{!NOT(ISNULL(supp_plan_histories)) && supp_plan_histories.Size = 0}">
+                             <apex:column headerValue="{!$Label.ARIA_GENERAL_CONFIG_PLAN}" width="11%" headerClass="headerlbl" styleClass="crow" />
+                             <apex:column headerValue="{!$Label.ARIA_ACCOUNT_DETAIL_SUBSCRIPTION_ID}" headerClass="headerlbl" ></apex:column>
+                              <apex:column headerValue="{!$Label.ARIA_USAGE_HISTORY_CLIENT_SUBSCRIPTION_ID}" headerClass="headerlbl" />
+                             
+                             <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_ADD_MODIFY_DATE}" headerClass="headerlbl" styleClass="drow" width="12%"/>
+                             <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_ACTION_SUMMARY}" width="20%" headerClass="headerlbl"  styleClass="lrow" />
+                             <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_ACTION_DETAIL}" width="20%" headerClass="headerlbl"  styleClass="lrow" />
+                             <apex:facet name="footer">{!$Label.ARIA_DISPUTE_NO_RECORDS}</apex:facet>
+                          </apex:pageBlockTable>
+                      </apex:outputPanel>
+                      
+                      <apex:outputPanel layout="block" rendered="{!active_tab = 'acct_status'}">
+                      
+                      <apex:outputPanel layout="block" style="float:right">
+						       <apex:outputLabel value="{!$Label.Aria_Acct_History_View}" />&nbsp;&nbsp;&nbsp;&nbsp;
+						       <apex:selectList value="{!selSubIdForAccStatusHis}" size="1" >
+						           <apex:selectOptions value="{!subscriptionListForAccStatus}"/>
+						       </apex:selectList>
+					     </apex:outputPanel>
+					     <br/><br/>
+                           <!-- this list show records for master plan change history of account -->
+                         <apex:pageBlockTable columnClasses="crow" value="{!acct_status_histories}" var="h" rendered ="{!NOT(ISNULL(acct_status_histories)) &&acct_status_histories.Size > 0}">
+                              <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_STATUS_CODE}" headerClass="headerlbl" value="{!h.new_status}"></apex:column>
+                              <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_COMMENTS}" value="{!h.comments}"  headerClass="headerlbl" />
+                              <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_EFFECTIVE_FROM}" style="text-align:left;" value="{!h.date_entered}">
+                              </apex:column>
+                              
+                            
+                          </apex:pageBlockTable>
+                          
+                          <!--  In case No records Found the below pageblock table will be rendered -->
+                          <apex:pageBlockTable value="{!master_plan_histories}" var="t" rendered="{!NOT(ISNULL(acct_status_histories)) && acct_status_histories.Size = 0}">
+                             <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_STATUS_CODE}" headerClass="headerlbl" styleClass="drow" width="12%"/>
+                             <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_COMMENTS}" width="11%" headerClass="headerlbl" styleClass="crow" />
+                             <apex:column headerValue="{!$Label.ARIA_ACCT_HISTORY_EFFECTIVE_FROM}" width="20%" headerClass="headerlbl"  styleClass="lrow" />
+                             <apex:facet name="footer">{!$Label.ARIA_DISPUTE_NO_RECORDS}</apex:facet>
+                          </apex:pageBlockTable>
+                      </apex:outputPanel>
+                      
+
+                </apex:pageBlock>
+            </div>
+        </div>
+        </div>
+        
+        <script>addEvent(document.body,"mousedown",function(a){ListPaginator.hideSelector('item_paginator_rpp_target')},!0);</script>    
+    </apex:form>
+</apex:page>

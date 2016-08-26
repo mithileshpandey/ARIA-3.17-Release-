@@ -1,0 +1,38 @@
+<apex:component access="global" controller="AriaTemplateViewerController">
+    <apex:attribute name="title" description="This value defines the title of the component" type="String" required="false" default="Client Plans"/>
+    <apex:attribute name="width" description="This value defines the width of the component" type="String" required="false" default="100%"/>
+    <apex:attribute name="height" description="This value defines the height of the component" type="String" required="false" default="400px"/>
+    <apex:attribute name="templateId" description="This value defines the Template" type="String" required="false" default="" />
+    <apex:attribute name="fieldsToDisplay" description="This value defines the list of fields to be displayed" type="String" required="false" 
+    default="planName;planType;planDescription;planStatus;recurringBillingInterval;recurringUsageInterval;rolloverMonths"/>
+    
+    <apex:includeScript value="https://code.jquery.com/jquery-1.11.2.min.js" />
+    <apex:includeScript value="//cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"/>
+    <apex:stylesheet value="//cdn.datatables.net/1.10.5/css/jquery.dataTables.min.css"/>    
+    
+    <table id="myTable" class="display">
+        <thead>
+            <tr>
+                <th>{!$Label.ARIA_CLIENT_PLAN_TEMPLATE_NAME}</th>
+                <th>{!$Label.ARIA_CLIENT_PLAN_TEMPLATE_CLASS}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <apex:repeat value="{!Templates}" var="i">
+                <tr>
+                    <td>{!i.templateName}</td>
+                    <td>{!i.templateClass}</td>
+                </tr>
+            </apex:repeat>
+        </tbody>
+    </table>
+   
+    <script>
+        var $x = jQuery.noConflict(); 
+         $x(document).ready(function(){
+            $x('#myTable').DataTable();
+         });
+    </script>
+    
+
+</apex:component>

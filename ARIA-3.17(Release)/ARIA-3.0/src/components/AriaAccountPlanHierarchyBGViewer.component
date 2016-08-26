@@ -1,0 +1,1018 @@
+<apex:component access="global" controller="AriaAccountPlanHierarchyBGViewerCtrl" allowDML="true"> 
+     
+    <apex:attribute name="accountId1" description="This value defines the account for which the plans have to listed" type="String" required="false" assignTo="{!accountId}"/>
+    <apex:attribute name="opportunityId1" description="This value defines the account for which the plans have to listed" type="String" required="false" assignTo="{!opportunityId}"/>
+    <!-- SK 2012-26-04 added condition for quote context  -->
+    <apex:attribute name="quoteId1" description="This value defines the quote for which the plans have to listed" type="String" required="false" assignTo="{!quoteId}"/>
+    <apex:attribute name="componentContext" description="This value defines the quote for which the plans have to listed" type="String" required="false" assignTo="{!context}"/> 
+    <style>
+    .labelDataClass{
+    padding-top: 1px !important;
+    padding-bottom: 1px !important;
+    vertical-align: middle !important;
+    border-bottom: none !important;
+    font-size: 11px !important;
+}
+.highlight-total{
+		background-color: #ececec !important;
+    	border-color: #ececec !important;
+    	border-top: 2px solid #ccc !important;
+    	border-bottom: 2px solid #ccc !important;
+    	position: relative;
+    	padding-top:7px !important;
+	}
+.highlight-total:after{
+   	position: absolute;
+    content: '';
+    width: 100%;
+    height: 1px;
+    top: 1px;
+    left: 0px;
+    background: #ccc;
+}
+    select {
+   height: 25px;
+   border-radius: 3px;
+   border: 1px solid #CCC;
+   font-weight: 200;
+   font-size: 13px; 
+   font-family: Verdana;
+   width: 168px;
+   box-shadow: 1px 1px 5px #CCC;
+}
+input[type='text'] {
+   width: 150px;
+   height: 9px;
+   border-radius: 3px;
+   border: 1px solid #CCC;
+   padding: 7px;
+   font-weight: 200;
+   font-size: 13px;
+   font-family: Verdana;
+   box-shadow: 1px 1px 5px #CCC;
+}
+          .requiredLoaderBG_notinuse{
+                background-color: rgb(71,71,71);
+                opacity:0.7;
+                filter:alpha(opacity=70);
+                background-image:url('/img/loading.gif');
+                background-position: center center;
+                background-repeat: no-repeat;
+                height: 100%;
+                left: 0;
+                position: fixed;
+                text-align: center;
+                top: 0;
+                width: 100%;
+                z-index: 1000;
+            }
+            .errormsg{
+                list-style-type: none;
+                color:red;
+                font-size: 10pt;
+                font-weight:bold;
+            }
+            .accountName{
+                text-decoration: underline;
+            }
+            .gradiantHeader{
+                font-size:12px !important;
+                border-width: 1px !important;
+                padding: 2px 6px 1px 8px!important;
+                border-style: solid !important;
+                border-color: #fff !important;
+                background-color:#D4D4D4 !important;
+                height:22px !important;
+                background: #eeeeee !important; /* Old browsers */
+                background: -moz-linear-gradient(top,  #eeeeee 0%, #cccccc 100%) !important; /* FF3.6+ */
+                background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#eeeeee), color-stop(100%,#cccccc)) !important; /* Chrome,Safari4+ */
+                background: -webkit-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* Chrome10+,Safari5.1+ */
+                background: -o-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* Opera 11.10+ */
+                background: -ms-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* IE10+ */
+                background: linear-gradient(to bottom,  #eeeeee 0%,#cccccc 100%) !important; /* W3C */
+                filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#eeeeee', endColorstr='#cccccc',GradientType=0 ) !important; /* IE6-9 */
+            }
+            .myTable{
+                border-width: 0px !important;
+                border-style: solid !important;
+                border-color: #fff !important;
+                font-size: 12px !important;
+                
+            }
+            .myTable thead tr th div{
+                background-color:red !important;
+            }
+            .myTable tbody tr:nth-child(even) {
+                background-color:#eeeeee !important;
+            }
+            .myTable tbody tr td {
+                border-width: 1px !important;
+                border-style: solid !important;
+                border-color: #fff;
+                padding-left: 8px;
+            }
+            .myTable1{
+                border-width: 0px !important;
+                border-style: solid !important;
+                /*border-color: #fff !important;*/
+                font-size: 12px !important;
+            }
+            .myTable1 tbody tr:nth-child(odd) {
+                background-color:#eeeeee !important;
+            }
+            .myTable1 tbody tr td {
+                border-width: 1px !important;
+                border-style: solid !important;
+                /*border-color: '' ;*/
+                height : 20px !important;
+                padding-left: 8px;
+            }
+            
+            h2 .myLink{
+                font-size: 1.0em !important;
+                color:blue;
+                color: blue;
+                text-decoration: underline;
+            }
+            .pbBody .myChangePayMethod{
+                font-size: 12px !important;
+                margin-left: 20px;
+                color: blue;
+                text-decoration: underline;
+                font-weight: bold;
+            }
+            .firstChild{
+                padding-left:20px !important;
+                font-weight:normal !important;
+                background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 2px 2px !important;
+            }
+            .secondChild {
+                padding-left:40px !important;
+                font-weight:normal !important;
+                background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 20px 2px !important;
+            }
+            .thirdChild {
+                padding-left:60px !important;
+                font-weight:normal !important;
+                background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 40px 2px !important;
+            }
+            .fourthChild {
+                padding-left:80px !important;
+                font-weight:normal !important;
+                background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 60px 2px !important;
+            }
+            
+#overlay{ /* we set all of the properties for are overlay */
+    color:black;
+    position:absolute;
+    top:6%;
+    z-index:1000;
+    display:none;
+    /* CSS 3 */
+    -webkit-border-radius:7px;
+    -moz-border-radius:7px;
+    -o-border-radius:7px;
+    border-radius:7px;
+    width: 98%;
+}
+
+#mask{ /* create are mask */
+    position:fixed;
+    top:0;
+    left:0;
+    z-index:500;
+    width:100%;
+    height:100%;
+    display:none;
+}
+/* use :target to look for a link to the overlay then we find are mask */
+#overlay:target, #overlay:target + #mask{
+    display:block;
+    opacity:1;
+}
+.close{ /* to make a nice looking pure CSS3 close button */
+    display:block;
+    position:absolute;
+    top:-20px;
+    right:-20px;
+    background:red;
+    color:white;
+    height:40px;
+    width:40px;
+    line-height:40px;
+    font-size:35px;
+    text-decoration:none;
+    text-align:center;
+    font-weight:bold;
+    -webkit-border-radius:40px;
+    -moz-border-radius:40px;
+    -o-border-radius:40px;
+    border-radius:40px;
+}
+.textRightAlign{
+                text-align:right;
+            }
+            
+#open-overlay{ /* open the overlay */
+    font-size: 1.1em !important;
+                color:blue;
+}
+
+table.planConfigTable{
+                        width: 97%;
+                        margin-left:0px;
+                        margin-top:0px;
+                        border-spacing:5px;
+                        
+                }
+                table.planConfigTable tr{
+                        width:20%
+                        
+                }
+                table.planConfigTable td{
+                    font-weight:bold;
+                    font-family:arial;
+                    
+                }
+                .configField { 
+                    width: 15%; 
+                }
+                input[type='text']{
+                    width: 56px;
+                    height: 12px;
+                    border-radius: 3px;
+                    border: 1px solid #CCC;
+                    padding: 7px;
+                    font-weight: 200;
+                    font-size: 13px;
+                    font-family: Verdana;
+                    box-shadow: 1px 1px 5px #CCC;
+                }
+                input[type='text']:hover{
+                box-shadow: 1px 1px 5px #CCC;
+                }
+                select{
+                    //height: 27px;
+                    border-radius: 3px;
+                    border: 1px solid #CCC;
+                    font-weight: 200;
+                    font-size: 13px;
+                    font-family: Verdana;
+                    box-shadow: 1px 1px 5px #CCC;
+                }
+                select: hover{
+                    width: 245px;
+                    height: 24px;
+                    border-radius: 3px;
+                    border: 1px solid #CCC;
+                    font-weight: 200;
+                    font-size: 13px;
+                    font-family: Verdana;
+                    box-shadow: 1px 1px 5px #CCC;
+                }
+                .buttonPanel {
+                   padding-top: 11px;
+                   background: #f8f8f8;
+                   padding-bottom: 2px;
+                }
+                .divborder tr td{
+                    border:0px !important;
+                    vertical-align:top !important;
+                }
+                .taxdetails-tooltip.last-column:after {
+                    left: auto;
+                    right: 30px;
+                }
+                
+</style>
+    <apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/tooltip.css')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'collapse.css')}" /> 
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+    <script>
+    $j = jQuery.noConflict(); 
+    var isPaymentDataUpdated = false;
+    var isBillingDataUpdated = false;
+    var isAccountUpdated = false;
+    function paymentUpdated(){
+        if(isPaymentDataUpdated == false){
+            isPaymentDataUpdated = true;
+            //setAPIFlag(isPaymentDataUpdated,isBillingDataUpdated,isAccountUpdated);
+        }
+        
+    }
+    function billingUpdated(){
+        if(isBillingDataUpdated == false){
+            isBillingDataUpdated = true;
+            //setAPIFlag(isPaymentDataUpdated,isBillingDataUpdated,isAccountUpdated);
+        }
+    }
+    function accountUpdated(){
+        if(isAccountUpdated == false){
+            isAccountUpdated = true;
+        //  setAPIFlag(isPaymentDataUpdated,isBillingDataUpdated,isAccountUpdated);
+        }
+    }
+    
+    
+    function toggleBillingContactOption(val,ext_acctClass,new_acctClass){
+        if(val == 'opt1'){ 
+           $j( "."+ext_acctClass ).hide(300);
+           $j( "."+new_acctClass ).hide(300);
+           
+        }else if(val == 'opt2'){
+           $j( "."+ext_acctClass ).show(300);
+           $j( "."+new_acctClass ).hide(300);
+        }else if(val == 'opt3'){
+            $j( "."+new_acctClass ).show(300);
+            $j( "."+ext_acctClass ).hide(300);
+        }else{
+            $j( "."+new_acctClass ).hide(300);
+            $j( "."+ext_acctClass ).hide(300);
+        }
+    }
+    
+    function stopPreviousdate(dateFieldID){
+                var dateValue = new Date (document.getElementById(dateFieldID).value);
+                var dateOnly = Date.parse(document.getElementById(dateFieldID).value); //Date.parse(dateValue.setHours(0,0,0,0));
+                var todayDate = Date.parse('{!effectiveDate}');
+                if(dateOnly < todayDate  ){
+                    //showGenericDialog('Alert ','Please select today or future date',180,300);
+                    alert('Please select today or future date');
+                    document.getElementById(dateFieldID).value = null;
+                }
+        }
+        
+      function redirectToPlanWizard(bgsfid,bgNo){ 
+        if($j('.billSelect').val() == ''){
+            bgsfid = '';
+            bgNo = '';
+        }
+        window.top.location.href = "/apex/"+'{!namespacePrefix}'+"AriaAccountPlanWizard?context=account&fromPlanButton=false&action=modify&selectionContext=closed&id="+'{!accountId}'+"&bgsfid="+bgsfid; 
+      }
+      function noBG(){
+      	$j('.myLink').hide();
+        $j('.addModifyBtn').hide();
+      }
+      function onBillGroupChange(bgVar){
+        if($j(bgVar).val() == ''){ 
+            $j('.myLink').hide();
+            return false;
+        }
+        
+        if($j(bgVar).val() == '000000000000ABC'){
+			noBG();       	
+        }else{
+        	$j('.myLink').show();
+        	$j('.addModifyBtn').show();
+        }
+        rerenderServices();
+        
+      }
+      
+       function checkMinChar(e,minChar){
+            var count =  e.value.indexOf(';');
+            if((count < minChar-1 && count != '-1') || (minChar > 1 && count == '-1')){
+                showGenericDialog('Alert','Please enter minimum '+ minChar +' values seperated with <;>',180,300);  
+                e.value = null;
+            }
+         }
+         
+          
+        function isNumberKey(evt, val)
+         {
+            var charCode = (evt.which) ? evt.which : evt.keyCode
+            if (charCode == 46) {
+               // Allow only 1 decimal point ('.')...
+               if((val) && (val.indexOf('.') >= 0))
+                   return false;
+               else
+                   return true;
+            }
+            
+            if (charCode > 31 && (charCode < 48 || charCode > 57))
+               return false;
+        
+            return true;
+         }
+         function showCalender(id){
+                var element = document.getElementById(id);
+                DatePicker.pickDate(true, element, false);
+        }
+        
+         function overRideCal(){
+                $j('.dateFormat a').each(function() {
+                        var href = $( this ).attr("href");
+                        var elementId = href.split(",")[1];
+                        //console.log(elementId+">>>>");
+                        $j( this ).attr("href","javascript:showCalender("+elementId+");");
+                        var span = $(this).parent();
+                        $j(span).html("");
+                    $j( this ).html('<img height="16" src="/img/func_icons/util/datePicker16.gif" width="16" style="padding-left: 8px;" />');
+                    $j(this).css({"vertical-align": "middle"}); 
+                    $j(span).append(this);
+                    $j(span).attr('class','dateFormatCustom');
+                });
+        }
+        function stopPreviousdate(dateFieldID){
+                        
+                var dateValue = new Date (document.getElementById(dateFieldID).value);
+                var dateOnly = Date.parse(document.getElementById(dateFieldID).value); //Date.parse(dateValue.setHours(0,0,0,0));
+
+                var todayDate = Date.parse('{!effectiveDate}'); 
+
+                if(dateOnly < todayDate  ){
+
+                        showGenericDialog('Alert ','Please select today or future date',180,300);
+                        document.getElementById(dateFieldID).value = null;
+                }
+        }
+    </script>
+    <apex:form >
+        <apex:actionFunction status="loadingStatus" action="{!rerenderServices}" name="rerenderServices" rerender="servicesPannel,pageTable,couponPanel">
+            <apex:param name="planId" assignTo="{!planId}" value="" /> 
+            <apex:param name="planName" assignTo="{!planName}" value="" /> 
+        </apex:actionFunction>
+        <apex:actionFunction status="loadingStatus1" action="{!rerenderServices}" name="rerenderServices1" rerender="servicesPannel,mainPageSec,overlayBlock">
+            <apex:param name="planId" assignTo="{!planId}" value="" /> 
+            <apex:param name="planName" assignTo="{!planName}" value="" /> 
+        </apex:actionFunction>
+        
+        <apex:actionfunction name="setAPIFlag" action="{!setAPIFlag}" rerender="" oncomplete="UpdateDetail();"></apex:actionfunction>
+            
+             <apex:actionfunction name="UpdateDetail" action="{!Update_Detail}"  status="loadingStatus" oncomplete="if('{!HasMessage}'=='false'){CallUpdateCompleteAPI();}" reRender="mainPb">
+                    <apex:param name="paymentDataUpdated" value="" assignTo="{!isPaymentDataUpdated}"/>
+                    <apex:param name="billingDataUpdated" value="" assignTo="{!isBillingDataUpdated}"/>
+                    <apex:param name="accountDataUpdated" value="" assignTo="{!isAccountUpdated}"/>
+             </apex:actionfunction>
+                 <apex:actionfunction name="CallUpdateCompleteAPI" action="{!CallUpdateAPI}" status="loadingStatus" onComplete="window.top.location='/{!accountId}'" reRender="mainPb"></apex:actionfunction> 
+             
+                
+    <apex:actionStatus id="busyStatus" startStyle="color:red;font-weight:bold" starttext="Processing..." startstyleClass="requiredLoaderBG" stopstyleclass="hide"/>
+   <apex:actionstatus id="loadingStatus">
+            <apex:facet name="start">
+                <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 20%;opacity:.8;">
+                    <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+                    
+                    <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+                </div>
+            </apex:facet> 
+        </apex:actionstatus>
+           <apex:pageBlock id="mainPageSec" rendered="{!isShow}">
+                    <apex:selectList value="{!selectedBillinGroup}" size="1" onchange="onBillGroupChange(this)" styleClass="billSelect" style="width:290px;" rendered="{!isBillGrp}">
+                        <apex:selectOptions value="{!billingGroupOption}"/>
+                    </apex:selectList>
+                    <apex:outputText value="{!selectedBillinGroupName}"  style="text-align: right;height: 25px;font-weight: 400;font-size: 13px;font-family: Verdana;width: 168px;" rendered="{!NOT(isBillGrp)}"></apex:outputText>
+                    <a href="#" id="open-overlay" class="myLink" style="cursor:pointer;margin-left: 8px;" onclick="javascript:return OpenURL('{!selectedBillinGroup}');">Edit</a> 
+                    <div style="float: right;">
+                    <button class="addModifyBtn" style="height: 21px;width: 110px;font-weight: bold;font-size: 1.0em;" onClick="redirectToPlanWizard('{!selectedBillinGroup}','');return false;">Add/Modify Plans</button>
+                    </div>
+                    <hr style="margin-left: -12px;margin-right: -12px;margin-top: 10px;" /> 
+            
+             <apex:messages styleclass="errormsg"/>   
+            <apex:pageBlockTable id="pageTable" value="{!AllSelectedPlansGroup[selectedBillinGroup]}" var="theAcctPlan" styleClass="myTable1" headerClass="gradiantHeader" >
+                <apex:repeat value="{!AccountPlanFields}" var="f" >
+                     <apex:column styleclass="{!if(theAcctPlan.acctPlanName == 'Total','highlight-total','')}" style="width:40%;background-color: {! IF (theAcctPlan.isAddedModified, '#ffa59f','')}" headerValue="{!f.Label}--" rendered="{!f.Label == $ObjectType.Account_Plan__c.Fields.Name.Label}" >
+                       <apex:outputlabel style="font-weight:bold;" value="{!theAcctPlan.acctPlanName}" escape="false" rendered="{!if(theAcctPlan.acctPlanName = 'Total',true,false)}"/>
+                       <apex:outputlabel value="{!theAcctPlan.acctPlanName}" escape="false" rendered="{!if(theAcctPlan.acctPlanName = 'Total',false,true)}" onClick="rerenderServices('{!theAcctPlan.acctPlanId}','{!theAcctPlan.planName}');"  styleClass="accountName {!if(theAcctPlan.level == 1,'firstChild','')} {!if(theAcctPlan.level == 2,'secondChild','')} {!if(theAcctPlan.level == 3,'thirdChild','')} {!if(theAcctPlan.level == 4,'fourthChild','')}" />
+                       &nbsp;<apex:outputPanel rendered="{!if(theAcctPlan.planWithCoupon,true,false)}"><img src="{!URLFOR($Resource.Sim_JS, 'images/CouponIcon.png')}" /></apex:outputPanel>
+                       &nbsp;<apex:outputPanel rendered="{!if(theAcctPlan.planWithContract,true,false)}"><img src="{!URLFOR($Resource.Sim_JS, 'images/TAIcon.png')}"/></apex:outputPanel>
+                       <apex:outputPanel style="float:right;margin-right:5px;" rendered="{!if(theAcctPlan.acctPlanName = 'Total',false,true)}" ><a href="javascript:window.open('/apex/AriaNextStatement?planId={!theAcctPlan.acctPlanId}','Statement','width=800,height=600')" style="color:blue;">Next Statement</a></apex:outputPanel>
+                     </apex:column>  
+                     <apex:column headerClass="textRightAlign" styleclass="{!if(theAcctPlan.acctPlanName == 'Total','highlight-total','')}"  style="width:10%;background-color: {! IF (theAcctPlan.isAddedModified, '#ffa59f','')};text-align:right" headerValue="{!f.Label}" rendered="{!AND(f.Type != 'Double',f.Label != $ObjectType.Account_Plan__c.Fields.Name.Label)}">
+                         <apex:outputText style="font-size:8pt" value="{0, number, 0.00}" rendered="{!if(theAcctPlan.acctPlanName == 'Total' && f.Label == 'ACV Total',true,false)}">
+                              <apex:param value="{!ACV_Total}" /> 
+                         </apex:outputText>
+                         <apex:outputText style="font-size:8pt" value="{0, number, 0.00}" rendered="{!if(theAcctPlan.acctPlanName == 'Total' && f.Label == 'ARR Total',true,false)}">
+                              <apex:param value="{!ARR_Total}" /> 
+                         </apex:outputText>
+                         <apex:outputText style="font-size:8pt" value="{0, number, 0.00}" rendered="{!if(theAcctPlan.acctPlanName == 'Total' && f.Label == 'MRR Total',true,false)}">
+                              <apex:param value="{!MRR_Total_IncTax}" /> 
+                         </apex:outputText>
+                         <apex:outputText style="font-size:8pt" value="{0, number, 0.00}" rendered="{!if(theAcctPlan.acctPlanName == 'Total' && f.Label == 'TCV Total',true,false)}">
+                              <apex:param value="{!TCV_Total}" /> 
+                         </apex:outputText>
+                         <apex:outputText style="font-size:8pt" value="{0, number, 0.00}" rendered="{!if(theAcctPlan.acctPlanName == 'Total' && f.Label == 'Total Price',true,false)}">
+                              <apex:param value="{!Total_Price}" /> 
+                         </apex:outputText>
+                         <!-- <apex:outputLabel value="{!ACV_Total}" rendered="{!if(theAcctPlan.acctPlanName == 'Total' && f.Label == 'ACV Total',true,false)}"/>
+                         <apex:outputLabel value="{!ARR_Total}" rendered="{!if(theAcctPlan.acctPlanName == 'Total' && f.Label == 'ARR Total',true,false)}"/>
+                         <apex:outputLabel value="{!MRR_Total_IncTax}" rendered="{!if(theAcctPlan.acctPlanName == 'Total' && f.Label == 'MRR Total',true,false)}"/>
+                         <apex:outputLabel value="{!TCV_Total}" rendered="{!if(theAcctPlan.acctPlanName == 'Total' && f.Label == 'TCV Total',true,false)}"/>
+                         <apex:outputLabel value="{!Total_Price}" rendered="{!if(theAcctPlan.acctPlanName == 'Total' && f.Label == 'Total Price',true,false)}"/>
+                          -->
+                         
+                         <apex:outputLabel rendered="{!if(f.Label=='MRR Total',true,false)}">
+                            <apex:outputText value="{0, number, 0.00}" rendered="{!if(f.Label=='MRR Total',true,false)}"> 
+                                    <apex:param value="{!theAcctPlan.acctPlan[f.fieldPath]}" /> 
+                            </apex:outputText>
+                            <span class="taxTotal"> 
+                                <img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" title = "Tax details to be shown" style="vertical-align: text-bottom;"/>
+                                <div class="taxdetails-tooltip" style="margin-left:-60px;min-width:120px">
+                                    Tax Amount<br/>
+                                    <!-- <span style="font-size:8pt">{!(theAcctPlan.acctPlan['MRR_Total_IncTax__c']-theAcctPlan.acctPlan['MMR_Total__c'])}</span> -->
+                                    <apex:outputText style="font-size:8pt" value="{0, number, 0.00}" rendered="{!if(theAcctPlan.acctPlanName == 'Total',false,true)}">
+                                         <apex:param value="{!(theAcctPlan.acctPlan['MRR_Total_IncTax__c']-theAcctPlan.acctPlan['MMR_Total__c'])}" /> 
+                                    </apex:outputText>
+									<apex:outputText style="font-size:8pt" value="{0, number, 0.00}" rendered="{!if(theAcctPlan.acctPlanName == 'Total',true,false)}">
+                                         <apex:param value="{!MRR_Total_IncTax-theAcctPlan.acctPlan['MMR_Total__c']}" />  
+                                    </apex:outputText> 
+                                    
+                                    <!--  ({!theAcctPlan.acctPlan['TaxPercentage__c']}%) -->
+                                </div>
+                            </span>
+                        </apex:outputLabel>
+                        <apex:outputLabel rendered="{!if(f.Label=='ARR',true,false)}"  >
+                            <apex:outputText value="{0, number, 0.00}">
+                                    <apex:param value="{!theAcctPlan.acctPlan[f.fieldPath]}" /> 
+                            </apex:outputText> 
+                            <span class="taxTotal"> 
+                                <img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" title = "Tax details to be shown" style="vertical-align: text-bottom;"/>
+                                <div class="taxdetails-tooltip" style="margin-left:-100px;min-width:200px">
+                                        <b>Total + Tax&nbsp;&nbsp;&nbsp;Tax Amount</b><br/>
+                                        <span style="font-size:8pt; float:left; min-width: 81px;">{!theAcctPlan.acctPlan['ARR_Total__c']}</span>
+                                        <!-- <span style="font-size:8pt; float:left;">{!(theAcctPlan.acctPlan['ARR_Total__c']-theAcctPlan.acctPlan['ARR__c'])} ({!theAcctPlan.acctPlan['TaxPercentage__c']}%)</span> -->
+                                         <apex:outputText style="font-size:8pt;" value="{0, number, 0.00}">
+                                             <apex:param value="{!(theAcctPlan.acctPlan['ARR_Total__c']-theAcctPlan.acctPlan['ARR__c'])}" /> 
+                                        </apex:outputText> 
+                                         <span style="font-size:8pt;">({!theAcctPlan.acctPlan['TaxPercentage__c']}%)</span>
+                                </div> 
+                            </span>
+                        </apex:outputLabel>
+                        <apex:outputLabel rendered="{!if(f.Label=='ACV',true,false)}">
+                            <apex:outputText value="{0, number, 0.00}">
+                                    <apex:param value="{!theAcctPlan.acctPlan[f.fieldPath]}" /> 
+                            </apex:outputText> 
+                            <span class="taxTotal"> 
+                                <img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" title = "Tax details to be shown" style="vertical-align: text-bottom;"/>
+                                <div class="taxdetails-tooltip last-column" style="margin-left:-153px;min-width:185px">
+                                    <b>Total + Tax&nbsp;&nbsp;&nbsp;Tax Amount</b><br/>
+                                    <span style="font-size:8pt; float:left; min-width: 81px;">{!theAcctPlan.acctPlan['ACV_Total__c']}</span>
+                                    
+                                    <!-- <span style="font-size:8pt; float:left;">{!(theAcctPlan.acctPlan['ACV_Total__c']-theAcctPlan.acctPlan['ACV__c'])} ({!theAcctPlan.acctPlan['TaxPercentage__c']}%)</span> -->
+                                    
+                                     <apex:outputText style="font-size:8pt;" value="{0, number, 0.00}">
+                                         <apex:param value="{!(theAcctPlan.acctPlan['ACV_Total__c']-theAcctPlan.acctPlan['ACV__c'])}" /> 
+                                    </apex:outputText> 
+                                     <span style="font-size:8pt;">({!theAcctPlan.acctPlan['TaxPercentage__c']}%)</span>
+                                         
+                                </div>
+                            </span>
+                        </apex:outputLabel>
+               
+                         <apex:outputText title="hello" rendered="{!if(AND(f.Label!='Units',f.Label!='ACV',f.Label!='ARR',f.Label!='MRR Total',f.Type == 'double'),true,false)}" value="{0, number, 0.00}">
+                                <apex:param value="{!theAcctPlan.acctPlan[f.fieldPath]}" /> 
+                         </apex:outputText> 
+                      
+                          <apex:outputText rendered="{!if(AND(f.Label=='Units',f.Type == 'double'),true,false)}" value="{0, number, 0}">
+                                   <apex:param value="{!theAcctPlan.acctPlan[f.fieldPath]}" /> 
+                           </apex:outputText> 
+                                    
+                         <apex:outputLabel rendered="{!if(AND(f.Label!='ACV',f.Label!='ARR',f.Label!='MRR Total',f.Type != 'double'),true,false)}"  value="{!theAcctPlan.acctPlan[f.fieldPath]}">
+                            
+                        </apex:outputLabel>     
+               
+                </apex:column>
+                    <!--  <apex:column style="background-color: {! IF (theAcctPlan.isAddedModified, '#ffa59f','')}" headerValue="{!f.Label}" value="{!theAcctPlan.acctPlan[f.fieldPath]}" rendered="{!AND(f.Type != 'Double',f.Label != $ObjectType.Account_Plan__c.Fields.Name.Label)}">
+                     </apex:column> --> 
+                     
+                      <apex:column width="100"  styleclass="{!if(theAcctPlan.acctPlanName == 'Total','highlight-total','')}" style="background-color: {! IF (theAcctPlan.isAddedModified, '#ffa59f','')}" headerValue="{!f.Label}--dileep" rendered="{!f.Type == 'Double'}" >
+                              <apex:outputText id="arr" value="{0, number, 0.00}"  style="text-align:right;" >
+                               <apex:param value="{!theAcctPlan.acctPlan[f.fieldPath]}" />
+                              </apex:outputText>
+                     </apex:column> 
+                     
+                </apex:repeat>
+                
+            </apex:pageBlockTable> 
+            <!-- <table width="100%" style="font-size: 12px;background-color:#eeeeee;">
+            	<tr>
+            		<td style="width:30%;">
+            			<b>Total</b>
+            		</td >
+            		<td style="width:10%;text-align:right;">
+            			1
+            		</td>
+            		<td style="width:10%;text-align:right;">
+            			2.2
+            		</td>
+            		<td style="width:10%;text-align:right;">
+            			0.00
+            			<img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" title = "Tax details to be shown" style="vertical-align: text-bottom;"/>
+            		</td>
+            		<td style="width:10%;text-align:right;">
+            			Active	
+            		</td>
+            		<td style="width:10%;text-align:right;">
+            			0.00
+            			<img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" title = "Tax details to be shown" style="vertical-align: text-bottom;"/>
+            		</td>
+            		<td style="width:10%;text-align:right;">
+            			0.00
+            		</td>
+            		<td style="width:10%;text-align:right;">
+            			0.00
+            			<img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" title = "Tax details to be shown" style="vertical-align: text-bottom;"/>
+            		</td>
+            	</tr>
+            </table> -->
+     <div class="white_content" id="htmlPreviewer"> 
+        <table width="99%" cellspacing="0" cellpadding="1" align="center"><tr><td align="right"><a href = "javascript:void(0)" onclick = "closeMe();"><strong style="color:red">X</strong></a></td></tr></table>
+        <div id="">
+            <iframe id="previewerBody" style="margin-top:0pt;width:100%;height:290pt;border:0px solid white" scrolling="yes"/>  
+            </div>
+    </div> 
+    <div id="fade" class="black_overlay"></div>
+     <script>
+                function OpenURL(idVal){
+                    //alert(idVal);
+                    $j('#previewerBody').attr('src','/apex/AriaAccountBGInlineEdit?bgid='+idVal);
+                    $j('#fade').show();
+                    $j('#htmlPreviewer').show();
+                    
+                    return false;
+                }
+                function closeMe(){
+                    $j('#previewerBody').html('');
+                    $j('#htmlPreviewer').hide();
+                    $j('#fade').hide();
+                }
+            </script>
+            <style> 
+            .black_overlay{ 
+                display: none; 
+                position: absolute; 
+                top: 0%; 
+                left: 0%; 
+                width: 100%; 
+                height: 100%; 
+                
+                z-index:1001; 
+                -moz-opacity: 0.8; 
+                opacity:.80; 
+                filter: alpha(opacity=80); 
+            } 
+            .white_content { 
+                display: none; 
+                position: absolute; 
+                top: 10%; 
+                left: 2%; 
+                width: 94%; 
+                
+                padding: 3px; 
+                border: 1px solid #236fbd; 
+                background-color: #f8f8f8; 
+                z-index:1002; 
+                overflow: auto; 
+            } 
+            </style>
+            <!--  SFDCDEV-208 -->
+       <apex:outputPanel id="couponPanel"> 
+		   <apex:pageBlock rendered="{!if(planId!=null && cpnList.size >0 && isMasterPlan == true && isAcctHaveAriaId == true,true,false)}">
+		   <apex:facet name="header">
+			<div class="pbHeader">
+				<table border="0" cellpadding="0" cellspacing="0">
+					<tbody>
+						<tr>
+							<td class="pbTitle" style="width:50% !important;"><h2 class="mainTitle">Coupons for
+									{!planName}</h2>
+						  </td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</apex:facet>
+	   <apex:outputPanel layout="block">
+	    
+	     <table border="0" width="100%" class="list myTable" cellspacing="0" cellpadding="0">
+			<tr >
+				<th width="27%" class="gradiantHeader">Coupon Code</th>
+				<th width="28%" class="gradiantHeader">Description</th>
+				<th width="15%" class="gradiantHeader">Expires</th>
+				<th width="15%" class="gradiantHeader">Created Date</th>
+				<th width="15%" class="gradiantHeader">Cancel Date</th>
+			</tr>
+			<apex:repeat value="{!cpnList}" var="cpn">
+				<tr>
+					<td >{!cpn.Coupon_Code__c}</td>
+					<td>{!cpn.Description__c}</td>
+					<td>{!cpn.Exp_Date__c}</td>
+					<td><apex:outputText value="{0,date,MM/dd/yy}"> <apex:param value="{!cpn.Create_Date__c}" /> </apex:outputText></td>
+					<td><apex:outputText value="{0,date,MM/dd/yy}"> <apex:param value="{!cpn.Cancel_Date__c}" /> </apex:outputText></td>
+				</tr>
+			</apex:repeat>
+        </table>
+     </apex:outputPanel>
+   </apex:pageBlock>
+ </apex:outputPanel>
+ <!--  SFDCDEV208 end -->
+    <apex:outputPanel id="servicesPannel">
+    <script>
+    var selectedSubscriptionStatus = '{!selectedSubscriptionStatus}';
+    var selectedSubscriptionTempStatus = '{!selectedSubscriptionTempStatus}';
+    if(selectedSubscriptionTempStatus == ''){
+        selectedSubscriptionTempStatus = '1';
+    }
+    console.log('==selectedSubscriptionTempStatus===='+selectedSubscriptionTempStatus);
+    var selectedSubscriptionId = '{!subscriptionId}';
+    console.log('==selectedSubscriptionId===='+selectedSubscriptionId);
+    var selectedSubscriptionDescription = '{!subscriptionDescription}';
+    console.log('==selectedSubscriptionDescription===='+selectedSubscriptionDescription);
+    var dateeff = '{!acctPlan.Effective_Date__c}';
+    var selectedEffectiveDate = '';
+    if(dateeff != ''){ 
+        selectedEffectiveDate= new Date ('{!acctPlan.Effective_Date__c}');
+        selectedEffectiveDate = selectedEffectiveDate.toLocaleDateString();
+        var chunks = selectedEffectiveDate.split('/');
+        selectedEffectiveDate =  [chunks[1],chunks[0],chunks[2]].join('/');
+    }
+    var selectedAlternateBillDay = '{!selectedAlternateBillDay}';
+    var paymentMethod = '{!objPaymentHistory.Payment_Method__c}';
+    var accountNumber = '{!objPaymentHistory.Account_Number__c}';
+    var pmCvv = '{!pmCVV}';
+    var expireMonth = '{!objPaymentHistory.CC_Expire_Month__c}';
+    var expireYear = '{!objPaymentHistory.CC_Expire_Year__c}';
+    var tokenId = '{!TokenID}';
+    var isTokenized = '{!objPaymentHistory.Is_Tokenized__c}';
+    var ECInfo = '{!objPaymentHistory.Bank_Routing_Number__c}';
+    var ECInfoAcc = '{!objPaymentHistory.Bank_Account_Number__c}';
+    var netTerms = '{!NetTerms}';
+    var acctAddPay = '{!acct_addPay}';
+    var billContact = '{!objPaymentMethod.Billing_Contact__c}';
+    billContact = billContact.match(/.{1,15}/g) 
+    var notifyMethod = '{!accCongif.Aria_Notify_Method__c}';
+    var statementTemplate = '';
+   
+    function checkUpdationOnPage(){
+        
+        var selectedSubscriptionStatusNewVal = $j('.selectedSubscriptionStatusCls').val();
+        var selectedSubscriptionTempStatusNewVal = $j('.selectedSubscriptionTempStatusCls').val();
+        var subscriptionIdNewVal = $j('.subscriptionIdCls').val();
+        var subscriptionDescriptionNewVal = $j('.subscriptionDescriptionCls').val();
+        var selectedEffectiveDateNewVal = $j('.effectiveDateCls').val();
+        var selectedAlternateBillDayNewVal = $j('.selectedAlternateBillDayCls').val();
+        if(selectedAlternateBillDay == ''){
+            selectedAlternateBillDay = '-1';
+        }
+        
+        
+        if((selectedSubscriptionStatusNewVal != selectedSubscriptionStatus) || (selectedSubscriptionTempStatusNewVal != selectedSubscriptionTempStatus)
+        || (selectedSubscriptionDescription != subscriptionDescriptionNewVal) || (selectedSubscriptionId != subscriptionIdNewVal) || (selectedEffectiveDate != selectedEffectiveDateNewVal)
+        || (selectedAlternateBillDay != selectedAlternateBillDayNewVal)){
+        console.log('Entered in Account Block');
+            isAccountUpdated = true;
+        }
+        
+        /******************billingGroup *********************************************/
+        var notifyMethodNewVal = $j('.notifyMethodCls').val();
+        if((notifyMethodNewVal != notifyMethod)){
+            console.log('Entered in Billing Block');
+            isBillingDataUpdated = true;
+        }
+    } 
+    </script>
+    <br/>
+         <apex:outputPanel rendered="{!if(planId!=null ,true,false)}">
+            <c:AriaAccountServices accountPlanIds="{!planId}" accountPlanName="{!planName}" source="{!context}"/>
+            <apex:outputPanel id="mainPb">
+            <apex:messages styleclass="errormsg"/>
+            <apex:pageBlock title="Plan Configuration"> 
+            <apex:pageBlockButtons > 
+                <apex:commandButton disabled="{!isOppClosed}" value="Save" action="{!call_IgnoreProEmail}" oncomplete="if('{!HasMessage}'=='false'){checkUpdationOnPage(),UpdateDetail(isPaymentDataUpdated,isBillingDataUpdated,isAccountUpdated);}" onClick="window.scroll(200,0);" status="loadingStatus" reRender="mainPb"/>
+                <apex:commandButton value="Cancel" action="{!resetAll}" status="loadingStatus" reRender="servicesPannel"/> 
+            </apex:pageBlockButtons> 
+
+            
+                <apex:outputpanel rendered="{!isOppClosed}" style="color:red;font-weight:bold;text-align:center" layout="block">Associated opportunity is closed won. To make any change update from account</apex:outputpanel>
+                            <div class="pbSubheader brandTertiaryBgr first tertiaryPalette">
+                                    <h3>Configurations Options</h3>
+                            </div>
+                            <!-- Configurations Options -->
+                            <apex:outputPanel rendered="{!isMasterPlan == true && isAcctHaveAriaId == true}">
+                             <table class="planConfigTable">
+                                   <tr><td><apex:outputLabel style="font-size: 11px;font-weight:bold " value="Subscription Status " /></td></tr>
+                                   <tr>     
+                                        <td>
+                                        <apex:selectList size="1" styleClass="configField selectedSubscriptionStatusCls"  value="{!selectedSubscriptionStatus}"> <!-- onchange="accountUpdated();" -->
+                                       <apex:selectOptions value="{!subscriptionStatusList}"></apex:selectOptions> 
+                                      </apex:selectList>
+                                        </td>
+                                   </tr>
+                                </table>
+                            </apex:outputPanel>
+
+                            <apex:outputPanel rendered="{!isMasterPlan}">
+                                <table class="planConfigTable">
+                                   <tr><td><apex:outputLabel style="font-size: 11px;font-weight:bold " value="Subscription Temporary Status " /></td></tr>
+                                   <tr>     
+                                        <td>
+                                        <apex:selectList size="1" styleClass="configField selectedSubscriptionTempStatusCls" value="{!selectedSubscriptionTempStatus}"  disabled="{!(acctPlan.Plan_Instance_No__c != null)}"> <!-- onchange="accountUpdated();" -->
+                                  <apex:selectOptions value="{!subscriptionTempStatusList}"></apex:selectOptions>
+                            </apex:selectList>
+                                        </td>
+                                   </tr>
+                                </table>
+                            </apex:outputPanel>
+         
+                            <apex:outputPanel >
+                                <table class="planConfigTable">
+                                   <tr><td><apex:outputLabel style="font-size: 11px;font-weight:bold " value="Subscription ID " /></td></tr>
+                                   <tr>     
+                                        <td>
+                                        <apex:inputText value="{!subscriptionId}" style="width:16%"   styleClass="subscriptionIdCls"/> <!-- disabled="{!(acctPlan.Plan_Instance_No__c != null)}" onchange="accountUpdated();"-->
+                                        </td>
+                                   </tr>
+                                </table>
+                            </apex:outputPanel>
+                            <apex:outputPanel >
+                                <table class="planConfigTable">
+                                   <tr><td><apex:outputLabel style="font-size: 11px;font-weight:bold " value="Subscription Description " /></td></tr>
+                                   <tr>     
+                                        <td>
+                                         <apex:inputText value="{!subscriptionDescription}" style="width:16%"   styleClass="subscriptionDescriptionCls"/> <!-- disabled="{!(acctPlan.Plan_Instance_No__c != null)}" onchange="accountUpdated();"-->
+                                        </td>
+                                   </tr>
+                                </table>
+                            </apex:outputPanel>
+
+                            <apex:outputPanel rendered="{!isAcctHaveAriaId}">
+                                <table class="planConfigTable">
+                                   <tr><td><apex:outputLabel style="font-size: 11px;font-weight:bold " value="Effective Date" /></td></tr>
+                                   <tr>     
+                                        <td>
+                                        <apex:inputfield value="{!acctPlan.Effective_Date__c}" style="width:16%"  id="effectiveDateId" onChange="stopPreviousdate('{!$Component.effectiveDateId}')" styleClass="effectiveDateCls" /> <!-- ,accountUpdated(); -->
+                                        </td>
+                                   </tr>
+                                </table>
+                            </apex:outputPanel>
+
+                            <apex:outputPanel rendered="{!isMasterPlan == true && isAcctHaveAriaId == true}">
+                                <table class="planConfigTable">
+                                   <tr><td><apex:outputLabel style="font-size: 11px;font-weight:bold " value="Alternate Bill Day" /></td></tr>
+                                   <tr>     
+                                        <td>
+                                       <apex:selectList size="1" styleClass="configField selectedAlternateBillDayCls" value="{!selectedAlternateBillDay}"  disabled="{!(acctPlan.Plan_Instance_No__c != null)}" > <!-- onchange="accountUpdated();" -->
+                                  <apex:selectOptions value="{!alternateBillDayList}"></apex:selectOptions>
+                            </apex:selectList>
+                                        </td>
+                                   </tr>
+                                </table>
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!isMasterPlan == true && isAcctHaveAriaId == true}">
+                                <table class="planConfigTable">
+                                   <tr><td><apex:outputLabel style="font-size: 11px;font-weight:bold " value="Alternate Billing Start Date" /></td></tr>
+                                   <tr>     
+                                        <td>
+                                        <apex:outputPanel rendered="{!(acctPlan.Plan_Instance_No__c == null)}">
+                                    <apex:inputfield value="{!accCongif.acct_start_date__c}" style="width:16%" />
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!(acctPlan.Plan_Instance_No__c != null)&& (accCongif.acct_start_date__c != null)}">
+                                    <apex:outputfield value="{!accCongif.acct_start_date__c}" style="width:46%" />
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!(acctPlan.Plan_Instance_No__c != null)&&(accCongif.acct_start_date__c == null)}">
+                                     <input type="text" value="" style="width:16%"  disabled="true"/>
+                                </apex:outputPanel>
+                                        </td>
+                                   </tr>
+                                </table>
+                            </apex:outputPanel>
+
+                            <apex:outputPanel rendered="{!isMasterPlan == true && isAcctHaveAriaId == true}">
+                                <table class="planConfigTable">
+                                   <tr><td><apex:outputLabel style="font-size: 11px;font-weight:bold " value="Retroactive Billing Start Date" /></td></tr>
+                                   <tr>     
+                                        <td>
+                                        <apex:outputPanel rendered="{!(acctPlan.Plan_Instance_No__c == null)}">
+                                    <apex:inputfield value="{!accCongif.Aria_Account_Activation_Date__c}" style="width:16%"  />
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!(acctPlan.Plan_Instance_No__c != null)&&(accCongif.Aria_Account_Activation_Date__c !=null)}">
+                                    <apex:outputfield value="{!accCongif.Aria_Account_Activation_Date__c}" style="width:46%"  />
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!(acctPlan.Plan_Instance_No__c != null)&&(accCongif.Aria_Account_Activation_Date__c ==null)}">
+                                     <input type="text" value="" style="width:16%"  disabled="true"/>
+                                </apex:outputPanel>
+                                        </td>
+                                   </tr>
+                                </table>
+                            </apex:outputPanel>
+                            
+                            
+                            <apex:outputPanel rendered="{!isMasterPlan}">
+                                <table class="planConfigTable">
+                                   <tr><td>
+                                   <apex:outputLabel style="font-size: 11px;font-weight:bold " value="Dunning Group" />
+                                   </td></tr>
+                                   <tr>     
+                                        <td>
+                                        <apex:selectList size="1" styleClass="configField"  value="{!selectedDunningGroup}">
+                                   <apex:selectOptions value="{!ariaDunningGroupList}"></apex:selectOptions> 
+                            </apex:selectList>
+                                        </td>
+                                   </tr>
+                                </table>
+                            </apex:outputPanel>
+                    <script> twistSection(document.getElementById('{!$Component.PlanConfigSection1}').getElementsByTagName('img')[0]) </script>
+                    
+               <!-- <apex:pageBlockSection columns="1" id="PlanConfigSection2" title="Configurations Fields" collapsible="true"> -->
+               <div class="pbSubheader brandTertiaryBgr first tertiaryPalette">
+                                    <h3>Configurations Fields</h3>
+                            </div>
+                    <table class="planConfigTable">
+                        <apex:repeat value="{!lstProductFields}" var="field"> 
+                            <!-- <tr>     
+                                <td>
+                                    <apex:outputLabel style="padding-top:5px;" value="{!field.Field_Name__c}"/><br/>
+                                    <apex:inputText value="{!field.Field_Value__c}" disabled="{!!field.Can_Override__c}" style="width: 13.4%;"/>
+                                </td> 
+                            </tr>  -->
+                            <tr> 
+                                <td>
+                                    <apex:outputPanel rendered="{!field.dType == 'text'}">
+                                        <apex:outputLabel style="padding-top:5px;" value="{!field.fieldName}"/><br/>                                        
+                                        <apex:input id="TextId" type="text" value="{!field.fieldValue}"  style="width:16%"  rendered="{!if(field.displayType == 'string',true,false)}" disabled="{!!field.canOverRide}" onblur="checkMinChar(this,'{!field.min_no_sel}');"/>
+                                        <apex:input id="NumberId" type="text" value="{!field.fieldValue}"  style="width:16%"  rendered="{!if(field.displayType == 'number',true,false)}" onkeypress="return isNumberKey(event)" disabled="{!!field.canOverRide}" onblur="checkMinChar(this,'{!field.min_no_sel}');"/>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!if(field.dType == 'text' && field.displayType == 'date',true,false)}">
+                                    
+                                        <!--  <apex:outputLabel style="padding-top:5px;" value="{!field.fieldName}"/> <br/> -->
+                                        <apex:inputText id="temp123" value="{!field.fieldValue}" onfocus="showCalender(this.id);" style="width:16%"  disabled="{!!field.canOverRide}"/>
+                                        <apex:outputPanel rendered="{!field.canOverRide}">
+                                        <a style="vertical-align:middle;" href="javascript:showCalender('{!$Component.temp123}');">
+                                            <img height="16" src="/img/func_icons/util/datePicker16.gif" width="16" style="padding-left: 8px;" />
+                                        </a>
+                                        </apex:outputPanel>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!if(field.dType == 'checkbox',true,false)}">
+                                        <apex:outputLabel style="padding-top:5px;" value="{!field.fieldName}"/><br/>
+                                         <apex:selectCheckboxes value="{!field.selectedMultiValues}" disabled="{!!field.canOverRide}">
+                                                <apex:selectOptions value="{!field.multiValue}"/>
+                                         </apex:selectCheckboxes>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!if(field.dType == 'radio',true,false)}">
+                                        <apex:outputLabel style="padding-top:5px;" value="{!field.fieldName}"/><br/>
+                                         <apex:selectRadio value="{!field.selectedRadioValues}" disabled="{!!field.canOverRide}"> 
+                                                <apex:selectOptions value="{!field.multiValue}"/>
+                                         </apex:selectRadio>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!if(field.dType == 'select',true,false)}">
+                                         <apex:outputLabel style="padding-top:5px;" value="{!field.fieldName}"/><br/>
+                                         <apex:selectList value="{!field.selectedMultiValues}" style="height:80px"  multiselect="true" rendered = "{!if(field.max_no_sel > 1, true,false)}" disabled = "{!!field.canOverRide}">
+                                                <apex:selectOptions value="{!field.multiValue}"/>
+                                         </apex:selectList>
+                                         <apex:selectList value="{!field.selectedSingleValue}" style="height:80px" multiselect="false" rendered="{!if(field.max_no_sel <= 1, true,false)}" disabled="{!!field.canOverRide}">
+                                                <apex:selectOptions value="{!field.multiValue}"/>
+                                         </apex:selectList>
+                                    </apex:outputPanel>
+                                     <apex:outputPanel rendered="{!if(field.dType == 'textarea',true,false)}">
+                                        <apex:outputLabel style="padding-top:5px;" value="{!field.fieldName}"/><br/>
+                                        <apex:inputtextarea rows="3" value="{!field.fieldValue}" style="width: 45.6%;" disabled="{!!field.canOverRide || field.disable}" onblur="checkMinChar(this,'{!field.min_no_sel}');"/>
+                                    </apex:outputPanel>
+                                    
+                                    
+                                </td>
+                            </tr>
+                        </apex:repeat>
+                    </table>
+                    
+                
+                    <!--  <apex:outputPanel rendered="{!apProducts!=null && apProducts.size==0}">No configured fields found.</apex:outputPanel>  
+                   <apex:repeat value="{!apProducts}" var="field">
+                       <apex:pageBlockSectionItem labelStyleClass="labelDataClass" labelStyle="display:none;" dataStyle="padding-left:0px;">
+                              <apex:outputPanel ></apex:outputPanel>
+                                <apex:outputPanel >
+                                    <table class="planConfigTable">
+                                       <tr><td>
+                                       <apex:outputLabel value="{!field.Product_Supp_Field__r.Field_Name__c}" style="font-size: 11px;font-weight:bold "/>
+                                       </td></tr>
+                                       <tr>     
+                                            <td>
+                                           <apex:inputText value="{!field.Prodcut_Supp_Field_Value__c}" disabled="{!!field.Product_Supp_Field__r.Can_Override__c}" style="width: 180px;" onchange="accountUpdated();"/>
+                                            </td>
+                                       </tr>
+                                    </table>
+                                </apex:outputPanel>
+                      </apex:pageBlockSectionItem>
+                   </apex:repeat> -->     
+               <!-- </apex:pageBlockSection>  -->
+               <script> twistSection(document.getElementById('{!$Component.PlanConfigSection2}').getElementsByTagName('img')[0])</script>
+             
+            </apex:pageBlock> 
+           
+            </apex:outputPanel>
+            
+         </apex:outputPanel>
+    </apex:outputPanel>
+    </apex:pageBlock>
+    <apex:pageBlock rendered="{!!if(isShow!=null,true,false)}">
+        <center>
+            <p style="color:red;font-weight:bold">Account plan and related data is not set properly. Please check. </p>
+        </center>
+    </apex:pageBlock>
+    <script>
+    if("{!selectedBillinGroup}" == "000000000000ABC"){
+    	noBG();
+    }
+    </script>
+
+    </apex:form>
+    
+</apex:component>

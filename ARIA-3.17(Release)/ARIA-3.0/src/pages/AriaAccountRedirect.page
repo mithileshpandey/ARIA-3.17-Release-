@@ -1,0 +1,3 @@
+<apex:page standardController="Account" extensions="AriaAccountRedirectController" showHeader="false" sidebar="false" action="{!redirect}">
+<apex:pageMessages />
+</apex:page>

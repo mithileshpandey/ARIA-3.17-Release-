@@ -1,0 +1,3 @@
+<apex:page controller="AriaPlanSelectionController" contentType="text/plain" action="{!initClientPlanInformation}">
+{!planListJSONString}
+</apex:page>

@@ -1,0 +1,271 @@
+<apex:component access="global" controller="AriaAcctPlanHierarchyOppBGViewerCtrl" allowDML="true">
+
+    <apex:attribute name="accountId1" description="This value defines the account for which the plans have to listed" type="String" required="false" assignTo="{!accountId}"/>
+    <apex:attribute name="opportunityId1" description="This value defines the account for which the plans have to listed" type="String" required="false" assignTo="{!opportunityId}"/>
+    <!-- SK 2012-26-04 added condition for quote context  -->
+    <apex:attribute name="quoteId1" description="This value defines the quote for which the plans have to listed" type="String" required="false" assignTo="{!quoteId}"/>
+    <apex:attribute name="componentContext" description="This value defines the quote for which the plans have to listed" type="String" required="false" assignTo="{!context}"/> 
+    <style>
+          .requiredLoaderBG_notinuse{
+            background-color: rgb(71,71,71); 
+            opacity:0.7;
+            filter:alpha(opacity=70);
+            background-image:url('/img/loading.gif');
+            background-position: center center;
+            background-repeat: no-repeat;
+            height: 100%;
+            left: 0;
+            position: fixed;
+            text-align: center;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            }
+            .errormsg{
+            list-style-type: none;
+            color:red;
+            font-size: 10pt;
+            font-weight:bold;
+            }
+            .accountName{
+                text-decoration: underline;             
+            }
+            .textRightAlign{
+                text-align:right;
+            }
+            .gradiantHeader{
+                font-size:12px !important;
+                border-width: 1px !important;
+                padding: 2px 6px 1px 8px!important;
+                border-style: solid !important;
+                border-color: #fff !important;
+                background-color:#D4D4D4 !important;
+                height:22px !important;
+                background: #eeeeee !important; /* Old browsers */
+                background: -moz-linear-gradient(top,  #eeeeee 0%, #cccccc 100%) !important; /* FF3.6+ */
+                background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#eeeeee), color-stop(100%,#cccccc)) !important; /* Chrome,Safari4+ */
+                background: -webkit-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* Chrome10+,Safari5.1+ */
+                background: -o-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* Opera 11.10+ */
+                background: -ms-linear-gradient(top,  #eeeeee 0%,#cccccc 100%) !important; /* IE10+ */
+                background: linear-gradient(to bottom,  #eeeeee 0%,#cccccc 100%) !important; /* W3C */
+                filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#eeeeee', endColorstr='#cccccc',GradientType=0 ) !important; /* IE6-9 */
+            }
+            .myTable{
+                border-width: 0px !important;
+                border-style: solid !important;
+                border-color: #fff !important;
+                font-size: 12px !important;
+                
+            }
+            .myTable tbody tr:nth-child(even) {
+                background-color:#eeeeee !important;
+            }
+            .myTable tbody tr td {
+                border-width: 1px !important;
+                border-style: solid !important;
+                border-color: #fff !important;
+                padding-left: 8px;
+            }
+            .myTable1{
+                border-width: 0px !important;
+                border-style: solid !important;
+                border-color: #fff !important;
+                font-size: 12px !important;
+            }
+            .myTable1 tbody tr:nth-child(even) {
+                background-color:#eeeeee !important;
+            }
+            .myTable1 tbody tr td {
+                border-width: 1px !important;
+                border-style: solid !important;
+                border-color: #fff !important;
+                height : 20px !important;
+                padding-left: 8px;
+            }
+            
+            h2 .myLink{
+                font-size: 0.9em !important;
+                color:blue;
+            }
+            .firstChild{
+                padding-left:20px !important;
+                font-weight:normal !important;
+                background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 2px 2px !important;
+            }
+            .secondChild {
+                padding-left:40px !important;
+                font-weight:normal !important;
+                background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 20px 2px !important;
+            }
+            .thirdChild {
+                padding-left:60px !important;
+                font-weight:normal !important;
+                background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 40px 2px !important;
+            }
+            .fourthChild {
+                padding-left:80px !important;
+                font-weight:normal !important;
+                background:no-repeat url({!URLFOR($Resource.Sim_JS,'images/')}arrow-icon-collasped.png) 60px 2px !important;
+            }
+    
+             .taxdetails-tooltip.last-column:after {
+                left: auto;
+                    right: 30px;
+            }
+                
+    </style>
+    <apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'collapse.css')}" /> 
+    <apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/tooltip.css')}"/>
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+    <script>
+     function redirectToPlanWizard(bgsfid,bgNo){ 
+        oppId = '{!opportunityId}';
+        if(oppId != null && oppId != ''){
+        window.top.location.href = "/apex/"+'{!namespacePrefix}'+"newQuote?inline=true&context=opportunity&id="+'{!opportunityId}'+"&bgsfid="+bgsfid+"&bgariaid="+bgNo; 
+        }
+        else{
+            window.top.location.href = "/apex/"+'{!namespacePrefix}'+"newQuote?inline=true&context=quote&id="+'{!quoteId}'+"&bgsfid="+bgsfid+"&bgariaid="+bgNo; 
+        }
+      }
+    </script>
+    <apex:form >
+        
+        <apex:actionFunction status="loadingStatus" action="{!rerenderServices}" name="rerenderServices" rerender="servicesPannel,mainPageSec">
+            <apex:param name="planId" assignTo="{!planId}" value="" /> 
+            <apex:param name="planName" assignTo="{!planName}" value="" /> 
+        </apex:actionFunction>
+        <apex:actionstatus id="loadingStatus">
+            <apex:facet name="start">
+                <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 20%;opacity:.8;">
+                    <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+                    
+                    <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+                </div>
+            </apex:facet>
+        </apex:actionstatus>
+    
+<!--     <apex:repeat value="{!AllSelectedPlansGroup}" var="mapKey" > -->
+    
+      <apex:pageBlock id="mainPageSec" rendered="{!isShow}">
+                <apex:selectList value="{!selectedBillinGroup}" size="1" onchange="rerenderServices()" style="width:290px;" rendered="{!isBillDrp}">
+                                        <apex:selectOptions value="{!billingGroupOption}"/>
+                                    </apex:selectList>
+                                    <apex:outputText value="{!selectedBillinGroupName}"  style="text-align: right;height: 25px;font-weight: 400;font-size: 13px;font-family: Verdana;width: 168px;" rendered="{!NOT(isBillDrp)}"></apex:outputText>
+                                    <hr style="margin-left: -12px;margin-right: -12px;margin-top: 10px;"/>          
+    
+
+      <apex:pageBlockTable value="{!AllSelectedPlansGroup[selectedBillinGroup]}" var="theAcctPlan" styleClass="myTable1" headerClass="gradiantHeader">
+        <apex:repeat value="{!AccountPlanFields}" var="f" >
+              <apex:column style="background-color: {! IF (theAcctPlan.isAddedModified, '#ffa59f','')}" headerValue="{!f.Label}" rendered="{!f.Label == $ObjectType.Account_Plan__c.Fields.Name.Label}" >
+               <apex:outputlabel value="{!theAcctPlan.acctPlanName}" escape="false" onClick="rerenderServices('{!theAcctPlan.acctPlanId}','{!theAcctPlan.planName}');" styleClass="accountName {!if(theAcctPlan.level == 1,'firstChild','')} {!if(theAcctPlan.level == 2,'secondChild','')} {!if(theAcctPlan.level == 3,'thirdChild','')} {!if(theAcctPlan.level == 4,'fourthChild','')}" />
+             
+             </apex:column> 
+             
+             <apex:column headerClass="textRightAlign"  style="background-color: {! IF (theAcctPlan.isAddedModified, '#ffa59f','')};text-align:right" headerValue="{!f.Label}" rendered="{!AND(f.Type != 'Double',f.Label != $ObjectType.Account_Plan__c.Fields.Name.Label)}">
+                 <apex:outputLabel rendered="{!if(f.Label=='MRR Total',true,false)}">
+                    <apex:outputText value="{0, number, 0.00}">
+                            <apex:param value="{!theAcctPlan.acctPlan[f.fieldPath]}" /> 
+                    </apex:outputText> 
+                    <span class="taxTotal"> 
+                        <img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" title = "Tax details to be shown" style="vertical-align: text-bottom;"/>
+                        <div class="taxdetails-tooltip" style="margin-left:-60px;min-width:120px">
+                            Tax Amount<br/>
+                               <!-- <span style="font-size:8pt">{!(theAcctPlan.acctPlan['MRR_Total_IncTax__c']-theAcctPlan.acctPlan['MMR_Total__c'])} </span> -->
+                               <apex:outputText style="font-size:8pt" value="{0, number, 0.00}">
+                                     <apex:param value="{!(theAcctPlan.acctPlan['MRR_Total_IncTax__c']-theAcctPlan.acctPlan['MMR_Total__c'])}" /> 
+                                </apex:outputText>
+                                    
+                            <!-- ({!theAcctPlan.acctPlan['TaxPercentage__c']}%)-->
+                        </div>
+                    </span>
+                </apex:outputLabel>
+                <apex:outputLabel rendered="{!if(f.Label=='ARR',true,false)}">
+                    <apex:outputText value="{0, number, 0.00}">
+                            <apex:param value="{!theAcctPlan.acctPlan[f.fieldPath]}" /> 
+                    </apex:outputText> 
+                    
+                    <span class="taxTotal"> 
+                        <img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" title = "Tax details to be shown" style="vertical-align: text-bottom;"/>
+                        <div class="taxdetails-tooltip" style="margin-left:-100px;min-width:200px">
+                                <b>Total + Tax&nbsp;&nbsp;&nbsp;Tax Amount</b><br/>
+                                <span style="font-size:8pt; float:left; min-width: 81px;"> {!theAcctPlan.acctPlan['ARR_Total__c']}</span>
+                                <!-- <span style="font-size:8pt; float:left;"> {!(theAcctPlan.acctPlan['ARR_Total__c']-theAcctPlan.acctPlan['ARR__c'])} ({!theAcctPlan.acctPlan['TaxPercentage__c']}%)</span>-->
+                                <apex:outputText style="font-size:8pt;" value="{0, number, 0.00}">
+                                     <apex:param value="{!(theAcctPlan.acctPlan['ARR_Total__c']-theAcctPlan.acctPlan['ARR__c'])}" /> 
+                                </apex:outputText>
+                                <span style="font-size:8pt;">({!theAcctPlan.acctPlan['TaxPercentage__c']}%)</span>
+                                
+                                
+                        </div>
+                    </span>
+                </apex:outputLabel>
+                <apex:outputLabel rendered="{!if(f.Label=='ACV',true,false)}">
+                    <apex:outputText value="{0, number, 0.00}">
+                            <apex:param value="{!theAcctPlan.acctPlan[f.fieldPath]}" /> 
+                    </apex:outputText> 
+                    
+                    <span class="taxTotal"> 
+                        <img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" title = "Tax details to be shown" style="vertical-align: text-bottom;"/>
+                        <div class="taxdetails-tooltip last-column" style="margin-left:-153px;min-width:185px">
+                            <b>Total + Tax&nbsp;&nbsp;&nbsp;Tax Amount</b><br/>
+                            <span style="font-size:8pt; float:left; min-width: 81px;">{!theAcctPlan.acctPlan['ACV_Total__c']}</span>
+                            <!-- <span style="font-size:8pt; float:left;">{!(theAcctPlan.acctPlan['ACV_Total__c']-theAcctPlan.acctPlan['ACV__c'])} ({!theAcctPlan.acctPlan['TaxPercentage__c']}%)</span> -->
+                            
+                             <apex:outputText style="font-size:8pt;" value="{0, number, 0.00}">
+                                     <apex:param value="{!(theAcctPlan.acctPlan['ACV_Total__c']-theAcctPlan.acctPlan['ACV__c'])}" /> 
+                            </apex:outputText>
+                            <span style="font-size:8pt">({!theAcctPlan.acctPlan['TaxPercentage__c']}%)</span>
+                                
+                        </div>
+                    </span>
+                </apex:outputLabel>
+                
+                  <apex:outputText rendered="{!if(AND(f.Label!='Units',f.Label!='ACV',f.Label!='ARR',f.Label!='MRR Total',f.Type == 'double'),true,false)}" value="{0, number, 0.00}">
+                            <apex:param value="{!theAcctPlan.acctPlan[f.fieldPath]}" /> 
+                     </apex:outputText> 
+                  
+                  <apex:outputText rendered="{!if(AND(f.Label=='Units',f.Type == 'double'),true,false)}" value="{0, number, 0}">
+                           <apex:param value="{!theAcctPlan.acctPlan[f.fieldPath]}" /> 
+                   </apex:outputText> 
+                            
+                 <apex:outputLabel rendered="{!if(AND(f.Label!='ACV',f.Label!='ARR',f.Label!='MRR Total',f.Type != 'double'),true,false)}"  value="{!theAcctPlan.acctPlan[f.fieldPath]}">
+                    
+                </apex:outputLabel> 
+               
+             
+                
+             </apex:column> 
+             
+             
+             
+            <apex:column width="100" style="background-color: {! IF (theAcctPlan.isAddedModified, '#ffa59f','')}" headerValue="{!f.Label}" rendered="{!f.Type == 'Double'}" >
+                      <apex:outputText id="arr" value="{0, number, 0.00}"  style="text-align:right;" >
+                       <apex:param value="{!theAcctPlan.acctPlan[f.fieldPath]}" />
+                      </apex:outputText>
+             </apex:column>
+        </apex:repeat>
+    </apex:pageBlockTable> 
+                
+    
+   
+    <apex:outputPanel id="servicesPannel">
+    <br/>
+          <apex:outputPanel rendered="{!if(planId!=null ,true,false)}">
+            
+            <apex:outputPanel id="mainPb">
+            <apex:messages styleclass="errormsg"/>
+            
+            </apex:outputPanel>
+            <c:AriaAccountServices accountPlanIds="{!planId}" accountPlanName="{!planName}" source="{!context}"/>
+         </apex:outputPanel>
+    </apex:outputPanel>
+    
+     </apex:pageBlock>
+     
+<!--      </apex:repeat> -->
+     
+     
+     
+    </apex:form>
+    
+</apex:component>

@@ -1,0 +1,118 @@
+<apex:component access="global" controller="AriaItemViewerController">
+    <apex:attribute name="title" description="This value defines the title of the component" type="String" required="false" default="Client Plans"/>
+    <apex:attribute name="width" description="This value defines the width of the component" type="String" required="false" default="100%"/>
+    <apex:attribute name="height" description="This value defines the height of the component" type="String" required="false" default="400px"/>
+    <apex:attribute name="itemId" description="This value defines the root plan" type="String" required="false" default="" />
+    <apex:attribute name="fieldsToDisplay" description="This value defines the list of fields to be displayed" type="String" required="false" default="planName;planType;planDescription;planStatus;recurringBillingInterval;recurringUsageInterval;rolloverMonths"/>
+   <apex:form id="ariaItmViewerForm">
+          <apex:actionStatus id="status">
+              <apex:facet name="start">
+                  <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 95%;width:100%;padding-top: 10%;opacity:.8;"> 
+                        <img  src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+                        <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+                   </div>
+              </apex:facet>
+          </apex:actionStatus>
+    <!-- apex action functions for paginations -->
+          <apex:actionFunction id="aFunction2" name="firstPage" action="{!firstBtnClick}" reRender="ariaItmViewerPblock" status="status" />
+          <apex:actionFunction id="aFunction3" name="prePage" action="{!previousBtnClick}" reRender="ariaItmViewerPblock" status="status" />
+          <apex:actionFunction id="aFunction4" name="nextPage" action="{!nextBtnClick}" reRender="ariaItmViewerPblock" status="status" />
+          <apex:actionFunction id="aFunction5" name="lastPage" action="{!lastBtnClick}" reRender="ariaItmViewerPblock" status="status" />
+          <apex:actionFunction id="aFunction6" name="setPageSize" reRender="ariaItmViewerPblock" status="status" >
+            <apex:param name="pSize" value="" assignTo="{!PageSize}"/>
+          </apex:actionFunction>
+    <!-- apex action functions for paginations ends--> 
+    </apex:form>
+   <apex:pageBlock id="ariaItmViewerPblock">
+        <div class="paginator">
+      <span class="left">
+         <span onmouseout="ListPaginator.unhoverSelector(this)" onmouseover="ListPaginator.hoverSelector(this)" onmousedown="ListPaginator.showSelector('item_paginator_rpp_target')" id="item_paginator_rpp_target" class="selectorTarget">
+            {!start}-{!ends} of {!totalRecords}
+            <table cellspacing="0" cellpadding="0" id="item_paginator_rpp" class="selector rpp">
+                <tbody>
+                <tr onmousedown="setPageSize(10);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=10,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">10</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                <tr onmousedown="setPageSize(25);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=25,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">25</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                <tr onmousedown="setPageSize(50);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=50,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td><td class="rppOpt">50</td>  <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                <tr onmousedown="setPageSize(100);" onmouseout="Sfdc.Dom.removeClass(this, 'optHover')" onmouseover="Sfdc.Dom.addClass(this, 'optHover')" class="opt {!IF(pageSize=100,'optSelected','optUnselected')}">
+                    <td>{!$Label.ARIA_PAYMENT_REFUND_DISPLAY}</td>    <td class="rppOpt">100</td> <td>{!$Label.ARIA_PAYMENT_CREDIT_RECORDS_PER_PAGE}</td>
+                </tr>
+                
+            </tbody>
+          </table>
+        <img src="/s.gif" class="selectArrow" />
+       </span>
+          
+      </span>
+      <span class="prevNextLinks">
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!previousButtonDisabled}">
+            <a href="javascript:firstPage();">
+                <img class="first" alt="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_FIRST_PAGE}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_FIRST_PAGE}" src="/s.gif"/>
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!previousButtonDisabled}">
+            <img class="firstoff" src="/s.gif"/>
+            </apex:outputPanel>
+        </span>
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!previousButtonDisabled}">
+            <a href="javascript:prePage();">
+                <img class="prev" alt="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PREVIOUS}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PREVIOUS}" src="/s.gif"/>{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PREVIOUS}
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!previousButtonDisabled}">
+            <img class="prevoff" src="/s.gif"/>{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PREVIOUS}
+            </apex:outputPanel>
+        </span>
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!nextButtonDisabled}">
+            <a href="javascript:nextPage();">{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_NEXT}
+                <img class="next" alt="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_NEXT}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_NEXT}" src="/s.gif"/>
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!nextButtonDisabled}">
+            {!$Label.ARIA_ACCOUNT_PLAN_SELECTION_NEXT}<img class="nextoff" src="/s.gif"/>
+            </apex:outputPanel>
+        </span>
+        <span class="prevNext">
+            <apex:outputPanel rendered="{!!nextButtonDisabled}">
+            <a href="javascript:lastPage();">
+                <img class="last" alt="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_LAST_PAGE}" title="{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_LAST_PAGE}" src="/s.gif"/>
+            </a>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!nextButtonDisabled}">
+            <img class="lastoff" src="/s.gif"/>
+            </apex:outputPanel>
+        </span>
+     </span>
+     <span class="right">{!$Label.ARIA_ACCOUNT_PLAN_SELECTION_PAGE} {!PageNumber} {!$Label.ARIA_ACCOUNT_PLAN_SELECTION_OF} {!TotalPageNumber}
+     <!--<input type="text" value="{!PageNumber}" onchange="jump(this.value);" maxlength="4" class="pageInput"/> of {!totalPageNumber}-->
+     </span>
+     </div>
+       <apex:pageBlockTable var="i" value="{!curItems}">
+          <apex:column headerValue="{!$Label.ARIA_ITEM_VIEW_ITEM_NO}" headerClass="headerlbl" value="{!i.Aria_Id__c}" onmouseover="showItemPopUp('{!i.Id}','','250px','300px');" />
+          <apex:column headerValue="{!$Label.ARIA_ITEM_VIEW_NAME}" value="{!i.Name}"  headerClass="headerlbl" />
+          <apex:column headerValue="{!$Label.ARIA_ITEM_VIEW_TYPE}" value="{!i.Item_Type__c}"  headerClass="headerlbl"  />
+          <apex:column headerValue="{!$Label.ARIA_ITEM_VIEW_SKU}" value="{!i.Client_SKU__c}" headerClass="headerlbl"   />
+          <apex:column headerValue="{!$Label.ARIA_ITEM_VIEW_STATUS}" value="{!i.Status__c}"  headerClass="headerlbl"  />
+          <apex:column headerValue="{!$Label.ARIA_ITEM_VIEW_STOCK_LEVEL}" value="{!i.Stock_Level__c}"  headerClass="headerlbl"  />
+       
+          <!-- <apex:column headerValue="Item No" headerClass="headerlbl" value="{!i.Aria_Id__c}" onmouseover="showItemPopUp('{!i.Id}','','250px','300px');" />
+          <apex:column headerValue="Name" value="{!i.Name}"  headerClass="headerlbl" />
+          <apex:column headerValue="Type" value="{!i.Item_Type__c}"  headerClass="headerlbl"  />
+          <apex:column headerValue="SKU" value="{!i.Client_SKU__c}" headerClass="headerlbl"   />
+          <apex:column headerValue="Status" value="{!i.Status__c}"  headerClass="headerlbl"  />
+          <apex:column headerValue="Stock Level" value="{!i.Stock_Level__c}"  headerClass="headerlbl"  /> -->
+       </apex:pageBlockTable>
+   </apex:pageBlock>
+  <c:AriaItemServicesPopupComponent />
+    <script>
+        hideItemPopUp();
+    </script>
+</apex:component>

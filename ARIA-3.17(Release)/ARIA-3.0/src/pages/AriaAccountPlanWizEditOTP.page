@@ -1,0 +1,533 @@
+<apex:page controller="AriaAccountPlanWizEditOTPCtrl" sidebar="false" tabStyle="Account">
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'collapse.css')}" /> 
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/>
+<apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" /> 
+<!-- ++Added for Angular Change -->
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.js"></script>
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css"/>
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/tooltip.css')}"/>
+<style>
+	.accountTab .pageTitleIcon, .individualPalette .accountBlock .pageTitleIcon {
+		background-image: url('{!URLFOR($Resource.QuoteIcon)}') !important;
+		background-position: 0 -3px; 
+		width: 51px;
+		height: 47px;
+	}
+	.gradiantHeader {
+		padding: 6px 10px;
+	}
+	table.altrowstable td {
+	    padding-left: 10px !important;
+	    padding-right: 10px !important;
+	}
+</style>
+<script type="text/javascript">
+        $j = jQuery.noConflict();
+            var prevVal=0;
+            var prevPrice = 0;
+            function previousvalue(e){ 
+                if(e.classList.contains('unitCls')){
+                    prevVal = $(e).val();
+                    prevPrice = 0;
+                }
+                else if(e.classList.contains('priceCls')){
+                    prevPrice = $(e).val();
+                    prevVal = 0;
+                }
+            }
+            
+            function isNumberKey(evt, val, noDecimal, uptoDecimal, el){
+			    var charCode = (evt.which) ? evt.which : evt.keyCode
+			    if (charCode == 46) {
+			       // Allow only 1 decimal point ('.')...
+			       if(!noDecimal){
+			       		return false;
+			       }
+			       if((val) && (val.indexOf('.') >= 0))
+			           return false;
+			       else
+			           return true;
+			    }
+			    
+			    if (charCode > 31 && (charCode < 48 || charCode > 57))
+			       return false;
+			       
+			    // for deciding decimal position 
+			    var caratPos = getSelectionStart(el);
+			    var dotPos = val.indexOf(".");
+			    //alert(caratPos+'---dotPos---'+dotPos);
+			    var number = val.split('.');
+			    if( caratPos > dotPos && dotPos>-1 && (number[1].length > (uptoDecimal -1))){
+			        return false;
+			    }  
+			    return true;
+			 }
+               
+    		function twoDecimalPlaces(obj){
+		        var decimalVal = obj.value.split('.');
+		         if(decimalVal.length > 1 && decimalVal[1].length > 2){
+		            obj.value = obj.value.substring(0,obj.value.indexOf('.')+3);
+		         }
+		      }
+		      
+        var orderTotal ;
+        function calculatePrice(e){
+        
+        if(typeof e !== 'undefined'){
+            var total_gt = ($('#Itemtotal span')).text();   
+            var rowObj = $(e).parent().parent();
+            var priceValueCheck = $(rowObj).find('.priceCls').attr('value');
+            var unitValueCheck = $(rowObj).find('.unitCls').attr('value');
+            if(priceValueCheck == ''){
+                $(rowObj).find('.priceCls').val('0.00');
+            } 
+            if(unitValueCheck == ''){
+                $(rowObj).find('.unitCls').val('0');
+            } 
+            calaucateTax(rowObj);
+            
+            $(rowObj).find('.unitCls').removeAttr('disabled');
+            $(rowObj).find('.priceCls').removeAttr('disabled');
+            var unit = $(rowObj).find('.unitCls').val(); //earlier x
+            var price = $(rowObj).find('.priceCls').text(); //earlier y
+            if(price == ''){
+               price = $(rowObj).find('.priceCls').attr('value');
+            }
+            if(unit == ''){
+               unit = 0;
+               $(rowObj).find('.unitCls').val('0');
+            }
+            var tax = 0;
+            if(typeof $(rowObj).find('.taxCls')[0] !== 'undefined' && $(rowObj).find('.taxCls')[0].value != ''){
+                tax = parseFloat($(rowObj).find('.taxCls')[0].value);
+            }
+            
+            if(e.type === 'text' && prevVal != 0){
+                var tempTot = parseFloat(prevVal) * parseFloat(price);
+                total_gt = total_gt - (tempTot + (tempTot * tax/100));
+            }
+            if(e.type === 'text' && prevPrice != 0){
+                var tempTot = parseFloat(prevPrice) * parseFloat(unit);
+                total_gt = total_gt - (tempTot + (tempTot * tax/100));
+            }
+            var totVal = parseFloat(unit) * parseFloat(price);
+            var totValWithTax = totVal + (totVal * tax/100);
+
+            orderTotal = totValWithTax.toFixed(2);
+            
+            var totalSum;
+                totalSum = parseFloat(orderTotal) + parseFloat(total_gt);
+          }  
+            
+           if(isNaN(totalSum) == false){
+               var total_gtm = document.getElementById('itemTotalSpan');
+               totalSum = totalSum.toFixed(2);
+               total_gtm.innerText = (totalSum);
+               total_gtm.innerHTML = (totalSum);
+            }
+            prevVal = 0;
+            prevPrice =0;
+        }
+
+        function setDefault(e){
+                if(typeof e !== 'undefined'){
+                        var rowObj = $(e).parent().parent();
+                        if(rowObj.find('.itemchBox').attr('checked') == 'checked'){
+                            $(rowObj).find('.unitCls').val('1');
+                        calculatePrice(e);
+                            
+                        }else{
+                            calculatePrice(e); 
+                            $(rowObj).find('.unitCls').val('0');
+                            var total_td = $(rowObj).find('.totalOTPCls')[0];
+                            total_td.innerText = '0.00';
+                        total_td.innerHTML = '0.00';
+                            
+                        }
+                }
+                
+        }
+function calaucateTax(rowObj){
+    if(typeof $(rowObj).find('.taxCls')[0] == "undefined" ){
+        return;
+    }
+        var unit    = parseFloat($(rowObj).find('.unitCls').val());
+            var y = $(rowObj).find('.priceCls').text();
+            if(y == ''){
+                y = $(rowObj).find('.priceCls').attr('value');
+            }
+            var price   = parseFloat(y);
+            //var   tax = parseFloat($(rowObj).find('.taxCls')[0].value);
+            var tax = 0;
+            if(typeof $(rowObj).find('.taxCls')[0] !== 'undefined' && $(rowObj).find('.taxCls')[0].value != ''){
+                tax = parseFloat($(rowObj).find('.taxCls')[0].value);
+            }
+            var taxAmt = (unit*price * tax/100);
+            var totalOtp = unit*price + taxAmt;
+            //console.log('totalOtp ::::'+totalOtp);
+            var total_td = $(rowObj).find('.totalOTPCls')[0];
+            total_td.innerText = totalOtp.toFixed(2);
+    total_td.innerHTML = totalOtp.toFixed(2);
+            
+    total_td = $(rowObj).find('.taxAmt')[0];
+            total_td.innerText = taxAmt.toFixed(2);
+            total_td.innerHTML = taxAmt.toFixed(2);
+            
+        }
+        
+        function disableCtrlKey(e)
+            {
+             var code = (document.all) ? event.keyCode:e.which;
+             // look for CTRL key press
+             if (parseInt(code)==17)
+             {
+                 alert("Sorry!! you can use only number keys");
+                 window.event.returnValue = false;
+             }
+          }
+    
+          function disableRightClick(event)
+           {
+               //For mouse right click
+               if (event.button==2)
+               {
+                   alert("Sorry!! you can use only number keys");       
+               }
+           }
+        </script>
+ <script>
+ $j(document).ready(function() {
+ 		$j(".unitCls").keypress(function(e) {
+		    if (e.which < 48 || e.which > 57) {
+		        //alert("Integer values only");
+		        return false;
+		    }
+		});
+	
+		$j('.priceClsss').keypress(function(){
+			var val = $(this).val();
+			if(isNaN(val)){
+			     val = val.replace(/[^0-9\.]/g,'');
+			     if(val.split('.').length>2){ 
+			         //val =val.replace(/\.+$/,"");
+			     }
+			}else{
+				console.log('aaaa');
+			}
+			//$j(this).val(val);
+		});
+ });
+ </script>      
+        <apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/AriaAccountPlanWizardOTP.css')}"/> 
+       
+       		
+        <apex:form >
+        <c:AriaPriceIndicatorComponent recid="{!$CurrentPage.parameters.id}" context="{!$CurrentPage.parameters.context}" selectedCurrency="{!$CurrentPage.parameters.accountCurrency}" accountName="{!accountName}" billingInterval="{!$CurrentPage.parameters.billingInterval}" />
+        <apex:actionstatus id="LoadingStatus">
+                <apex:facet name="start">
+                    <div class="waitingSearchDiv" id="el_loading" style="background-color: #fff;position:absolute;height: 100%;width:100%;padding-top: 15%;opacity:.8;">
+                        <img src="{!URLFOR($Resource.LodingGif)}" title="Please Wait..." /><br/><br/>
+                        
+                        <span class="waitingDescription" style="color: #6B3;">{!$Label.ARIA_GENERAL_CONFIG_LOADING}</span>
+                    </div>
+                </apex:facet>
+            </apex:actionstatus> 
+        <div >
+        <apex:pagemessages id="errorQuoteMessage"></apex:pagemessages>
+        <apex:outputPanel id="Neworderpb">
+                        <apex:actionfunction id="cloneFunction" name="itemClone" action="{!itemClone}" reRender="tablepanel" status="LoadingStatus">
+                        <apex:param name="firstParam" assignTo="{!selectedItemId}" value=""/>
+                  </apex:actionfunction> 
+                  
+                  <apex:actionFunction name="removeProduct" action="{!removeProduct}" rerender="tablepanel" status="LoadingStatus">
+                 	 <apex:param name="removeIndex" assignTo="{!otpIndexToRemove}" value="" />
+                 	 <apex:param name="removeId" assignTo="{!otpIdToRemove}" value="" />
+                  </apex:actionFunction>
+                  <apex:actionFunction name="removeInstance" action="{!removeInstance}" rerender="tablepanel" status="LoadingStatus">
+                 	 <apex:param name="parentIndex" assignTo="{!parentIndex}" value="" />
+                 	 <apex:param name="instIndex" assignTo="{!instIndex}" value="" />
+                  </apex:actionFunction>
+                  
+                                  <!-- apex action functions for paginations ends--> 
+                    
+                    <apex:outputPanel id="pgsecorder"> 
+                            <apex:outputPanel id="tablepanel">
+                                <table width="98%" style="margin-top:35px;margin-left:12px;">
+                                    <tr>
+                                        <td>
+                                        <Span style="font-family:Arial;font-size:18px;">Selected One Time Products</Span>
+                                           <br></br>
+                                           Configure products and general settings before saving.
+                                           <apex:actionFunction name="AddProducts" action="{!addProducts}" rerender="#"/>
+                                        </td>
+                                        <td>
+                                        	<input style="margin-right:10px;" type="submit" name="Submit" value="+ Add" class="button blue" onClick="AddProducts(); return false;" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2"><apex:outputPanel layout="block"
+                                                style="overflow:hidden;overflow-x: hidden;"
+                                                styleClass="checkBoxDiv">
+                                                
+                                                    <table width="100%" border="0" class="altrowstable myTable" style="margin-top:10px;">
+                                                        <tr>
+                                                            
+                                                            <th class="gradiantHeader" height="30" width="10%" style="font-family: arial,sans-serif;"><b>SKU</b></th>
+                                                            <th class="gradiantHeader" height="30" style="font-family: arial,sans-serif;text-align:left;"><b>Description</b></th>
+                                                            <th class="gradiantHeader" height="30" width="5%" style="font-family: arial,sans-serif;text-align:left;"><b>Unit</b></th>
+                                                            <th class="gradiantHeader" height="30" width="5%" style="font-family: arial,sans-serif;text-align:right;padding-right:5px !important;"><b>Price</b></th>
+                                                            <th class="gradiantHeader" height="30" width="15%" style="font-family: arial,sans-serif;text-align:right;padding-right:5px !important;"><b>Total Price</b></th>
+                                                            <th class="gradiantHeader" height="30" width="5%" style="font-family: arial,sans-serif;text-align:left;"><b>Assignment</b></th>
+                                                       		<th class="gradiantHeader" height="30" width="6%" style="font-family: arial,sans-serif;text-align:left;"></th>
+                                                        </tr>
+                                                         <apex:variable var="rowIndex" value="{!0}"/>
+                                                    <apex:repeat value="{!itemstoDisplay}" var="itm">
+                                                        <tr>
+                                                            
+                                                            <td  class = "gradiantHeaderOTP" style="padding-top: 6px;"> 
+                                                                <label>{!itm.itemSKU}</label>
+                                                            </td>
+                                                            <td class = "gradiantHeaderOTP" style="padding-top: 6px;"> 
+                                                                <label>{!itm.itemDesc}</label>
+                                                            </td>
+                                                            <td class = "gradiantHeaderOTP" style="padding-top: 1px;">
+                                                                 <apex:inputText value="{!itm.itemQty}"  styleClass="unitCls" maxlength="5" onKeyDown="return disableCtrlKey(event)" onMouseDown="disableRightClick(event)"   style="text-align:false;" onfocus="previousvalue(this);"  onchange="calculatePrice(this);"
+                                                                disabled="{!cantEditQuantity}"/>  
+                                                              
+                                                            </td>
+                                                        
+                                                            <td class = "gradiantHeaderOTP" style="text-align:right;width: 100px;padding-top: 1px;padding-right: 5px;">
+                                                                <apex:inputText rendered="{! (itm.isPriceEditable && !cantEditPrice)}" onfocus="previousvalue(this);"
+                                                                    onkeyup="twoDecimalPlaces(this)" onkeypress="return isNumberKey(event,this.value, true,2,this)" onKeyDown="return disableCtrlKey(event)" 
+																	onMouseDown="disableRightClick(event)"
+                                                                    styleClass="priceCls" 
+                                                                    value="{!itm.itemUnitPrice}" maxlength="12"
+                                                                    style="text-align:right;width: 91px;" onchange="calculatePrice(this);" />
+                                                                <apex:outputText rendered="{! (!itm.isPriceEditable || cantEditPrice)}" 
+                                                                    styleClass="priceCls" 
+                                                                    style="border: 1px solid #abadb3;width: 100px;height:18px;padding: 2px;text-align: right;background-color: #ECEEF7;display: inline-block" 
+																	value="{!itm.itemUnitPrice}"></apex:outputText>
+                                                            </td>
+                                                             <!-- OTPTax -->
+                                                            <apex:variable value="{0,number,###,###,###,##0.00}" var="vformat"/>
+                                                            <td class = "gradiantHeaderOTP" style="text-align:right;width: 100px;padding-top: 1px;padding-right: 5px;">
+                                                                 <input type="hidden" class="taxCls" value="{!if(ISBLANK(itm.tax),'0.00',itm.tax)}"/>
+                                                                  <apex:outputText styleClass="totalOTPCls" value="{!vformat}">
+                                                                    <apex:param value="{!VALUE(itm.itemQty) * VALUE(itm.itemUnitPrice) +(VALUE(itm.itemQty)* VALUE(itm.itemUnitPrice) * itm.tax/100)}"/>
+                                                                  </apex:outputText>
+                                                                <span class="taxTotal">
+                                                                    <img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" title = "Tax details to be shown" style="vertical-align: text-bottom;"/>
+                                                                    <div class="taxdetails-tooltip">
+                                                                        <strong>
+                                                                        Tax Amount<br/> 
+<!--                                                                            <span class="taxAmt">{!(VALUE(itm.itemQty)* VALUE(itm.itemUnitPrice) * itm.tax/100)}</span> -->
+                                                                            <apex:outputText styleClass="taxAmt" value="{!vformat}">
+                                                                                <apex:param value="{!(VALUE(itm.itemQty)* VALUE(itm.itemUnitPrice) * itm.tax/100)}"/>
+                                                                            </apex:outputText>
+                                                                        </strong>
+                                                                    </div>
+                                                
+                                                                </span>
+                                                            </td>
+                                                            <td class = "gradiantHeaderOTP">
+                                                              <apex:outputPanel id="assignmentPanel">
+                                                                <apex:selectList value="{!itm.instanceNumber}" multiselect="false" size="1" id="assignSelectList">
+                                                                    <apex:selectOptions value="{!SelectedMasterPlanList}"/>
+                                                                    <apex:actionSupport event="onchange" rerender="" status="status" />
+                                                                </apex:selectList>
+                                                            </apex:outputPanel> 
+                                                            </td>
+                                                            <td class = "gradiantHeaderOTP" style="width:8%;"> 
+                                                            <apex:facet name="header">
+                                                                <apex:inputCheckbox id="checkAll" value="{!itm.itemSKU}" 
+                                                                onchange="checkAllOrderItem(this)"
+                                                                onclick="calculatePrice(this);" />
+                                                            </apex:facet>
+                                                            
+                                                            
+                                                            <img style="margin-top:5px;margin-left:10px;margin-right:5px;" class= "addOrder" src="{!URLFOR($Resource.Sim_JS, 'images/icon_addinstance.png')}"  width="16" height="16" onclick="itemClone('{!itm.itemid}');"></img>
+                                                             
+                                                             	
+															     <img style="cursor:pointer;" src="{!URLFOR($Resource.Sim_JS, 'images/icon_removeinstance.png')}" onclick="removeProduct('{!rowIndex}','{!itm.itemid}');"/>
+                                                            	
+                                                            	
+                                                            </td>
+                                                        </tr>
+                                                        <apex:variable var="rowInstIndex" value="{!0}"/>
+                                                        <apex:repeat value="{!itm.instanceList}" var="itmInst">
+                                                        <tr>
+                                                            
+                                                            <td align="center" class = "gradiantHeaderOTP" style="padding-top: 6px;text-align:left">  
+                                                                <label>{!itmInst.itemSKU}</label> 
+                                                            </td>
+                                                            <td class = "gradiantHeaderOTP" style="padding-top: 6px;">
+                                                                <label>{!itmInst.itemDesc}</label>
+                                                            </td>
+                                                            <td class = "gradiantHeaderOTP" style="padding-top: 1px;">
+                                                                <apex:inputText value="{!itmInst.itemQty}" onkeypress="return isNumberKey(event, this.value, false,2,this);" styleClass="unitCls" maxlength="5" onKeyDown="return disableCtrlKey(event)" onMouseDown="disableRightClick(event)"  style="text-align:left;" onfocus="previousvalue(this);"  onchange="calculatePrice(this);"
+                                                                disabled="{!cantEditQuantity}"/>
+                                                            </td>
+                                                            <td class = "gradiantHeaderOTP" style="text-align:right;width: 100px;padding-top: 1px;padding-right: 5px;">
+                                                            <apex:inputText rendered="{!itmInst.isPriceEditable}" onfocus="previousvalue(this);"
+                                                                    onkeyup="twoDecimalPlaces(this)" onkeypress="return isNumberKey(event, this.value, true,2,this);" onKeyDown="return disableCtrlKey(event)" onMouseDown="disableRightClick(event)"
+                                                                    styleClass="priceCls" 
+                                                                    value="{!itmInst.itemUnitPrice}" maxlength="12"
+                                                                    style="text-align:right;width: 91px;" onchange="calculatePrice(this);" />
+                                                            <apex:outputText rendered="{! !itmInst.isPriceEditable}"
+                                                                    styleClass="priceCls"
+                                                                    style="border: 1px solid #abadb3;width: 100px;height:18px;padding: 2px;text-align: right;background-color: #ECEEF7;display: inline-block"
+                                                                    value="{!itmInst.itemUnitPrice}"></apex:outputText>
+                                                            </td>
+                                                            <td class = "gradiantHeaderOTP" style="text-align:right;width: 100px;padding-top: 1px;padding-right: 5px;">
+                                                                 <input type="hidden" class="taxCls" value="{!if(ISBLANK(itmInst.tax),'0.00',itmInst.tax)}"/>
+                                                                 <apex:outputText styleClass="totalOTPCls" value="{!vformat}">
+                                                                    <apex:param value="{!VALUE(itmInst.itemQty) * VALUE(itmInst.itemUnitPrice) +(VALUE(itmInst.itemQty)* VALUE(itmInst.itemUnitPrice) * itmInst.tax/100)}"/>
+                                                                  </apex:outputText> 
+                                                                <span class="taxTotal">
+                                                                    <img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" title = "Tax details to be shown" style="vertical-align: text-bottom;"/>
+                                                                    <div class="taxdetails-tooltip">
+                                                                        <strong>
+                                                                        Tax Amount<br/> 
+<!--                                                                            <span class="taxAmt">{!(VALUE(itmInst.itemQty)* VALUE(itmInst.itemUnitPrice) * itmInst.tax/100)}</span> -->
+                                                                            <apex:outputText styleClass="taxAmt" value="{!vformat}">
+                                                                                <apex:param value="{!(VALUE(itmInst.itemQty)* VALUE(itmInst.itemUnitPrice) * itmInst.tax/100)}"/>
+                                                                            </apex:outputText>
+                                                                        </strong>
+                                                                    </div>
+                                                
+                                                                </span>
+                                                            </td>
+                                                            <td class = "gradiantHeaderOTP">
+                                                                <apex:outputPanel id="assignmentPanelInst">
+                                                                <apex:selectList value="{!itmInst.instanceNumber}" multiselect="false" size="1" >
+                                                                    <apex:selectOptions value="{!SelectedMasterPlanList}"/>
+                                                                    <apex:actionSupport event="onchange" rerender="" status="status" /> 
+                                                                </apex:selectList>
+                                                                </apex:outputPanel>
+                                                            </td>  
+                                                            <td class = "gradiantHeaderOTP">
+                                                                <apex:facet name="header">
+                                                                <apex:inputCheckbox id="checkAll" value="{!itmInst.itemSKU}" 
+                                                                onchange="checkAllOrderItem(this)"
+                                                                onclick="calculatePrice(this);" />
+                                                            </apex:facet>
+                                                            <img  class="removeClone" src="{!URLFOR($Resource.Sim_JS, 'images/icon_removeinstance.png')}" style="padding-left:36px;cursor:pointer;" onclick="removeInstance('{!rowIndex}','{!rowInstIndex}');"/> 
+                                                            </td>
+                                                            <apex:variable var="rowInstIndex" value="{!rowInstIndex+1}"/>
+                                                        </tr>
+                                                        
+                                                        </apex:repeat>
+                                                        <apex:variable var="rowIndex" value="{!rowIndex+1}"/>
+                                                    </apex:repeat>
+                                                    
+                                                </table>
+                                            </apex:outputPanel>
+<!--                                              <apex:variable value="{0,number,###,###,###,##0.00}" var="vformat1"/>     -->
+                                            <apex:outputPanel id="itemTotalPanel"
+                                                            style="float: right;display:none; border-top-style: groove; border-top-color: #CC6600; border-top-width: 2px; height:20px;width:500px;background:#EEE !important;"
+                                                            >
+                                                <span id="totalRow" style="float: right;padding-right:65%;"><b>Total:</b>&nbsp;&nbsp;&nbsp;
+                                                <span id="Itemtotal">
+                                                      <span id="itemTotalSpan" style= "font-weight:bold">{!itemTotal}</span>
+<!--                                                       <apex:outputText styleClass="itemTotalSpan" value="{!vformat1}"> -->
+<!--                                                       	<apex:param value="{!itemTotal}"/> -->
+<!--                                                       </apex:outputText> -->
+                                                      
+                                                         
+                                                    </span>
+                                                            
+                                                 </span>
+                                                
+                                            </apex:outputPanel>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </apex:outputPanel>
+                       <div style="background: #f5f5f5; width: 97.4%;margin-left: 15px;border-radius: 5px;padding: 20px 10px;margin-top: 15px; box-sizing: border-box;">
+                        <apex:outputPanel layout="block" id="itmSec1" 
+                            styleClass="hideOrderSec">
+                            <apex:outputLabel style="font:bold;"><b>Client Order ID</b></apex:outputLabel>
+                            <apex:outputPanel layout="block">
+                                <apex:inputText styleClass="disabled"
+                                    value="{!AriaOrder.Client_Order_Id__c}" size="40"
+                                    style="width: 200px;margin-top:5px;margin-bottom:15px;" />
+                                <!--  <i>(Optional)</i> -->
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                        <apex:outputPanel layout="block" id="itmSec2" styleClass="hideOrderSec" >
+                            <apex:outputLabel ><b>Invoice Immediately?</b></apex:outputLabel>
+                            <apex:outputPanel layout="block" >
+                                <apex:selectRadio value="{!isInvImmediate}"
+                                    styleClass="disabled" layout="pageDirection"
+                                    onchange="toggle_Order_Status(this.value)" style="margin-left:-19px">
+                                    <apex:selectOptions value="{!Option}"/>
+                                </apex:selectRadio>
+                                <apex:selectRadio value="{!isheldOrder}" styleClass="ordStatus"
+                                    style="display:none;margin-left:0px;margin-top:-13px;" layout="pageDirection" >
+                                    <apex:selectOptions value="{!order_bill_optn}" />
+                                </apex:selectRadio>
+                                <br />
+                                <script>
+                            toggle_Order_Status('{!isInvImmediate}');
+                            function toggle_Order_Status(optnVal){
+                                if(optnVal == 'No'){
+                                    $(".ordStatus").show();
+                                }else{
+                                    $(".ordStatus").hide();
+                                }
+                                //alert(optnVal);
+                            }
+                            
+                            function checkAllOrderItem(ele) {
+        
+                                 if (ele.checked) {
+                                     $(".itemchBox").prop("checked", true);
+                                     $(".hideobj").show();
+                                    
+                                 } else {
+                                     $(".itemchBox").prop("checked", false);
+                                     $(".hideobj").hide();
+                                 }
+                             }
+                             
+                              /*function AnyBoxChecked() {
+                                    var isOn = 'No';  
+                                    $('.checkBoxDiv input:checked').each(function() {
+                                       //alert(0);
+                                        isOn = 'Yes';
+                                    });
+                                    //document.getElementById('j_id0:j_id31:Neworderpb:pgsecorder:itmSec3:checkboxhidden').value= isOn;
+                                    //alert(document.getElementById('j_id0:j_id31:thePageBlock:Neworderpb:pgsecorder:itmSec3:checkboxhidden').value);
+                             }*/
+                            
+                        </script> 
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                        </div>	
+                            <apex:outputPanel id="itmSec3" styleClass="hideOrderSec">
+                            <apex:outputPanel id="ordbtnsec" style="padding-left: 33%;"
+                                layout="block"> 
+                                <apex:commandButton value="Create Order" action="{!SaveAriaOrder}" rendered="false" reRender="Neworderpb,mainMessage" />
+                                 <!--  <apex:inputHidden value="{!isCheckBoxOn}" id="checkboxhidden" />-->
+                            </apex:outputPanel> 
+                        </apex:outputpanel>
+                        </apex:outputpanel>
+                        <apex:actionFunction name="saveOrder" action="{!SaveAriaOrder}" status="LoadingStatus" reRender="errorQuoteMessage"/>
+                        <apex:actionFunction name="redirectToOverview" action="{!redirectToOverview}"></apex:actionFunction>
+                </apex:outputPanel>
+                </div>
+                <div style="padding-top:11px;width: 100%">
+                   <input style="margin-left:10px" type="button" name="Submit" value="Cancel" class="button white" onClick ="redirectToOverview();"/>
+                   <input style="margin-right:10px" type="submit" name="Submit" value="Save" class="button blue" onClick="saveOrder(); return false;" />
+                </div>
+                
+                    
+                
+                </apex:form>
+           
+<script>
+        
+        calculatePrice(this);
+    </script>
+</apex:page>

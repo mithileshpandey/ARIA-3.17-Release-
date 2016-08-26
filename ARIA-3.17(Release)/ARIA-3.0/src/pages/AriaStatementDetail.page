@@ -1,0 +1,4 @@
+<apex:page sidebar="false"  showHeader="false" title="Display Aria Statement" controller="AriaStatementDetailController" contentType="html"> 
+    <apex:outputText value="{!Req}" escape="false"/> 
+    
+</apex:page>

@@ -1,0 +1,481 @@
+<apex:page controller="AriaAccountPlanWizardPlanSelectionCtrl" docType="html-5.0" sidebar="false" showHeader="false" tabStyle="Account" id="thePage" action="{!initServices}">
+<apex:includeScript value="{!URLFOR($Resource.Sim_JS, 'jquery.min.js')}"/> 
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css"/> 
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/AriaAccountPlanWizard.css')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.Sim_JS, 'css/tooltip.css')}"/>
+<style>
+a{
+    color:blue;
+}
+.ui-dialog-buttonset{
+    width:100%;
+}
+.leftFloatClass{
+    background: #999 !important;
+    color: #fff !important;
+}
+.rightFloatClass{
+    float: right !important;
+    background: #428BCA !important;
+    color: #fff !important;
+    border-color: #428BCA !important;
+}
+
+.overlayDialog .topLeft {
+    background: #f8f8f8;
+    display: none !important;
+}
+.buttonPanel {
+         padding-top: 1px;
+         background: #f8f8f8;
+         padding-bottom: 2px;
+         font-size: 15px;
+               }
+ .scrollDiv {
+    min-height: 330px !important;
+    max-height: 330px !important;
+    overflow-y: auto;
+}
+</style>
+
+
+<script>
+function setFocusOnLoad() {}
+    var __sfdcSessionId = '{!GETSESSIONID()}'; 
+   $j = jQuery.noConflict();
+   
+   //Added By Sanjeev STARTS here
+
+//var planPageNo={!pageNo};
+var billingInt = {"1":"Monthly","3":"Quaterly","6":"Half-Yearly","12":"Yearly"} 
+var planNoNameMap={}; 
+var nspre = 'ASF3__'; 
+var replacedPlansNoToBeDeletedJS=[];
+var newPlansNoToBeDeletedJS=[];
+(function() {
+  'use strict';  
+  
+    var demoApp = angular.module('demoApp', []);
+      
+    demoApp.controller('MainCtrl', function($scope, $timeout ,$http) {
+        $scope.nspre='ASF3__';
+        $scope.mRecType='{!MRType}';
+      $scope.list = {!JsonString};
+      $scope.pw = {!JsonString};
+      //console.log($scope.list);
+      $scope.replacedPlansMap={};
+      $scope.replacedPlansBackupMap={};
+      $scope.replacedPlan = {};
+      $scope.newPlan = {};
+      $scope.replacedPlansNoToBeDeleted = [];
+      $scope.exculsivePlansMap={}; 
+      $scope.isAcctHaveAriaId={!isAcctHaveAriaId};
+      $scope.acctCurr='{!accountCurrency}';
+      $scope.ListPriceVal = 0;
+      $scope.PriceVal = 0;
+      
+      
+      $scope.ngSetSelectedRateSchedule = function (pw){
+      		var selectedOption = pw.node.selectedRS;
+            var services = pw.node.services;
+            angular.forEach(services, function(value,key){
+            var serviceKey = key;
+            var serviceNode = value;
+                angular.forEach(value.listRateScedules, function(value,key){
+                    if(value.rateSchedule.Id == selectedOption){
+                        serviceNode.selectedRateSchedule = value;
+                    }
+                });
+                    
+            });
+            $scope.ngRecalculatePrice(pw);
+            //updateJson($scope.list, $scope.extList);
+            //$scope.$apply();
+      };
+      
+      $scope.ngPopulateRateScheduleSelectOptionFilter=function(pw, selectedBillingInterval, setDefaultFlag){
+      
+            var servicesNode = pw.node.services;
+            pw.rsList = [];
+            //$scope.rsList = [];
+            var uniqueIds = [];
+            var rateScheduleID ='';
+            $j.each(servicesNode, function(key,service){
+                $j.each(service.listRateScedules, function(key,val){
+                    if(uniqueIds.indexOf(val.rateSchedule.Id) == -1 && val.rateSchedule[nspre+'Recurring_Billing_Interval__c']==selectedBillingInterval){
+                        pw.rsList.push({value: val.rateSchedule.Id,label: val.rateSchedule.Name});
+                        if(rateScheduleID==''){
+                            rateScheduleID = val.rateSchedule.Id;
+                        }
+                        uniqueIds.push(val.rateSchedule.Id);
+                    }
+                });
+                return false;
+            });
+            
+            if(setDefaultFlag || pw.node.selectedRS==null){
+                pw.node.selectedRS = pw.rsList[0].value;
+            }
+            
+            
+            //updateJson($scope.list, $scope.extList);
+            return rateScheduleID;            
+    };
+    
+    $scope.preventPaste = function(e){
+            e.preventDefault();
+            showGenericDialog('Alert !','You can not paste in here. Please try again');
+            return false;
+    };
+
+
+    $scope.ngRecalculatePrice = function(pw, newVal){
+        if(typeof newVal != "undefined"){
+            console.log('newVal :'+newVal);
+            if(newVal!=null && newVal.toString().trim()==''){
+                console.log('newVal is blank, returning');
+                return;
+            }
+        }
+        
+        $scope.ListPriceVal = 0;
+        $scope.PriceVal = 0;
+        angular.forEach(pw.node.services, function(service,serviceIndex){
+            $scope.ngcalculateData(service,pw.node, false);
+        });
+        pw.node.ListPrice = $scope.ListPriceVal;
+        pw.node.Price = $scope.PriceVal;
+//        $scope.$apply();
+    };
+    
+    $scope.ngcalculateData = function(service,selectedNode,loopFlag, rateTier){
+        var units = selectedNode.Unit;
+        selectedNode.isCustomRate=true;
+        if(rateTier){
+            rateTier[nspre+'Build_Custom_Rate_Call__c']=true;
+        }
+        //$scope.ListPriceVal = 0;
+        //$scope.PriceVal = 0;
+        var unit; 
+        //console.log(' inside ngcalculate data method' + service.cps[nspre+'Service__r'][nspre+'Service_Type__c']);
+        
+        if(service.cps[nspre+'Service__r'][nspre+'Service_Type__c'] == "Recurring"){
+            //console.log('service type is Recurring');
+            var accountRateTiers = service.selectedRateSchedule.accountRateTiers;
+            //console.log('service.cps[nspre+'Tiered_Pricing_Rule__c'] : '+service.cps[nspre+'Tiered_Pricing_Rule__c']);
+            if(service.cps[nspre+'Tiered_Pricing_Rule__c'] == "Standard"){
+                //console.log('pricing rule standard');
+                service.listPrice = 0;
+                service.netPrice = 0;
+                angular.forEach(accountRateTiers, function(accountRateTier,accountRateTierIndex){
+                    //console.log('inside loop account rate tiers standard');
+                    if(!isInTier(units, accountRateTier[nspre+'FromUnit__c'], accountRateTier[nspre+'ToUnit__c'] )) {
+                      //console.log('inside inTier');
+                      if(units >= accountRateTier[nspre+'FromUnit__c']){
+                          unit = (null != accountRateTier[nspre+'ToUnit__c']) ? (accountRateTier[nspre+'ToUnit__c'] - accountRateTier[nspre+'FromUnit__c'] + 1) : 1.0 ;
+                          service.listPrice += accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] * unit;
+                          service.netPrice += accountRateTier[nspre+'Rate_per_Unit__c']  * unit;
+                          $scope.ListPriceVal += accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] * unit;
+                          $scope.PriceVal += accountRateTier[nspre+'Rate_per_Unit__c']  * unit;
+                      }
+                  } else {
+                        //console.log('not in tier');
+                       var remainingUnitsInHighestTier = units - accountRateTier[nspre+'FromUnit__c'] + 1.0;
+                       service.listPrice  += accountRateTier[nspre+'Orig_Rate_Per_Unit__c']  * remainingUnitsInHighestTier;
+                       service.netPrice  += accountRateTier[nspre+'Rate_per_Unit__c']  * remainingUnitsInHighestTier;
+                       $scope.ListPriceVal += accountRateTier[nspre+'Orig_Rate_Per_Unit__c']  * remainingUnitsInHighestTier;
+                       $scope.PriceVal += accountRateTier[nspre+'Rate_per_Unit__c']  * remainingUnitsInHighestTier;
+                  }
+                });
+            }
+            else if (service.cps[nspre+'Tiered_Pricing_Rule__c'] == "Volume Discount") {
+                 service.listPrice = 0;
+                 service.netPrice = 0;
+                 angular.forEach(accountRateTiers, function(accountRateTier,accountRateTierIndex){
+                     if(isInTier( units, accountRateTier[nspre+'FromUnit__c'], accountRateTier[nspre+'ToUnit__c'] )) { 
+                         service.listPrice += units * accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] ;
+                         service.netPrice += units * accountRateTier[nspre+'Rate_per_Unit__c'] ;
+                         $scope.ListPriceVal += units * accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] ;
+                         $scope.PriceVal += units * accountRateTier[nspre+'Rate_per_Unit__c'] ;
+                     }
+                 });
+             }
+             else{
+                 service.listPrice = 0;
+                 service.netPrice = 0;
+                 angular.forEach(accountRateTiers, function(accountRateTier,accountRateTierIndex){
+                     if(isInTier(units, accountRateTier[nspre+'FromUnit__c'], accountRateTier[nspre+'ToUnit__c'])) {
+                         service.listPrice += accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] ;
+                         service.netPrice += accountRateTier[nspre+'Rate_per_Unit__c'] ;
+                         $scope.ListPriceVal += accountRateTier[nspre+'Orig_Rate_Per_Unit__c'] ;
+                         $scope.PriceVal += accountRateTier[nspre+'Rate_per_Unit__c'] ;
+                     }                                       
+                 });
+             }
+        }
+        //listPriceForPlan += listPriceForService;
+        //netPriceForPlan += netPriceForService;
+       
+     };
+     
+     $scope.ngAddRateTiers = function (plan, accountRateTiers){
+            var newNode = angular.copy(accountRateTiers[accountRateTiers.length - 1]);
+            if(newNode[nspre+'ToUnit__c'] == null || newNode[nspre+'ToUnit__c'] == '')
+                alert("Please specify Rate Tiers 'To' value");
+            else{
+                newNode[nspre+'FromUnit__c'] = parseInt(newNode[nspre+'ToUnit__c'])+1;
+                newNode[nspre+'ToUnit__c'] = null;
+                newNode[nspre+'Rate_per_Unit__c'] = 0;
+                newNode[nspre+'Orig_Rate_Per_Unit__c'] = 0;
+                
+                newNode[nspre+'Rate_seq_no__c'] += 1;
+                newNode[nspre+'Build_Custom_Rate_Call__c'] =true;
+                newNode[nspre+'IsCustomRate__c'] =true;
+                plan.node.isCustomRate = true;
+                
+                accountRateTiers.push(newNode);
+               // updateJson($scope.list, $scope.extList);
+            //updatePlanOnOppJS(plan, plan.node.clientPlanInstanceNumber,3);
+            }
+            
+            
+      };
+      $scope.ngRemoveRateTiers = function(plan, accountRateTiers){
+            if(accountRateTiers.length<=1){
+                return false;
+            }
+            accountRateTiers.splice(accountRateTiers.length - 1,1);
+            accountRateTiers[accountRateTiers.length - 1][nspre+'ToUnit__c'] = null;
+            //updateJson($scope.list, $scope.extList);
+            //updatePlanOnOppJS(plan, plan.node.clientPlanInstanceNumber, 3);
+      };
+      
+      
+     
+     function isInTier(unit,fromUnit,toUnit ){
+        if( unit >= fromUnit && ( unit <= toUnit || toUnit == null) ){
+            return true;
+        }
+        return false;       
+    }
+        
+    });
+})();
+
+
+/*Angular script ends here*/
+
+function showGenericDialog(title,htmlBody,height,width){
+     var ht=180;
+     var wt=450;
+     
+     if(typeof(height)!="undefined"){
+            ht=height;
+     }
+     if(typeof(width)!="undefined"){
+            wt=width;
+     }
+         
+      $j('#genericDialogBox').dialog({
+                resizable: false,
+                height:ht,
+                width:wt,
+                modal: true,
+                open: function(e){
+                        $j(this).html(htmlBody);
+                },
+                buttons: [
+                        {
+                                text: "Ok",
+                                "class": 'rightFloatClass',
+                                click: function() {
+                                        $j(this).dialog("close");
+                                }
+                        }
+                ],
+                title: title
+        });  
+ } 
+ 
+ 
+function isNumberKey(evt, val)
+ {
+    var charCode = (evt.which) ? evt.which : evt.keyCode
+    if (charCode == 46) {
+       // Allow only 1 decimal point ('.')...
+       if((val) && (val.indexOf('.') >= 0))
+           return false;
+       else
+           return true;
+    }
+    
+    if (charCode > 31 && (charCode < 48 || charCode > 57))
+       return false;
+
+    return true;
+ }
+ 
+ function updateServicesJS(){
+        var scope = angular.element(document.getElementById("mainBlock")).scope();
+        //alert('Updating Plan - '+plan.leftName+'...');
+        var plans = [];
+        plans.push(scope.pw);
+        var planText ='';
+        planText = JSON.stringify(plans, function (key, val) {
+             if (key == '$$hashKey') {
+               return undefined;
+             }
+             return val;
+        });
+        plans = [];
+        updateServices(planText);
+}
+
+ function closeDailog(){
+    $j('#close-button').click();
+ }
+
+</script>
+<script>
+$j(document).ready(function() {
+    var scope = angular.element(document.getElementById("mainBlock")).scope();
+    scope.ngPopulateRateScheduleSelectOptionFilter(scope.pw, scope.pw.selectedBillingInterval, false);
+    scope.$apply();
+});     
+
+</script>
+<apex:form >
+    <apex:actionstatus id="loadStatus">
+        <apex:facet name="start">
+            <img src="../img/loading.gif" style="padding-left: 57px; padding-right: 5px; margin-top: 5px;"/>
+            <div style="position:fixed; top:0; left:0; background:rgba(0,0,0,0.6); z-index:5; width:100%; height:100%;"></div>
+        </apex:facet> 
+    </apex:actionstatus>
+    <apex:actionFunction name="updateServices" action="{!updateServices}" oncomplete="closeDailog();" rerender="" status="loadStatus"> 
+           <apex:param id="selectedPlanJson" name="selectedPlanJson" assignTo="{!selectedPlanJson}" value="" />
+     </apex:actionFunction> 
+     <div class="scrollDiv">  
+    <div class="container-fluid" ng-app="demoApp" ng-controller="MainCtrl" id="mainBlock">
+    
+            <div ng-include="'items_renderer.html'"  width="100%">
+                           
+            </div>
+                            
+            <script type="text/ng-template" id="items_renderer.html">
+                    <table width="100%" cellspacing="0" cellpadding="0">
+               
+                    <!-- Service/Child Row -->
+                    <tr id="sec_row_{{pw.groupNo}}" >
+                    <td colspan="10" align="center" id="planServiceTD_{{pw.groupNo}}" style="padding-top: 0px;padding-left: 0px !important;">
+                        <!-- Service DIV -->
+                        <div id="servdiv_{{pw.groupNo}}" class="curtainCls" style="border:0px;">
+                            <table id="plan_services" width="98%" border="0" cellspacing="0" cellpadding="2" class="plan_services">
+                                <tr>
+                                    <td align="left" style="vertical-align: middle;font-family: arial,sans-serif;font-weight: bold;font-size: 14px;"><b>Edit Custom Rates</b></td>
+                                    <td align="right" style="vertical-align: middle;font-family: arial,sans-serif;font-weight: bold;font-size: 14px;padding-bottom: 5px;">
+                                        <b>Rate Schedule: &nbsp;&nbsp; </b>
+                                        <select style="width: 250px;margin-top: 5px;" id="rateScheduleSelect_{{pw.groupNo}}" ng-model="pw.node.selectedRS" ng-options="option.value as option.label for option in pw.rsList" ng-change="ngSetSelectedRateSchedule(pw);">
+                                        </select>
+                                        
+                                        
+                                    </td>
+                                    
+                                <tr>
+                            </table>
+                            
+                        <table id="plan_services" width="98%" border="0" cellspacing="0" cellpadding="2" class="plan_services">
+                            
+                              <tr>
+                                <th class="gradiantHeader service" width="20%" style="vertical-align: middle;"><b>Services</b></th>
+                                <th class="gradiantHeader service" width="20%" style="vertical-align: middle;"><b>Type </b></th>
+                                <td style="padding-left: 0px !important;padding-right: 0px !important;padding-top: 0px !important;padding-bottom: 0px !important">
+                                    <table width="100%" cellspacing="0" cellpadding="0">
+                                    <tr>
+                                        <th class="gradiantHeader service" width="25%" align="left" style="vertical-align: middle;"><b>From</b></th>
+                                        <th class="gradiantHeader service" width="25%" align="left" style="vertical-align: middle;"><b>To</b></th>
+                                        <th class="gradiantHeader service" width="25%" align="left" style="vertical-align: middle;text-align: right;padding-right: 5px;"><b>Rate</b></th>
+                                        <th class="gradiantHeader service" width="25%" align="left" style="vertical-align: middle;text-align: right;padding-right: 5px;"><b>Custom Rate</b></th>
+                                    </tr>
+                                    </table>
+                                </td>
+                                <th class="gradiantHeader service" width="8%" align="right" style="vertical-align: middle;text-align: right;padding-right: 5px;"><b>List Price </b></th>
+                                <th class="gradiantHeader service" width="8%" align="right" style="vertical-align: middle;text-align: right;padding-right: 5px;"><b>Net price </b></th>
+                                <th class="gradiantHeader service" width="8%" align="right" style="vertical-align: middle;text-align: right;padding-right: 5px;"><b>Total Net </b></th>
+                                <th class="gradiantHeader" width="4%" align="right" style="vertical-align: middle;"></th>
+
+                                
+                
+                              </tr>
+                            <!-- Service Loop -->
+                            <tr style="border-bottom:dashed; border-bottom-width:0px;" ng-repeat="ser in pw.node.services">
+                                <td class="serviceContent" align="left" valign="top" bgcolor="#FFFFFF" style="padding-left: 5px !important;"><span class="style21">{{ser.cps[nspre+'Service__r'].Name}}</span></td>
+                                <td class="serviceContent" align="left" valign="top" bgcolor="#FFFFFF">{{ser.cps[nspre+'Service__r'][nspre+'Service_Type__c']}}</td> 
+
+                                <!--<td class="serviceContent" align="left" valign="top" bgcolor="#FFFFFF" style="padding-left: 5px !important;"><span class="style21">{{ser.cps.Service__r.Name}}</span></td>
+                                <td class="serviceContent" align="left" valign="top" bgcolor="#FFFFFF">{{ser.cps.Service__r.Service_Type__c}}</td>--> 
+                                <td width="32%" style="padding-left: 0px !important;padding-right: 0px !important;padding-top: 0px !important;padding-bottom: 0px !important;background-color: #F8F8F8 !important">
+                                   <table width="100%" cellspacing="0" cellpadding="0">
+                                        <!-- Rate Loop -->
+                                        <tr ng-repeat="rt in ser.selectedRateSchedule.accountRateTiers">
+                                            <td class="serviceContent rateTier" width="25%" align="left" style="padding-left: 5px !important;" valign="top" ng-dblclick="editing = true;ngSetFocus($event);">
+                                                <span style="min-width:50px;height:15px;" ng-hide="editing" ng-bind="rt[nspre+'FromUnit__c']"></span>
+                                                <input style="width: 50px;" ng-model="rt[nspre+'FromUnit__c']" ng-show="editing" ng-blur="editing = false;ngRecalculatePrice(pw);" ng-paste="preventPaste($event)" onkeypress="return isNumberKey(event)"/>
+                                            </td>
+                                            <td class="serviceContent rateTier" width="25%" align="left"  valign="top" ng-dblclick="editing2 = true;ngSetFocus($event);">
+                                                <span style="min-width:50px;height:15px;" ng-hide="editing2" ng-bind="rt[nspre+'ToUnit__c']"></span>
+                                    <span ng-show="(!editing2) && (rt[nspre+'ToUnit__c']==null)">&infin;</span>
+                                                <input style="width: 50px;" ng-model="rt[nspre+'ToUnit__c']" ng-show="editing2" ng-blur="editing2 = false;ngRecalculatePrice(pw);" ng-paste="preventPaste($event)" onkeypress="return isNumberKey(event)"/>
+ 
+                                            </td>
+                                            <td class="serviceContent rateTier" id="perUnit_{{rt[nspre+'Rate_seq_no__c']}}" width="25%" align="right" valign="top" >
+                                                <span id="span_perUnit_{{rt[nspre+'Rate_seq_no__c']}}">{{rt[nspre+'Orig_Rate_Per_Unit__c']|number:2}}</span> 
+                                            </td>
+                                            <td class="serviceContent rateTier" id="custRate_{{rt[nspre+'Rate_seq_no__c']}}" width="25%" align="right" valign="top" ng-dblclick="editing3 = pw.node.Discount==0 && {!!cantEditPrice};ngSetFocus($event);" style="padding-right: 5px !important;">
+                                                <span style="min-width:50px;height:15px;" ng-hide="editing3" ng-bind="rt[nspre+'Rate_per_Unit__c']|number:2"></span>
+                                                <input style="width: 50px;" ng-model="rt[nspre+'Rate_per_Unit__c']" ng-show="editing3" ng-blur="editing3 = false;rt[nspre+'Build_Custom_Rate_Call__c']=true;ngRecalculatePrice(pw);" ng-paste="preventPaste($event)" onkeypress="return isNumberKey(event)"/>
+                                            </td> 
+                                        </tr>
+                                    </table>
+                                    </td>
+                                    <td class="serviceContent rateTier" id="list_{{ser.listPricePerUnit}}" width="8%" align="right"  valign="top">
+                                        {{ser.listPricePerUnit==null? '0.00':ser.listPricePerUnit|number:2}}
+                                    </td> 
+                                    <td class="serviceContent rateTier" id="net_{{ser.netPricePerUnit}}" width="8%" align="right"  valign="top">
+                                        {{ser.netPricePerUnit==null? '0.00':ser.netPricePerUnit|number:2}}
+                                    </td>
+                                    <!--SerTaxVal-->
+                                    <td class="serviceContent rateTier" id="net_{{ser.netPrice}}" width="8%" align="right"  valign="top">
+                                        <span id="currency_total_{{pw.groupNo}}" ng-bind="ser.netPrice+(ser.netPrice*pw.node.tax/100) | number:2"></span>
+                                        <span class="taxTotal">
+                                            <img class="taxInfo" src="{!URLFOR($Resource.Sim_JS, 'images/icon-info-blue.png')}"  width="16" height="16" title = "Tax details to be shown" style="vertical-align: text-bottom;"/>
+                                            <div class="taxdetails-tooltip">
+                                                Tax Amount<br/> {{pw.node.tax==null? '0.00':(ser.netPrice*pw.node.tax/100)|number:2}}
+                                            </div>
+                                        </span>
+                                    </td>  
+                                    <td class="serviceContent" id="net_{{ser.netPrice}}" width="4%" align="right"  style="vertical-align: bottom !important;padding-bottom: 2px !important;padding-right: 2px !important;border-right: 2px solid #f8f8f8 !important;">
+                                        <img src="{!URLFOR($Resource.Sim_JS, 'images/plus-icon-orange.png')}"  width="16" height="16" ng-click="ngAddRateTiers(pw, ser.selectedRateSchedule.accountRateTiers);"  ng-hide="ser.cps[nspre+'Service__r'][nspre+'Service_Type__c']!='Recurring'"/>
+                                        <img src="{!URLFOR($Resource.Sim_JS, 'images/minus-icon-orange.png')}" width="16" height="16" ng-click="ngRemoveRateTiers(pw, ser.selectedRateSchedule.accountRateTiers);" ng-hide="ser.cps[nspre+'Service__r'][nspre+'Service_Type__c']!='Recurring' || ser.selectedRateSchedule.accountRateTiers.length<=1"/>
+                                    </td> 
+                              </tr>
+                        </table>
+                        </div>
+                    </td>
+                    </tr>
+                </table>
+                </script>
+              
+    </div>
+    </div>
+    <div class="buttonPanel">
+           <input type="button" value="Cancel" class="button white" style="float:left" onclick=""/>
+           <input type="button" value="Done" class="button blue" onclick="updateServicesJS();"/>
+           <input id="close-button" type="button" value="Save" style="display:none;"/>
+           
+           <br/><br/>
+        </div> 
+</apex:form>        
+<div id="genericDialogBox"></div>       
+</apex:page>
